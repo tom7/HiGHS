@@ -79,6 +79,7 @@ include_directories(ipm/basiclu/include)
 set(sources
     ../extern/filereaderlp/reader.cpp
     io/Filereader.cpp
+    io/FilereaderBqpd.cpp
     io/FilereaderLp.cpp
     io/FilereaderEms.cpp
     io/FilereaderMps.cpp
@@ -176,6 +177,7 @@ set(headers
     ../extern/filereaderlp/model.hpp
     ../extern/filereaderlp/reader.hpp
     io/Filereader.h
+    io/FilereaderBqpd.h
     io/FilereaderLp.h
     io/FilereaderEms.h
     io/FilereaderMps.h
