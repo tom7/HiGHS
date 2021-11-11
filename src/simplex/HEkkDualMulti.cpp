@@ -25,8 +25,6 @@
 #include "simplex/HEkkDual.h"
 #include "simplex/SimplexTimer.h"
 
-using std::cout;
-using std::endl;
 
 void HEkkDual::iterateMulti() {
   slice_PRICE = 1;
@@ -274,10 +272,13 @@ void HEkkDual::minorChooseRow() {
    */
   row_out = kNoRowChosen;
   if (multi_iChoice != -1) {
+    assert(multi_iChoice < std::min(multi_num, kSimplexConcurrencyLimit));
     MChoice* workChoice = &multi_choice[multi_iChoice];
 
     // Assign useful variables
     row_out = workChoice->row_out;
+    assert(row_out >= 0);
+    assert(size_t(row_out) < ekk_instance_.basis_.basicIndex_.size());
     variable_out = ekk_instance_.basis_.basicIndex_[row_out];
     double valueOut = workChoice->baseValue;
     double lowerOut = workChoice->baseLower;
@@ -286,6 +287,7 @@ void HEkkDual::minorChooseRow() {
     move_out = delta_primal < 0 ? -1 : 1;
 
     // Assign buffers
+    assert(multi_nFinish < kSimplexConcurrencyLimit);
     MFinish* finish = &multi_finish[multi_nFinish];
     finish->row_out = row_out;
     finish->variable_out = variable_out;
@@ -302,6 +304,7 @@ void HEkkDual::minorChooseRow() {
 
 void HEkkDual::minorUpdate() {
   // Minor update - store roll back data
+  assert(multi_nFinish < kSimplexConcurrencyLimit);
   MFinish* finish = &multi_finish[multi_nFinish];
   finish->move_in = ekk_instance_.basis_.nonbasicMove_[variable_in];
   finish->shiftOut = ekk_instance_.info_.workShift_[variable_out];
