@@ -20,6 +20,7 @@
 #include "mip/HighsConflictPool.h"
 #include "mip/HighsCutPool.h"
 #include "mip/HighsMipSolverData.h"
+#include "parallel/HighsParallel.h"
 #include "pdqsort/pdqsort.h"
 
 static double activityContributionMin(double coef, const double& lb,
@@ -1803,7 +1804,16 @@ bool HighsDomain::propagate() {
 
         // printf("numproprows (model): %" HIGHSINT_FORMAT "\n", numproprows);
 
-        for (HighsInt k = 0; k != numproprows; ++k) propagateIndex(k);
+        if (numproprows < 2 || propnnz <= 10000) {
+          for (HighsInt k = 0; k != numproprows; ++k) propagateIndex(k);
+        } else {
+          highs::parallel::for_each(
+              0, numproprows,
+              [&](HighsInt start, HighsInt end) {
+                for (HighsInt k = start; k < end; ++k) propagateIndex(k);
+              },
+              std::max(1.0, (5000.0 * numproprows) / propnnz));
+        }
 
         for (HighsInt k = 0; k != numproprows; ++k) {
           HighsInt i = propagateinds[k];
@@ -1873,7 +1883,16 @@ bool HighsDomain::propagate() {
 
           // printf("numproprows (cuts): %" HIGHSINT_FORMAT "\n", numproprows);
 
-          for (HighsInt k = 0; k != numproprows; ++k) propagateIndex(k);
+          if (numproprows < 2 || propnnz <= 10000) {
+            for (HighsInt k = 0; k != numproprows; ++k) propagateIndex(k);
+          } else {
+            highs::parallel::for_each(
+                0, numproprows,
+                [&](HighsInt start, HighsInt end) {
+                  for (HighsInt k = start; k < end; ++k) propagateIndex(k);
+                },
+                std::max(1.0, (5000.0 * numproprows) / propnnz));
+          }
 
           for (HighsInt k = 0; k != numproprows; ++k) {
             HighsInt i = propagateinds[k];
