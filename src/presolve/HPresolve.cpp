@@ -4160,7 +4160,7 @@ void HPresolve::computeIntermediateMatrix(std::vector<HighsInt>& flagRow,
 
 HPresolve::Result HPresolve::removeDependentEquations(
     HighsPostsolveStack& postSolveStack) {
-  if (equations.empty()) return Result::kOk;
+  if (equations.size() <= 1) return Result::kOk;
 
   HighsSparseMatrix matrix;
   matrix.num_col_ = equations.size();
@@ -4245,7 +4245,7 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
       freeCols.push_back(i);
   }
 
-  if (freeCols.empty()) return Result::kOk;
+  if (freeCols.size() <= 1) return Result::kOk;
 
   HighsSparseMatrix matrix;
   matrix.num_col_ = freeCols.size();
@@ -4288,12 +4288,13 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
 
   printf("HPresolve::removeDependentFreeCols Rank deficiency is %d\n",
          (int)rank_deficiency);
-  HighsInt num_removed_row = 0;
+  HighsInt num_removed_col = 0;
   HighsInt num_removed_nz = 0;
   HighsInt num_fictitious_cols_skipped = 0;
   for (HighsInt k = 0; k < rank_deficiency; k++) {
     if (factor.var_with_no_pivot[k] >= 0) {
       HighsInt redundant_col = freeCols[factor.var_with_no_pivot[k]];
+      num_removed_col++;
       num_removed_nz += colsize[redundant_col];
       fixColToZero(postSolveStack, redundant_col);
     } else {
@@ -4301,8 +4302,8 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
     }
   }
 
-  printf("HPresolve::removeDependentFreeCols Removed %d rows and %d nonzeros",
-         (int)num_removed_row, (int)num_removed_nz);
+  printf("HPresolve::removeDependentFreeCols Removed %d cols and %d nonzeros",
+         (int)num_removed_col, (int)num_removed_nz);
   if (num_fictitious_cols_skipped)
     printf(", avoiding %d fictitious rows", (int)num_fictitious_cols_skipped);
   printf("\n");
