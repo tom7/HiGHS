@@ -605,6 +605,44 @@ void analyseMatrixSparsity(const HighsLogOptions& log_options,
 
 bool initialiseValueDistribution(const std::string distribution_name,
                                  const std::string value_name,
+                                 const HighsInt min_value_limit,
+                                 const HighsInt max_value_limit,
+                                 const HighsInt base_value_limit,
+                                 HighsIntValueDistribution& value_distribution) {
+  assert(min_value_limit > 0);
+  assert(max_value_limit > 0);
+  assert(base_value_limit > 1);
+  value_distribution.distribution_name_ = distribution_name;
+  value_distribution.value_name_ = value_name;
+  if (min_value_limit <= 0) return false;
+  if (max_value_limit < min_value_limit) return false;
+  HighsInt num_count;
+  if (min_value_limit == max_value_limit) {
+    // For counting values below and above a value
+    num_count = 1;
+  } else {
+    if (base_value_limit <= 0) return false;
+    const double log_ratio = log((1.0 * max_value_limit) / min_value_limit);
+    const double log_base_value_limit = log((double)base_value_limit) / log(2);
+    num_count = log_ratio / log_base_value_limit + 1;
+  }
+  value_distribution.count_.assign(num_count + 1, 0);
+  value_distribution.limit_.assign(num_count, 0);
+  value_distribution.limit_[0] = min_value_limit;
+  for (HighsInt i = 1; i < num_count; i++) {
+    value_distribution.limit_[i] =
+        base_value_limit * value_distribution.limit_[i - 1];
+  }
+  value_distribution.num_count_ = num_count;
+  value_distribution.num_zero_ = 0;
+  value_distribution.min_value_ = kHighsIInf;
+  value_distribution.max_value_ = 0;
+  value_distribution.sum_count_ = 0;
+  return true;
+}
+
+bool initialiseValueDistribution(const std::string distribution_name,
+                                 const std::string value_name,
                                  const double min_value_limit,
                                  const double max_value_limit,
                                  const double base_value_limit,
@@ -653,6 +691,25 @@ bool initialiseValueDistribution(const std::string distribution_name,
   return true;
 }
 
+bool updateValueDistribution(const HighsInt value,
+                             HighsIntValueDistribution& value_distribution) {
+  if (value_distribution.num_count_ < 0) return false;
+  value_distribution.sum_count_++;
+  const HighsInt abs_value = abs(value);
+  value_distribution.min_value_ =
+      std::min(abs_value, value_distribution.min_value_);
+  value_distribution.max_value_ =
+      std::max(abs_value, value_distribution.max_value_);
+  for (HighsInt i = 0; i < value_distribution.num_count_; i++) {
+    if (abs_value < value_distribution.limit_[i]) {
+      value_distribution.count_[i]++;
+      return true;
+    }
+  }
+  value_distribution.count_[value_distribution.num_count_]++;
+  return true;
+}
+
 bool updateValueDistribution(const double value,
                              HighsValueDistribution& value_distribution) {
   if (value_distribution.num_count_ < 0) return false;
@@ -690,6 +747,94 @@ HighsInt integerPercentage(const HighsInt of, const HighsInt in) {
 }
 
 bool logValueDistribution(const HighsLogOptions& log_options,
+                          const HighsIntValueDistribution& value_distribution) {
+  if (value_distribution.sum_count_ <= 0) return false;
+  const HighsInt num_count = value_distribution.num_count_;
+  if (num_count < 0) return false;
+  if (value_distribution.distribution_name_ != "")
+    highsLogDev(log_options, HighsLogType::kInfo, "\n%s\n",
+                value_distribution.distribution_name_.c_str());
+  std::string value_name = value_distribution.value_name_;
+  HighsInt sum_count = value_distribution.num_zero_;
+  double sum_percentage = 0;
+  const HighsInt min_value = value_distribution.min_value_;
+  for (HighsInt i = 0; i < num_count + 1; i++)
+    sum_count += value_distribution.count_[i];
+  if (!sum_count) return false;
+  //  highsLogDev(log_options, HighsLogType::kInfo, "Min value = %g\n", min_value);
+  highsLogDev(log_options, HighsLogType::kInfo,
+	      "     Minimum %svalue is %4d\n", value_name.c_str(), min_value);
+  highsLogDev(log_options, HighsLogType::kInfo,
+              "     Maximum %svalue is %4d\n", value_name.c_str(),
+              value_distribution.max_value_);
+  HighsInt sum_report_count = 0;
+  double percentage;
+  HighsInt int_percentage;
+  HighsInt count = value_distribution.num_zero_;
+  if (count) {
+    percentage = doublePercentage(count, sum_count);
+    sum_percentage += percentage;
+    int_percentage = percentage;
+    highsLogDev(log_options, HighsLogType::kInfo,
+                "%12" HIGHSINT_FORMAT " %svalues (%3" HIGHSINT_FORMAT
+                "%%) are %4d\n",
+                count, value_name.c_str(), int_percentage, 0.0);
+    sum_report_count += count;
+  }
+  count = value_distribution.count_[0];
+  if (count) {
+    percentage = doublePercentage(count, sum_count);
+    sum_percentage += percentage;
+    int_percentage = percentage;
+    highsLogDev(log_options, HighsLogType::kInfo,
+                "%12" HIGHSINT_FORMAT " %svalues (%3" HIGHSINT_FORMAT
+                "%%) in (%4d, %4d)",
+                count, value_name.c_str(), int_percentage, 0.0,
+                value_distribution.limit_[0]);
+    sum_report_count += count;
+    highsLogDev(log_options, HighsLogType::kInfo, "\n");
+  }
+  for (HighsInt i = 1; i < num_count; i++) {
+    count = value_distribution.count_[i];
+    if (count) {
+      percentage = doublePercentage(count, sum_count);
+      sum_percentage += percentage;
+      int_percentage = percentage;
+      highsLogDev(log_options, HighsLogType::kInfo,
+                  "%12" HIGHSINT_FORMAT " %svalues (%3" HIGHSINT_FORMAT
+                  "%%) in [%4d, %4d)",
+                  count, value_name.c_str(), int_percentage,
+                  value_distribution.limit_[i - 1],
+                  value_distribution.limit_[i]);
+      sum_report_count += count;
+      highsLogDev(log_options, HighsLogType::kInfo, "\n");
+    }
+  }
+  count = value_distribution.count_[num_count];
+  if (count) {
+    percentage = doublePercentage(count, sum_count);
+    sum_percentage += percentage;
+    int_percentage = percentage;
+    highsLogDev(log_options, HighsLogType::kInfo,
+                "%12" HIGHSINT_FORMAT " %svalues (%3" HIGHSINT_FORMAT
+                "%%) in [%4d,        inf)",
+                count, value_name.c_str(), int_percentage,
+                value_distribution.limit_[num_count - 1]);
+    sum_report_count += count;
+    highsLogDev(log_options, HighsLogType::kInfo, "\n");
+  }
+  highsLogDev(log_options, HighsLogType::kInfo,
+              "%12" HIGHSINT_FORMAT " %svalues\n", sum_count,
+              value_name.c_str());
+  if (sum_report_count != sum_count)
+    highsLogDev(log_options, HighsLogType::kInfo,
+                "ERROR: %" HIGHSINT_FORMAT
+                " = sum_report_count != sum_count = %" HIGHSINT_FORMAT "\n",
+                sum_report_count, sum_count);
+  return true;
+}
+
+bool logValueDistribution(const HighsLogOptions& log_options,
                           const HighsValueDistribution& value_distribution,
                           const HighsInt mu) {
   if (value_distribution.sum_count_ <= 0) return false;
@@ -707,9 +852,9 @@ bool logValueDistribution(const HighsLogOptions& log_options,
   for (HighsInt i = 0; i < num_count + 1; i++)
     sum_count += value_distribution.count_[i];
   if (!sum_count) return false;
-  highsLogDev(log_options, HighsLogType::kInfo, "Min value = %g\n", min_value);
+  //  highsLogDev(log_options, HighsLogType::kInfo, "Min value = %g\n", min_value);
   highsLogDev(log_options, HighsLogType::kInfo,
-              "     Minimum %svalue is %10.4g", value_name.c_str(), min_value);
+	      "     Minimum %svalue is %10.4g", value_name.c_str(), min_value);
   if (mu > 0) {
     highsLogDev(log_options, HighsLogType::kInfo,
                 "  corresponding to  %10" HIGHSINT_FORMAT

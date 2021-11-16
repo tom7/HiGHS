@@ -17,6 +17,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <sstream>
 
 #include "lp_data/HConst.h"
 #include "pdqsort/pdqsort.h"
@@ -807,9 +808,18 @@ HighsInt HFactor::buildKernel() {
   double fake_eliminate = 0;
 
   const bool progress_report = num_basic != num_row;
-  const HighsInt progress_frequency = 10000;
-  HighsInt search_k = 0;
+  const HighsInt progress_frequency = 10;//10000;
+  HighsInt report_from_GE_stage = 68;//kHighsIInf;
+  bool report_GE_stage = false;
+  if (progress_report) {
+    log_data->output_flag = true;
+    log_data->log_dev_level = 2;
+    log_options.log_file_stream = stdout;
+  }
+  std::stringstream ss;
 
+  const HighsInt num_simple_pivot = num_basic - nwork;
+  HighsInt num_pivot = num_simple_pivot;
   while (nwork-- > 0) {
     /**
      * 1. Search for the pivot
@@ -824,8 +834,8 @@ HighsInt HFactor::buildKernel() {
     double merit_limit = 1.0 * num_basic * num_row;
     double merit_pivot = merit_limit;
 
-    if (progress_report && search_k) {
-      if (search_k % progress_frequency == 0) {
+    if (progress_report && num_pivot) {
+      if (num_pivot % progress_frequency == 0) {
         HighsInt min_col_count = kHighsIInf;
         HighsInt min_row_count = kHighsIInf;
         for (HighsInt count = 1; count < num_row; count++) {
@@ -841,12 +851,22 @@ HighsInt HFactor::buildKernel() {
           }
         }
         printf(
-            "HFactor::buildKernel stage = %6d: min_col_count = %3d; "
+            "\nHFactor::buildKernel stage = %6d: min_col_count = %3d; "
             "min_row_count = %3d\n",
-            (int)search_k, (int)min_col_count, (int)min_row_count);
+            (int)num_pivot, (int)min_col_count, (int)min_row_count);
+	ss.str(std::string());
+	ss << "Kernel " << num_pivot << " report ";
+	analyseActiveSubmatrix(ss.str());
       }
     }
-    search_k++;
+    num_pivot++;
+    if (progress_report) printf("report_GE_stage %d\n", (int)num_pivot);
+    if (progress_report && num_pivot >= report_from_GE_stage) report_GE_stage = true;
+    if (report_GE_stage) {
+      ss.str(std::string());
+      ss << "GE stage " << num_pivot << " report ";
+      analyseActiveSubmatrix(ss.str());
+    }
     // 1.2. Search for local singletons
     bool foundPivot = false;
     if (!foundPivot && col_link_first[1] != -1) {
@@ -878,10 +898,14 @@ HighsInt HFactor::buildKernel() {
           HighsInt start = mc_start[j];
           HighsInt end = start + mc_count_a[j];
           for (HighsInt k = start; k < end; k++) {
+	    HighsInt report_row_count = -1;
+	    HighsInt report_row_index = -1;
             if (fabs(mc_value[k]) >= min_pivot) {
               HighsInt i = mc_index[k];
               HighsInt row_count = mr_count[i];
               double merit_local = 1.0 * (count - 1) * (row_count - 1);
+	      report_row_count = row_count;
+	      report_row_index = i;
               if (merit_pivot > merit_local) {
 #ifndef NDEBUG
                 candidate_pivot_value = fabs(mc_value[k]);
@@ -892,6 +916,13 @@ HighsInt HFactor::buildKernel() {
                 foundPivot = foundPivot || (row_count < count);
               }
             }
+	    if (report_GE_stage) {
+	      printf("Count %3d: Col %6d searched   0 indices for Row %6d (count %3d; value %11.4g):"
+		     " merit_pivot = %11.4g for (%6d, %6d) found = %s\n",
+		     (int)count, (int)j, (int)report_row_index,
+		     (int)report_row_count, mc_value[k],
+		     merit_pivot, (int)iRowPivot, (int)jColPivot, highsBoolToString(foundPivot).c_str());
+	    }
           }
 
           if (searchCount++ >= searchLimit && merit_pivot < merit_limit)
@@ -913,9 +944,13 @@ HighsInt HFactor::buildKernel() {
             HighsInt j = mr_index[k];
             HighsInt column_count = mc_count_a[j];
             double merit_local = 1.0 * (count - 1) * (column_count - 1);
+	    HighsInt num_index_searched = 0;
+	    double value_found = 0;
             if (merit_local < merit_pivot) {
               HighsInt ifind = mc_start[j];
               while (mc_index[ifind] != i) ifind++;
+	      num_index_searched = ifind-mc_start[j]+1;
+	      value_found = mc_value[ifind];
               if (fabs(mc_value[ifind]) >= mc_min_pivot[j]) {
 #ifndef NDEBUG
                 candidate_pivot_value = fabs(mc_value[ifind]);
@@ -926,6 +961,13 @@ HighsInt HFactor::buildKernel() {
                 foundPivot = foundPivot || (column_count <= count);
               }
             }
+	    if (report_GE_stage) {
+	      printf("Count %3d: Row %6d searched %3d indices for Col %6d (count %3d; value %11.4g):"
+		     " merit_pivot = %11.4g for (%6d, %6d) found = %s\n",
+		     (int)count, (int)i, (int)num_index_searched,
+		     (int)j, (int)column_count, value_found,
+		     merit_pivot, (int)iRowPivot, (int)jColPivot, highsBoolToString(foundPivot).c_str());
+	    }
           }
           if (searchCount++ >= searchLimit && merit_pivot < merit_limit)
             foundPivot = true;
@@ -948,6 +990,11 @@ HighsInt HFactor::buildKernel() {
     double pivot_multiplier = colDelete(jColPivot, iRowPivot);
     if (!singleton_pivot)
       assert(candidate_pivot_value == fabs(pivot_multiplier));
+
+    if (report_GE_stage && singleton_pivot) {
+      printf("Count   1: pivot = %11.4g for (%6d, %6d)\n",
+	     pivot_multiplier, (int)iRowPivot, (int)jColPivot);
+    }    
     if (fabs(pivot_multiplier) < pivot_tolerance) {
       highsLogDev(log_options, HighsLogType::kWarning,
                   "Small |pivot| = %g when nwork = %" HIGHSINT_FORMAT "\n",

@@ -102,3 +102,32 @@ void HFactor::reportDoubleVector(const std::string name,
   }
   printf("\n");
 }
+
+void HFactor::analyseActiveSubmatrix(const std::string message) const {
+  highsLogDev(log_options, HighsLogType::kInfo, "\n%s\n", message.c_str());
+  HighsValueDistribution active_submatrix;
+  HighsIntValueDistribution row_count;
+  HighsIntValueDistribution col_count;
+  initialiseValueDistribution("Active submatrix", "", 1e-20, 1e20, 10.0, active_submatrix);
+  initialiseValueDistribution("Row counts", "", 1, 1024, 2, row_count);
+  initialiseValueDistribution("Col counts", "", 1, 1024, 2, col_count);
+  for (HighsInt count = 1; count <= num_row; count++) {
+    for (HighsInt j = col_link_first[count]; j != -1;
+             j = col_link_next[j]) {
+      updateValueDistribution(count, col_count);
+      HighsInt start = mc_start[j];
+      HighsInt end = start + mc_count_a[j];
+      for (HighsInt k = start; k < end; k++) 
+	updateValueDistribution(mc_value[k], active_submatrix);
+    }
+  }
+  for (HighsInt count = 1; count <= num_basic; count++) {
+    for (HighsInt j = row_link_first[count]; j != -1; j = row_link_next[j])
+      updateValueDistribution(count, row_count);
+  }
+  logValueDistribution(log_options, active_submatrix);
+  logValueDistribution(log_options, row_count);
+  logValueDistribution(log_options, col_count);
+  
+
+}

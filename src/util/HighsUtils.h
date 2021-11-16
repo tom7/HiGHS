@@ -55,6 +55,18 @@ struct HighsValueDistribution {
   HighsInt sum_count_;
 };
 
+struct HighsIntValueDistribution {
+  std::string distribution_name_;
+  std::string value_name_;
+  HighsInt num_count_;
+  HighsInt num_zero_;
+  HighsInt min_value_;
+  HighsInt max_value_;
+  std::vector<HighsInt> limit_;
+  std::vector<HighsInt> count_;
+  HighsInt sum_count_;
+};
+
 struct HighsScatterData {
   HighsInt max_num_point_;
   HighsInt num_point_;
@@ -153,10 +165,20 @@ void analyseMatrixSparsity(
 
 bool initialiseValueDistribution(const std::string distribution_name,
                                  const std::string value_name,
+                                 const HighsInt min_value_limit,
+                                 const HighsInt max_value_limit,
+                                 const HighsInt base_value_limit,
+                                 HighsIntValueDistribution& value_distribution);
+
+bool initialiseValueDistribution(const std::string distribution_name,
+                                 const std::string value_name,
                                  const double min_value_limit,
                                  const double max_value_limit,
                                  const double base_value_limit,
                                  HighsValueDistribution& value_distribution);
+
+bool updateValueDistribution(const HighsInt value,
+                             HighsIntValueDistribution& value_distribution);
 
 bool updateValueDistribution(const double value,
                              HighsValueDistribution& value_distribution);
@@ -164,6 +186,8 @@ bool updateValueDistribution(const double value,
 HighsInt integerPercentage(const HighsInt of, const HighsInt in);
 double doublePercentage(const HighsInt of, const HighsInt in);
 
+bool logValueDistribution(const HighsLogOptions& log_options,
+                          const HighsIntValueDistribution& value_distribution);
 bool logValueDistribution(const HighsLogOptions& log_options,
                           const HighsValueDistribution& value_distribution,
                           const HighsInt mu = 0);

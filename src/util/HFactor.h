@@ -393,6 +393,7 @@ class HFactor {
                        const vector<HighsInt> entry) const;
   void reportDoubleVector(const std::string name,
                           const vector<double> entry) const;
+  void analyseActiveSubmatrix(const std::string message = "") const;
 
   void ftranL(HVector& vector, const double expected_density,
               HighsTimerClock* factor_timer_clock_pointer = NULL) const;
