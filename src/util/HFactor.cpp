@@ -808,15 +808,24 @@ HighsInt HFactor::buildKernel() {
   double fake_eliminate = 0;
 
   const bool progress_report = num_basic != num_row;
-  const HighsInt progress_frequency = 10;//10000;
-  HighsInt report_from_GE_stage = 68;//kHighsIInf;
+  const HighsInt progress_frequency = 10000;
+  HighsInt report_from_GE_stage = 2075;//5840;//kHighsIInf;
+  HighsInt report_to_GE_stage = report_from_GE_stage+10;
   bool report_GE_stage = false;
+  std::string GE_stage_name = "";
+  std::stringstream ss;
+  const double query_pivot_value = 1e-8;//-1;
   if (progress_report) {
     log_data->output_flag = true;
     log_data->log_dev_level = 2;
     log_options.log_file_stream = stdout;
   }
-  std::stringstream ss;
+  HighsIntValueDistribution pivot_merit;
+  HighsValueDistribution pivot_value;
+  if (progress_report) {
+    initialiseValueDistribution("Kernel pivot merit", "", 1, 1024*1024, 2, pivot_merit);
+    initialiseValueDistribution("Kernel pivot value", "", 1e-8, 1e16, 10.0, pivot_value);
+  }
 
   const HighsInt num_simple_pivot = num_basic - nwork;
   HighsInt num_pivot = num_simple_pivot;
@@ -860,23 +869,28 @@ HighsInt HFactor::buildKernel() {
       }
     }
     num_pivot++;
-    if (progress_report) printf("report_GE_stage %d\n", (int)num_pivot);
-    if (progress_report && num_pivot >= report_from_GE_stage) report_GE_stage = true;
+    if (progress_report) report_GE_stage =
+			   num_pivot >= report_from_GE_stage &&
+			   num_pivot <= report_to_GE_stage;
+    ss.str(std::string());
+    ss << "GE stage " << num_pivot;
+    GE_stage_name = ss.str();
     if (report_GE_stage) {
-      ss.str(std::string());
-      ss << "GE stage " << num_pivot << " report ";
-      analyseActiveSubmatrix(ss.str());
+      analyseActiveSubmatrix(GE_stage_name);
+      printf("\n");
     }
     // 1.2. Search for local singletons
     bool foundPivot = false;
     if (!foundPivot && col_link_first[1] != -1) {
       jColPivot = col_link_first[1];
       iRowPivot = mc_index[mc_start[jColPivot]];
+      merit_pivot = 0;
       foundPivot = true;
     }
     if (!foundPivot && row_link_first[1] != -1) {
       iRowPivot = row_link_first[1];
       jColPivot = mr_index[mr_start[iRowPivot]];
+      merit_pivot = 0;
       foundPivot = true;
     }
     const bool singleton_pivot = foundPivot;
@@ -900,6 +914,7 @@ HighsInt HFactor::buildKernel() {
           for (HighsInt k = start; k < end; k++) {
 	    HighsInt report_row_count = -1;
 	    HighsInt report_row_index = -1;
+	    bool report_new_candidate = false;
             if (fabs(mc_value[k]) >= min_pivot) {
               HighsInt i = mc_index[k];
               HighsInt row_count = mr_count[i];
@@ -907,6 +922,7 @@ HighsInt HFactor::buildKernel() {
 	      report_row_count = row_count;
 	      report_row_index = i;
               if (merit_pivot > merit_local) {
+		report_new_candidate = true;
 #ifndef NDEBUG
                 candidate_pivot_value = fabs(mc_value[k]);
 #endif
@@ -917,11 +933,14 @@ HighsInt HFactor::buildKernel() {
               }
             }
 	    if (report_GE_stage) {
-	      printf("Count %3d: Col %6d searched   0 indices for Row %6d (count %3d; value %11.4g):"
-		     " merit_pivot = %11.4g for (%6d, %6d) found = %s\n",
-		     (int)count, (int)j, (int)report_row_index,
+	      printf("%s: Count %3d; merit %6d (limit %10.4g): "
+		     "Col %6d searched   0 indices for Row %6d (count %3d; value %11.4g):"
+		     " new cdd = %s\n",
+		     GE_stage_name.c_str(),
+		     (int)count, (int)merit_pivot, merit_limit,
+		     (int)j, (int)report_row_index,
 		     (int)report_row_count, mc_value[k],
-		     merit_pivot, (int)iRowPivot, (int)jColPivot, highsBoolToString(foundPivot).c_str());
+		     highsBoolToString(report_new_candidate).c_str());
 	    }
           }
 
@@ -946,12 +965,14 @@ HighsInt HFactor::buildKernel() {
             double merit_local = 1.0 * (count - 1) * (column_count - 1);
 	    HighsInt num_index_searched = 0;
 	    double value_found = 0;
+	    bool report_new_candidate = false;
             if (merit_local < merit_pivot) {
               HighsInt ifind = mc_start[j];
               while (mc_index[ifind] != i) ifind++;
 	      num_index_searched = ifind-mc_start[j]+1;
 	      value_found = mc_value[ifind];
               if (fabs(mc_value[ifind]) >= mc_min_pivot[j]) {
+		report_new_candidate = true;
 #ifndef NDEBUG
                 candidate_pivot_value = fabs(mc_value[ifind]);
 #endif
@@ -962,11 +983,14 @@ HighsInt HFactor::buildKernel() {
               }
             }
 	    if (report_GE_stage) {
-	      printf("Count %3d: Row %6d searched %3d indices for Col %6d (count %3d; value %11.4g):"
-		     " merit_pivot = %11.4g for (%6d, %6d) found = %s\n",
-		     (int)count, (int)i, (int)num_index_searched,
+	      printf("%s: Count %3d; merit %6d (limit %10.4g): "
+		     "Row %6d searched %3d indices for Col %6d (count %3d; value %11.4g):"
+		     " new cdd = %s\n",
+		     GE_stage_name.c_str(),
+		     (int)count, (int)merit_pivot, merit_limit,
+		     (int)i, (int)num_index_searched,
 		     (int)j, (int)column_count, value_found,
-		     merit_pivot, (int)iRowPivot, (int)jColPivot, highsBoolToString(foundPivot).c_str());
+		     highsBoolToString(report_new_candidate).c_str());
 	    }
           }
           if (searchCount++ >= searchLimit && merit_pivot < merit_limit)
@@ -980,6 +1004,10 @@ HighsInt HFactor::buildKernel() {
     // 1.4. If we found nothing: tell singular
     if (!foundPivot) {
       rank_deficiency = nwork + 1;
+      if (progress_report) {
+	logValueDistribution(log_options, pivot_merit);
+	logValueDistribution(log_options, pivot_value);
+      }
       return rank_deficiency;
     }
 
@@ -991,11 +1019,22 @@ HighsInt HFactor::buildKernel() {
     if (!singleton_pivot)
       assert(candidate_pivot_value == fabs(pivot_multiplier));
 
-    if (report_GE_stage && singleton_pivot) {
-      printf("Count   1: pivot = %11.4g for (%6d, %6d)\n",
+    if (progress_report) {
+      updateValueDistribution((HighsInt)merit_pivot, pivot_merit);
+      updateValueDistribution(pivot_multiplier, pivot_value);
+    }
+
+    if (report_GE_stage) {
+      printf("\n%s: Merit %6d: pivot = %11.4g for (%6d, %6d)\n",
+	     GE_stage_name.c_str(),
+	     (int)merit_pivot,
 	     pivot_multiplier, (int)iRowPivot, (int)jColPivot);
-    }    
-    if (fabs(pivot_multiplier) < pivot_tolerance) {
+    }
+    const bool pivot_too_small = fabs(pivot_multiplier) < pivot_tolerance;
+    if (pivot_too_small) {
+      printf("\n%s: Merit %d: pivot = %11.4g for (%6d, %6d) is too small\n",
+	     GE_stage_name.c_str(), (int)merit_pivot,
+	     pivot_multiplier, (int)iRowPivot, (int)jColPivot);
       highsLogDev(log_options, HighsLogType::kWarning,
                   "Small |pivot| = %g when nwork = %" HIGHSINT_FORMAT "\n",
                   fabs(pivot_multiplier), nwork);
@@ -1003,7 +1042,17 @@ HighsInt HFactor::buildKernel() {
       assert((HighsInt)this->refactor_info_.pivot_row.size() +
                  rank_deficiency ==
              num_basic);
+      if (progress_report) {
+	logValueDistribution(log_options, pivot_merit);
+	logValueDistribution(log_options, pivot_value);
+      }
       return rank_deficiency;
+    }
+    if (fabs(pivot_multiplier) < query_pivot_value) {
+      printf("\n%s: Merit %d: pivot = %11.4g for (%6d, %6d) is less than %g, with tolerance = %g\n",
+	     GE_stage_name.c_str(), (int)merit_pivot, 
+	     pivot_multiplier, (int)iRowPivot, (int)jColPivot,
+	     query_pivot_value, pivot_tolerance);
     }
     rowDelete(jColPivot, iRowPivot);
     clinkDel(jColPivot);
@@ -1168,6 +1217,10 @@ HighsInt HFactor::buildKernel() {
   build_synthetic_tick +=
       fake_search * 20 + fake_fill * 160 + fake_eliminate * 80;
   rank_deficiency = 0;
+  if (progress_report) {
+    logValueDistribution(log_options, pivot_merit);
+    logValueDistribution(log_options, pivot_value);
+  }
   return rank_deficiency;
 }
 

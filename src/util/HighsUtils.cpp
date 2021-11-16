@@ -700,6 +700,10 @@ bool updateValueDistribution(const HighsInt value,
       std::min(abs_value, value_distribution.min_value_);
   value_distribution.max_value_ =
       std::max(abs_value, value_distribution.max_value_);
+  if (!abs_value) {
+    value_distribution.num_zero_++;
+    return true;
+  }
   for (HighsInt i = 0; i < value_distribution.num_count_; i++) {
     if (abs_value < value_distribution.limit_[i]) {
       value_distribution.count_[i]++;
@@ -778,7 +782,7 @@ bool logValueDistribution(const HighsLogOptions& log_options,
     highsLogDev(log_options, HighsLogType::kInfo,
                 "%12" HIGHSINT_FORMAT " %svalues (%3" HIGHSINT_FORMAT
                 "%%) are %4d\n",
-                count, value_name.c_str(), int_percentage, 0.0);
+                count, value_name.c_str(), int_percentage, 0);
     sum_report_count += count;
   }
   count = value_distribution.count_[0];
@@ -789,7 +793,7 @@ bool logValueDistribution(const HighsLogOptions& log_options,
     highsLogDev(log_options, HighsLogType::kInfo,
                 "%12" HIGHSINT_FORMAT " %svalues (%3" HIGHSINT_FORMAT
                 "%%) in (%4d, %4d)",
-                count, value_name.c_str(), int_percentage, 0.0,
+                count, value_name.c_str(), int_percentage, 0,
                 value_distribution.limit_[0]);
     sum_report_count += count;
     highsLogDev(log_options, HighsLogType::kInfo, "\n");
@@ -826,11 +830,14 @@ bool logValueDistribution(const HighsLogOptions& log_options,
   highsLogDev(log_options, HighsLogType::kInfo,
               "%12" HIGHSINT_FORMAT " %svalues\n", sum_count,
               value_name.c_str());
-  if (sum_report_count != sum_count)
+  if (sum_report_count != sum_count) {
     highsLogDev(log_options, HighsLogType::kInfo,
                 "ERROR: %" HIGHSINT_FORMAT
                 " = sum_report_count != sum_count = %" HIGHSINT_FORMAT "\n",
                 sum_report_count, sum_count);
+    fflush(stdout);
+  }
+  assert(sum_report_count == sum_count);
   return true;
 }
 
@@ -1013,11 +1020,14 @@ bool logValueDistribution(const HighsLogOptions& log_options,
   highsLogDev(log_options, HighsLogType::kInfo,
               "%12" HIGHSINT_FORMAT " %svalues\n", sum_count,
               value_name.c_str());
-  if (sum_report_count != sum_count)
+  if (sum_report_count != sum_count) {
     highsLogDev(log_options, HighsLogType::kInfo,
                 "ERROR: %" HIGHSINT_FORMAT
                 " = sum_report_count != sum_count = %" HIGHSINT_FORMAT "\n",
                 sum_report_count, sum_count);
+    fflush(stdout);
+  }
+  assert(sum_report_count == sum_count);
   return true;
 }
 
