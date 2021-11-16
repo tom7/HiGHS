@@ -21,7 +21,6 @@
 #include <memory>
 #include <vector>
 
-//#include "HConfig.h"
 #include "io/HighsIO.h"
 #include "lp_data/HConst.h"
 #include "lp_data/HighsAnalysis.h"
@@ -30,8 +29,9 @@
 
 // Uses max and min for local in-line functions
 using std::max;
-// using std::min;
 using std::vector;
+
+const HighsInt kMaxKernelSearch = 8;
 
 /**
  * @brief Basis matrix factorization, update and solves for HiGHS
