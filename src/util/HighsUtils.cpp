@@ -821,7 +821,7 @@ bool logValueDistribution(const HighsLogOptions& log_options,
     int_percentage = percentage;
     highsLogDev(log_options, HighsLogType::kInfo,
                 "%12" HIGHSINT_FORMAT " %svalues (%3" HIGHSINT_FORMAT
-                "%%) in [%4d,        inf)",
+                "%%) in [%4d,  inf)",
                 count, value_name.c_str(), int_percentage,
                 value_distribution.limit_[num_count - 1]);
     sum_report_count += count;

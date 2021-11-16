@@ -394,7 +394,10 @@ class HFactor {
   void reportDoubleVector(const std::string name,
                           const vector<double> entry) const;
   void analyseActiveSubmatrix(const std::string message = "") const;
-
+  void reportKernelValueChange(const std::string message,
+			       const HighsInt iRow,
+			       const HighsInt iCol,
+			       double& track_value);
   void ftranL(HVector& vector, const double expected_density,
               HighsTimerClock* factor_timer_clock_pointer = NULL) const;
   void btranL(HVector& vector, const double expected_density,

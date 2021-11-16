@@ -109,19 +109,22 @@ void HFactor::analyseActiveSubmatrix(const std::string message) const {
   HighsIntValueDistribution row_count;
   HighsIntValueDistribution col_count;
   initialiseValueDistribution("Active submatrix", "", 1e-20, 1e20, 10.0, active_submatrix);
-  initialiseValueDistribution("Row counts", "", 1, 1024, 2, row_count);
-  initialiseValueDistribution("Col counts", "", 1, 1024, 2, col_count);
-  for (HighsInt count = 1; count <= num_row; count++) {
+  initialiseValueDistribution("Row counts", "", 1, 16384, 2, row_count);
+  initialiseValueDistribution("Col counts", "", 1, 16384, 2, col_count);
+  for (HighsInt count = 0; count <= num_row; count++) {
     for (HighsInt j = col_link_first[count]; j != -1;
              j = col_link_next[j]) {
       updateValueDistribution(count, col_count);
       HighsInt start = mc_start[j];
       HighsInt end = start + mc_count_a[j];
-      for (HighsInt k = start; k < end; k++) 
+      for (HighsInt k = start; k < end; k++) {
+	if (fabs(mc_value[k]) < 1e-16)
+	  printf("B(%6d, %6d) = %g\n", (int)mc_index[k], (int)j, mc_value[k]);
 	updateValueDistribution(mc_value[k], active_submatrix);
+      }
     }
   }
-  for (HighsInt count = 1; count <= num_basic; count++) {
+  for (HighsInt count = 0; count <= num_basic; count++) {
     for (HighsInt j = row_link_first[count]; j != -1; j = row_link_next[j])
       updateValueDistribution(count, row_count);
   }
@@ -131,3 +134,27 @@ void HFactor::analyseActiveSubmatrix(const std::string message) const {
   
 
 }
+
+void HFactor::reportKernelValueChange(const std::string message,
+				      const HighsInt iRow,
+				      const HighsInt iCol,
+				      double& track_value) {
+  if (iRow < 0 || iCol < 0) return;
+  double latest_value = 0;
+  HighsInt start = mc_start[iCol];
+  HighsInt end = start + mc_count_a[iCol];
+  for (HighsInt k = start; k < end; k++) {
+    if (mc_index[k] == iRow) {
+      latest_value = mc_value[k];
+      break;
+    }
+  }
+  if (track_value != latest_value)
+    printf("\n%s: Change of %11.4g in B(%6d, %6d) to %11.4g\n", message.c_str(),
+	   latest_value-track_value,
+	   (int)iRow,
+	   (int)iCol,
+	   latest_value);
+  track_value = latest_value;
+}
+

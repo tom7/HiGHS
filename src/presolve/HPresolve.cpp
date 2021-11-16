@@ -4233,7 +4233,7 @@ HPresolve::Result HPresolve::removeDependentEquations(
 
 HPresolve::Result HPresolve::removeDependentFreeCols(
     HighsPostsolveStack& postSolveStack) {
-  return Result::kOk;
+  //  return Result::kOk;
 
   // todo the postsolve step does not work properly
   std::vector<HighsInt> freeCols;
