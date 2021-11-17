@@ -158,3 +158,13 @@ void HFactor::reportKernelValueChange(const std::string message,
   track_value = latest_value;
 }
 
+void HFactor::reportMcColumn(const HighsInt num_pivot, const HighsInt iCol) const {
+  if (iCol >= num_basic) return;
+  printf("McColumn %d: (Pivot %6d) Var %6d; Start %8d; Count(A %3d; N %3d); Space %6d\n",
+	 (int)iCol, (int)num_pivot, (int)mc_var[iCol], (int)mc_start[iCol],
+	 (int)mc_count_a[iCol], (int)mc_count_n[iCol],
+	 (int)mc_space[iCol]);
+  for (HighsInt iEl = mc_start[iCol]; iEl<mc_start[iCol]+mc_count_a[iCol]; iEl++) 
+    printf("%11.4g ", mc_value[iEl]);
+  printf("\n");  
+}

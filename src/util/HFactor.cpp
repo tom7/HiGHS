@@ -809,18 +809,26 @@ HighsInt HFactor::buildKernel() {
 
   const bool progress_report = num_basic != num_row;
   const HighsInt progress_frequency = 10000;
-  HighsInt report_from_GE_stage = 109708-2;//2075;//5840;//kHighsIInf;
+  HighsInt report_from_GE_stage = 109313;//2075;//5840;//kHighsIInf;
   HighsInt report_to_GE_stage = report_from_GE_stage+5;
+  const bool report_GE_search = false;
+  const bool report_GE_elimination = false;
   bool report_GE_stage = false;
+  bool report_search = false;
+  bool report_elimination = false;
   std::string GE_stage_name = "";
   std::stringstream ss;
   const double query_pivot_value = 1e-8;//-1;
   const HighsInt track_iRow = -69015;
   const HighsInt track_iCol = -79920;
+  const HighsInt track_iEl = 11557924;
+  HighsInt mc_index_size = mc_index.size();
+  printf("HFactor::buildKernel mc_index.size = %d\n", (int)mc_index_size);
+  HighsInt track_iEl_index = kHighsIInf;
+  double track_iEl_value = kHighsInf;
   double track_value = kHighsInf;
   bool track_pivoted = false;
   reportKernelValueChange(GE_stage_name, track_iRow, track_iCol, track_value);
-  bool report_elimination = false;
   if (progress_report) {
     log_data->output_flag = true;
     log_data->log_dev_level = 2;
@@ -843,6 +851,18 @@ HighsInt HFactor::buildKernel() {
     /**
      * 1. Search for the pivot
      */
+    reportMcColumn(num_pivot, 151955);
+    if (track_iEl >=0 && track_iEl < (int)mc_index.size()) {
+      if (mc_index[track_iEl] != track_iEl_index ||
+	  mc_value[track_iEl] != track_iEl_value) {
+	printf("Pass %6d: For k = %7d, MC(%7d; %11.4g) changed to MC(%7d; %11.4g) \n",
+	       (int)num_pivot, (int)track_iEl,
+	       (int)track_iEl_index, track_iEl_value,
+	       (int)mc_index[track_iEl], mc_value[track_iEl]);
+	track_iEl_index = mc_index[track_iEl];
+	track_iEl_value = mc_value[track_iEl];
+      }
+    }
     HighsInt jColPivot = -1;
     HighsInt iRowPivot = -1;
     //    int8_t pivot_type = kPivotIllegal;
@@ -881,11 +901,19 @@ HighsInt HFactor::buildKernel() {
       }
     }
     num_pivot++;
+    if (num_pivot == report_from_GE_stage) {
+      printf("\n!!Pass %d\n", (int)num_pivot);
+      if (track_iEl < (int)mc_index.size())
+	printf("0 : MC(%7d; %11.4g)\n", 
+	       (int)mc_index[track_iEl],
+	       mc_value[track_iEl]);
+    }
     if (progress_report) {
       report_GE_stage =
 	num_pivot >= report_from_GE_stage &&
 	num_pivot <= report_to_GE_stage;
-      report_elimination = report_GE_stage;
+      report_search = report_GE_stage && report_GE_search;
+      report_elimination = report_GE_stage && report_GE_elimination;
     }
     
     ss.str(std::string());
@@ -984,7 +1012,7 @@ HighsInt HFactor::buildKernel() {
                 found_pivot = found_pivot || (row_count < count);
               }
             }
-	    if (report_GE_stage) {
+	    if (report_search) {
 	      printf("%s: Count %3d; merit (local %10.4g; ideal %10.4g): "
 		     "Col %6d searched   0 indices for Row %6d (count %3d; value %11.4g)",
 		     GE_stage_name.c_str(),
@@ -1036,7 +1064,7 @@ HighsInt HFactor::buildKernel() {
                 found_pivot = found_pivot || (column_count <= count);
               }
             }
-	    if (report_GE_stage) {
+	    if (report_search) {
 	      printf("%s: Count %3d; merit (local %10.4g; ideal %10.4g): "
 		     "Row %6d searched %3d indices for Col %6d (count %3d; value %11.4g)",
 		     GE_stage_name.c_str(),
@@ -1067,6 +1095,12 @@ HighsInt HFactor::buildKernel() {
     }
 
     if (jColPivot == track_iCol) track_pivoted = true;
+
+    if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size())
+      printf("1 : MC(%7d; %11.4g)\n", 
+	     (int)mc_index[track_iEl],
+	     mc_value[track_iEl]);
+
     /**
      * 2. Elimination other elements by the pivot
      */
@@ -1120,6 +1154,11 @@ HighsInt HFactor::buildKernel() {
     //	   (int)jColPivot, (int)basic_index[jColPivot]);
     assert(mc_var[jColPivot] == basic_index[jColPivot]);
 
+    if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size())
+      printf("2 : MC(%7d; %11.4g)\n", 
+	     (int)mc_index[track_iEl],
+	     mc_value[track_iEl]);
+
     this->refactor_info_.pivot_row.push_back(iRowPivot);
     this->refactor_info_.pivot_var.push_back(basic_index[jColPivot]);
     this->refactor_info_.pivot_type.push_back(kPivotMarkowitz);
@@ -1160,18 +1199,38 @@ HighsInt HFactor::buildKernel() {
     for (HighsInt row_k = row_start; row_k < row_end; row_k++) {
       // 2.4.1. My pointer
       HighsInt iCol = mr_index[row_k];
+
+      if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
+	printf("3a: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
+	       (int)mc_index[track_iEl],
+	       mc_value[track_iEl], (int)row_k, (int)iCol);
+      }
       const HighsInt my_count = mc_count_a[iCol];
       const HighsInt my_start = mc_start[iCol];
       const HighsInt my_end = my_start + my_count - 1;
       double my_pivot = colDelete(iCol, iRowPivot);
+      if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
+	printf("3c: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
+	       (int)mc_index[track_iEl],
+	       mc_value[track_iEl], (int)row_k, (int)iCol);
+      }
       colStoreN(iCol, iRowPivot, my_pivot);
 
+      if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
+	printf("3c: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
+	       (int)mc_index[track_iEl],
+	       mc_value[track_iEl], (int)row_k, (int)iCol);
+      }
       // 2.4.2. Elimination on the overlapping part
       HighsInt nFillin = mwz_column_count;
       HighsInt nCancel = 0;
       for (HighsInt my_k = my_start; my_k < my_end; my_k++) {
         HighsInt iRow = mc_index[my_k];
         double value = mc_value[my_k];
+	const bool local_report = num_pivot == report_from_GE_stage && my_k == track_iEl && track_iEl < (int)mc_index.size();
+	if (local_report) printf("3x: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
+				 (int)mc_index[track_iEl],
+				 mc_value[track_iEl], (int)row_k, (int)iCol);
         if (mwz_column_mark[iRow]) {
           mwz_column_mark[iRow] = 0;
           nFillin--;
@@ -1190,10 +1249,19 @@ HighsInt HFactor::buildKernel() {
             nCancel++;
           }
           mc_value[my_k] = value;
+	if (local_report) printf("3d: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
+				 (int)mc_index[track_iEl],
+				 mc_value[track_iEl], (int)row_k, (int)iCol);
         }
       }
       fake_eliminate += mwz_column_count;
       fake_eliminate += nFillin * 2;
+
+      if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
+	printf("3z: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
+	       (int)mc_index[track_iEl],
+	       mc_value[track_iEl], (int)row_k, (int)iCol);
+      }
 
       // 2.4.3. Remove cancellation gaps
       if (nCancel > 0) {
@@ -1207,6 +1275,12 @@ HighsInt HFactor::buildKernel() {
           }
         }
         mc_count_a[iCol] = new_end - my_start;
+      }
+
+      if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
+	printf("4 : MC(%7d; %11.4g)\n", 
+	       (int)mc_index[track_iEl],
+	       mc_value[track_iEl]);
       }
 
       // 2.4.4. Insert fill-in
@@ -1254,6 +1328,12 @@ HighsInt HFactor::buildKernel() {
         }
       }
 
+      if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
+	printf("5 : MC(%7d; %11.4g)\n", 
+	       (int)mc_index[track_iEl],
+	       mc_value[track_iEl]);
+      }
+
       // 2.4.5. Reset pivot column mark
       for (HighsInt i = 0; i < mwz_column_count; i++)
         mwz_column_mark[mwz_column_index[i]] = 1;
@@ -1278,6 +1358,12 @@ HighsInt HFactor::buildKernel() {
         rlinkAdd(iRow, mr_count[iRow]);
       }
     }
+    if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
+      printf("9 : MC(%7d; %11.4g)\n", 
+	     (int)mc_index[track_iEl],
+	     mc_value[track_iEl]);
+    }
+
   }
   build_synthetic_tick +=
       fake_search * 20 + fake_fill * 160 + fake_eliminate * 80;

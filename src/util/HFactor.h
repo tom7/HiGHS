@@ -398,6 +398,7 @@ class HFactor {
 			       const HighsInt iRow,
 			       const HighsInt iCol,
 			       double& track_value);
+  void reportMcColumn(const HighsInt num_pivot, const HighsInt iCol) const;
   void ftranL(HVector& vector, const double expected_density,
               HighsTimerClock* factor_timer_clock_pointer = NULL) const;
   void btranL(HVector& vector, const double expected_density,
@@ -445,12 +446,28 @@ class HFactor {
   }
 
   double colDelete(const HighsInt iCol, const HighsInt iRow) {
+    HighsInt mc_count_a_iCol_og = mc_count_a[iCol];
     HighsInt idel = mc_start[iCol];
     HighsInt imov = idel + (--mc_count_a[iCol]);
     while (mc_index[idel] != iRow) idel++;
     double pivot_multiplier = mc_value[idel];
     mc_index[idel] = mc_index[imov];
     mc_value[idel] = mc_value[imov];
+    if (std::fabs(mc_value[idel]) < kHighsTiny) {
+      printf("mc_start[iCol] =     %d\n", (int)mc_start[iCol]);
+      printf("mc_count_a_iCol_og = %d\n", (int)mc_count_a_iCol_og);
+      printf("mc_count_a[iCol] =   %d\n", (int)mc_count_a[iCol]);
+      printf("mc_count_n[iCol] =   %d\n", (int)mc_count_n[iCol]);
+      printf("mc_start[iCol+1] =     %d\n", (int)mc_start[iCol+1]);
+      printf("idel = %d; imov = %d\n", (int)idel, (int)imov);
+      printf("mc_index.size() = %d\n", (int)mc_index.size());
+      printf("mc_value.size() = %d\n", (int)mc_value.size());
+      printf("mc_count_a.size() = %d\n", (int)mc_count_a.size());
+      printf("mc_count_n.size() = %d\n", (int)mc_count_n.size());
+      printf("colDelete(%6d, %6d) creates value %g\n", (int)iCol, (int)iRow, mc_value[idel]);
+      fflush(stdout);
+      assert(1==0);
+    }
     return pivot_multiplier;
   }
 
