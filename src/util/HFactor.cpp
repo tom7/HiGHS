@@ -815,8 +815,8 @@ HighsInt HFactor::buildKernel() {
   std::string GE_stage_name = "";
   std::stringstream ss;
   const double query_pivot_value = 1e-8;//-1;
-  const HighsInt track_iRow = 69015;
-  const HighsInt track_iCol = 79920;
+  const HighsInt track_iRow = -69015;
+  const HighsInt track_iCol = -79920;
   double track_value = kHighsInf;
   bool track_pivoted = false;
   reportKernelValueChange(GE_stage_name, track_iRow, track_iCol, track_value);

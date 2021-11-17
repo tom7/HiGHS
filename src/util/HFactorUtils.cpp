@@ -119,7 +119,7 @@ void HFactor::analyseActiveSubmatrix(const std::string message) const {
       HighsInt end = start + mc_count_a[j];
       for (HighsInt k = start; k < end; k++) {
 	if (fabs(mc_value[k]) < 1e-16)
-	  printf("B(%6d, %6d) = %g\n", (int)mc_index[k], (int)j, mc_value[k]);
+	  printf("MC entry %7d gives B(%6d, %6d) = %g\n",(int)k, (int)mc_index[k], (int)j, mc_value[k]);
 	updateValueDistribution(mc_value[k], active_submatrix);
       }
     }
