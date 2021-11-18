@@ -826,7 +826,7 @@ HighsInt HFactor::buildKernel() {
   const HighsInt progress_frequency = 10000;
   HighsInt report_from_GE_stage = 109313;//2075;//5840;//kHighsIInf;
   HighsInt report_to_GE_stage = report_from_GE_stage+5;
-  const bool report_GE_search = false;
+  const bool report_GE_search = true;
   const bool report_GE_elimination = false;
   bool report_GE_stage = false;
   bool report_search = false;
@@ -857,6 +857,7 @@ HighsInt HFactor::buildKernel() {
   }
   const HighsInt num_simple_pivot = num_basic - nwork;
   HighsInt num_pivot = num_simple_pivot;
+  HighsInt num_kernel_pivot = 0;
   HighsInt min_row_count = kHighsIInf;
   HighsInt min_col_count = kHighsIInf;
   // Row count can be more than the number of rows if num_basic >
@@ -890,8 +891,8 @@ HighsInt HFactor::buildKernel() {
     double merit_ideal = 0.0;
     const bool use_merit_ideal = true;
 
-    if (progress_report && num_pivot) {
-      if (num_pivot % progress_frequency == 0) {
+    if (progress_report) {
+      if (num_pivot % progress_frequency == 0 || num_kernel_pivot == 0) {
         HighsInt min_col_count = kHighsIInf;
         HighsInt min_row_count = kHighsIInf;
         for (HighsInt count = 1; count < num_row; count++) {
@@ -916,13 +917,7 @@ HighsInt HFactor::buildKernel() {
       }
     }
     num_pivot++;
-    if (num_pivot == report_from_GE_stage) {
-      printf("\n!!Pass %d\n", (int)num_pivot);
-      if (track_iEl < (int)mc_index.size())
-	printf("0 : MC(%7d; %11.4g)\n", 
-	       (int)mc_index[track_iEl],
-	       mc_value[track_iEl]);
-    }
+    num_kernel_pivot++;
     if (progress_report) {
       report_GE_stage =
 	num_pivot >= report_from_GE_stage &&
@@ -1028,13 +1023,13 @@ HighsInt HFactor::buildKernel() {
               }
             }
 	    if (report_search) {
-	      printf("%s: Count %3d; merit (local %10.4g; ideal %10.4g): "
+	      printf("%s: Search %6d (Col) Count %3d; merit (local %10.4g; ideal %10.4g): "
 		     "Col %6d searched   0 indices for Row %6d (count %3d; value %11.4g)",
-		     GE_stage_name.c_str(),
+		     GE_stage_name.c_str(), (int)search_count,
 		     (int)count, merit_local, merit_ideal, 
 		     (int)j, (int)report_row_index,
 		     (int)report_row_count, mc_value[k]);
-	      if (report_new_candidate) printf(": new_cdd merit %10.4g", merit_pivot);
+	      if (report_new_candidate) printf(" new_cdd merit %10.4g", merit_pivot);
 	      printf("\n");
 	    }
 	    if (use_merit_ideal && merit_pivot <= merit_ideal) break;
@@ -1061,13 +1056,15 @@ HighsInt HFactor::buildKernel() {
             HighsInt column_count = mc_count_a[j];
             double merit_local = 1.0 * (count - 1) * (column_count - 1);
 	    HighsInt num_index_searched = 0;
-	    double value_found = 0;
+	    double value_found = kHighsInf;
+	    double min_pivot_required = kHighsInf;
 	    bool report_new_candidate = false;
             if (merit_pivot > merit_local) {
               HighsInt ifind = mc_start[j];
               while (mc_index[ifind] != i) ifind++;
 	      num_index_searched = ifind-mc_start[j]+1;
 	      value_found = mc_value[ifind];
+	      min_pivot_required = mc_min_pivot[j];
               if (fabs(mc_value[ifind]) >= mc_min_pivot[j]) {
 		report_new_candidate = true;
 #ifndef NDEBUG
@@ -1080,13 +1077,13 @@ HighsInt HFactor::buildKernel() {
               }
             }
 	    if (report_search) {
-	      printf("%s: Count %3d; merit (local %10.4g; ideal %10.4g): "
-		     "Row %6d searched %3d indices for Col %6d (count %3d; value %11.4g)",
-		     GE_stage_name.c_str(),
+	      printf("%s: Search %6d (Row) Count %3d; merit (local %10.4g; ideal %10.4g): "
+		     "Row %6d searched %3d indices for Col %6d (count %3d; value %11.4g; rq %11.4g)",
+		     GE_stage_name.c_str(), (int)search_count,
 		     (int)count, merit_local, merit_ideal, 
 		     (int)i, (int)num_index_searched,
-		     (int)j, (int)column_count, value_found);
-	      if (report_new_candidate) printf(": new_cdd merit %10.4g", merit_pivot);
+		     (int)j, (int)column_count, value_found, min_pivot_required);
+	      if (report_new_candidate) printf(" new_cdd merit %10.4g", merit_pivot);
 	      printf("\n");
 	    }
 	    if (use_merit_ideal && merit_pivot <= merit_ideal) break;
@@ -1110,11 +1107,6 @@ HighsInt HFactor::buildKernel() {
     }
 
     if (jColPivot == track_iCol) track_pivoted = true;
-
-    if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size())
-      printf("1 : MC(%7d; %11.4g)\n", 
-	     (int)mc_index[track_iEl],
-	     mc_value[track_iEl]);
 
     /**
      * 2. Elimination other elements by the pivot
@@ -1169,11 +1161,6 @@ HighsInt HFactor::buildKernel() {
     //	   (int)jColPivot, (int)basic_index[jColPivot]);
     assert(mc_var[jColPivot] == basic_index[jColPivot]);
 
-    if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size())
-      printf("2 : MC(%7d; %11.4g)\n", 
-	     (int)mc_index[track_iEl],
-	     mc_value[track_iEl]);
-
     this->refactor_info_.pivot_row.push_back(iRowPivot);
     this->refactor_info_.pivot_var.push_back(basic_index[jColPivot]);
     this->refactor_info_.pivot_type.push_back(kPivotMarkowitz);
@@ -1214,28 +1201,11 @@ HighsInt HFactor::buildKernel() {
     for (HighsInt row_k = row_start; row_k < row_end; row_k++) {
       // 2.4.1. My pointer
       HighsInt iCol = mr_index[row_k];
-
-      if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
-	printf("3a: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
-	       (int)mc_index[track_iEl],
-	       mc_value[track_iEl], (int)row_k, (int)iCol);
-      }
       const HighsInt my_count = mc_count_a[iCol];
       const HighsInt my_start = mc_start[iCol];
       const HighsInt my_end = my_start + my_count - 1;
       double my_pivot = colDelete(iCol, iRowPivot);
-      if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
-	printf("3c: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
-	       (int)mc_index[track_iEl],
-	       mc_value[track_iEl], (int)row_k, (int)iCol);
-      }
       colStoreN(iCol, iRowPivot, my_pivot);
-
-      if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
-	printf("3c: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
-	       (int)mc_index[track_iEl],
-	       mc_value[track_iEl], (int)row_k, (int)iCol);
-      }
       // 2.4.2. Elimination on the overlapping part
       //
       // The elimination is driven by mwz_column_*, that is set up
@@ -1272,10 +1242,6 @@ HighsInt HFactor::buildKernel() {
       for (HighsInt my_k = my_start; my_k < my_end; my_k++) {
         HighsInt iRow = mc_index[my_k];
         double value = mc_value[my_k];
-	const bool local_report = num_pivot == report_from_GE_stage && my_k == track_iEl && track_iEl < (int)mc_index.size();
-	if (local_report) printf("3x: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
-				 (int)mc_index[track_iEl],
-				 mc_value[track_iEl], (int)row_k, (int)iCol);
         if (mwz_column_mark[iRow]) {
 	  // The pivotal column has a nonzero in this row, so remove
 	  // the mark and reduce the count of fill-in
@@ -1296,20 +1262,10 @@ HighsInt HFactor::buildKernel() {
             nCancel++;
           }
           mc_value[my_k] = value;
-	  if (local_report) printf("3d: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
-				   (int)mc_index[track_iEl],
-				   mc_value[track_iEl], (int)row_k, (int)iCol);
         }
       }
       fake_eliminate += mwz_column_count;
       fake_eliminate += nFillin * 2;
-
-      if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
-	printf("3z: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
-	       (int)mc_index[track_iEl],
-	       mc_value[track_iEl], (int)row_k, (int)iCol);
-      }
-
       // 2.4.3. Remove cancellation gaps
       if (nCancel > 0) {
         HighsInt new_end = my_start;
@@ -1323,13 +1279,6 @@ HighsInt HFactor::buildKernel() {
         }
         mc_count_a[iCol] = new_end - my_start;
       }
-
-      if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
-	printf("4 : MC(%7d; %11.4g)\n", 
-	       (int)mc_index[track_iEl],
-	       mc_value[track_iEl]);
-      }
-
       // 2.4.4. Insert fill-in
       if (nFillin > 0) {
 	// 2.4.4.0 Avoid fill-in that's too small
@@ -1393,12 +1342,6 @@ HighsInt HFactor::buildKernel() {
         }
       }
 
-      if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
-	printf("5 : MC(%7d; %11.4g)\n", 
-	       (int)mc_index[track_iEl],
-	       mc_value[track_iEl]);
-      }
-
       // 2.4.5. Reset pivot column mark
       for (HighsInt i = 0; i < mwz_column_count; i++)
         mwz_column_mark[mwz_column_index[i]] = 1;
@@ -1423,12 +1366,6 @@ HighsInt HFactor::buildKernel() {
         rlinkAdd(iRow, mr_count[iRow]);
       }
     }
-    if (num_pivot == report_from_GE_stage && track_iEl < (int)mc_index.size()) {
-      printf("9 : MC(%7d; %11.4g)\n", 
-	     (int)mc_index[track_iEl],
-	     mc_value[track_iEl]);
-    }
-
   }
   build_synthetic_tick +=
       fake_search * 20 + fake_fill * 160 + fake_eliminate * 80;
