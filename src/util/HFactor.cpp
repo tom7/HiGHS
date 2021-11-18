@@ -866,7 +866,7 @@ HighsInt HFactor::buildKernel() {
     /**
      * 1. Search for the pivot
      */
-    if (num_pivot>100000) reportMcColumn(num_pivot, 151955);
+    //    if (num_pivot>100000) reportMcColumn(num_pivot, 151955);
     if (track_iEl >=0 && track_iEl < (int)mc_index.size()) {
       if (mc_index[track_iEl] != track_iEl_index ||
 	  mc_value[track_iEl] != track_iEl_value) {
@@ -1333,16 +1333,22 @@ HighsInt HFactor::buildKernel() {
       // 2.4.4. Insert fill-in
       if (nFillin > 0) {
 	// 2.4.4.0 Avoid fill-in that's too small
-	//        for (HighsInt i = 0; i < mwz_column_count; i++) {
-	//          HighsInt iRow = mwz_column_index[i];
-	//          if (mwz_column_mark[iRow]) {
-	//	    double value = -my_pivot * mwz_column_array[iRow];
-	//            colInsert(iCol, iRow, -my_pivot * mwz_column_array[iRow]);
-	//	  }
-	//        }
-	//
-	
-        // 2.4.4.1 Check column size
+	for (HighsInt i = 0; i < mwz_column_count; i++) {
+	  HighsInt iRow = mwz_column_index[i];
+	  if (mwz_column_mark[iRow]) {
+	    double value = -my_pivot * mwz_column_array[iRow];
+	    if (fabs(value) < kHighsTiny) {
+	      // Too small to record as fill-in
+	      mwz_column_mark[iRow] = 0;
+	      value = 0;
+	      nFillin--;
+	    }
+	  }
+	}
+
+        // 2.4.4.1 Copy column to the end of mc_column_index/value if
+        // new number of nonzeros exceeds space available. Space is
+        // (at least) doubled
         if (mc_count_a[iCol] + mc_count_n[iCol] + nFillin > mc_space[iCol]) {
           // p1&2=active, p3&4=non active, p5=new p1, p7=new p3
           HighsInt p1 = mc_start[iCol];
