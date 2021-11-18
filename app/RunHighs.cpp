@@ -30,6 +30,8 @@ int main(int argc, char** argv) {
   bool options_ok = loadOptions(argc, argv, options, model_file);
   if (!options_ok) return 0;
   Highs highs;
+  highs.writeOptions("HighsOptions.html");
+  //  highs.writeOptions("HighsOptions.set");
   //
   // Pass the option seetings to HiGHS
   highs.passOptions(options);

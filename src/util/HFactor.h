@@ -427,6 +427,11 @@ class HFactor {
    * Local in-line functions
    */
   void colInsert(const HighsInt iCol, const HighsInt iRow, const double value) {
+    if (fabs(value) < kHighsTiny) {
+      printf("colInsert:  value %11.4g inserted in (%6d, %6d)\n", value, (int)iRow, (int)iCol);
+      fflush(stdout);
+      assert(1==0);
+    }
     const HighsInt iput = mc_start[iCol] + mc_count_a[iCol]++;
     mc_index[iput] = iRow;
     mc_value[iput] = value;

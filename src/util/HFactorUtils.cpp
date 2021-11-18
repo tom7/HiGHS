@@ -160,11 +160,28 @@ void HFactor::reportKernelValueChange(const std::string message,
 
 void HFactor::reportMcColumn(const HighsInt num_pivot, const HighsInt iCol) const {
   if (iCol >= num_basic) return;
-  printf("McColumn %d: (Pivot %6d) Var %6d; Start %8d; Count(A %3d; N %3d); Space %6d\n",
+  const HighsInt iCol_start = mc_start[iCol];
+  const HighsInt iCol_count_a = mc_count_a[iCol];
+  HighsInt next_col = -1;
+  HighsInt next_start = kHighsIInf;
+  const HighsInt num_mc_col = mc_start.size();
+  assert(num_mc_col == num_basic);
+  for (HighsInt i = 0; i < num_basic; i++) {
+    if (mc_start[i] > iCol_start && mc_start[i] < next_start) {
+      next_col = i;
+      next_start = mc_start[i];
+    }
+  }
+  printf("McColumn %d: (Pivot %6d) Var %6d; Start %8d; Count(A %3d; N %3d); Space %6d: Next col is %6d; Start %8d",
 	 (int)iCol, (int)num_pivot, (int)mc_var[iCol], (int)mc_start[iCol],
 	 (int)mc_count_a[iCol], (int)mc_count_n[iCol],
-	 (int)mc_space[iCol]);
-  for (HighsInt iEl = mc_start[iCol]; iEl<mc_start[iCol]+mc_count_a[iCol]; iEl++) 
-    printf("%11.4g ", mc_value[iEl]);
-  printf("\n");  
+	 (int)mc_space[iCol], (int)next_col, (int)next_start);
+  HighsInt en = 0;
+  for (HighsInt iEl = mc_start[iCol]; iEl<mc_start[iCol]+mc_count_a[iCol]; iEl++) {
+    if (en % 5 == 0) printf("\n");
+    en++;
+    printf("[%6d %11.4g] ", (int)mc_index[iEl], mc_value[iEl]);
+  }
+  printf("\n"); fflush(stdout);
+  assert(iCol_start+iCol_count_a <= next_start);
 }

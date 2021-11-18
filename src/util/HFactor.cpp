@@ -766,6 +766,21 @@ void HFactor::buildSimple() {
   mr_index.resize(mr_countX);
 
   // 3.2 Prepare column links, kernel matrix
+  //
+  // MC matrix is the column-wise kernel
+  // 
+  // mc_start exists for all columns in the original matrix, but its
+  // entries are zero for all columns not in the kernel
+  //
+  // mc_count_a is the number of entries in a column that are active -
+  // all the kernel initially
+  //
+  // mc_count_n is the number of entries in a column that are
+  // non-active - all zero initially
+  //
+  // mc_space is the interval between the start of one column and the
+  // next - twice mc_count_a initially
+  //
   col_link_first.assign(num_row + 1, -1);
   const HighsInt mc_dim = num_basic;
   mc_index.clear();
@@ -821,9 +836,9 @@ HighsInt HFactor::buildKernel() {
   const double query_pivot_value = 1e-8;//-1;
   const HighsInt track_iRow = -69015;
   const HighsInt track_iCol = -79920;
-  const HighsInt track_iEl = 11557924;
+  const HighsInt track_iEl = -11557924;
   HighsInt mc_index_size = mc_index.size();
-  printf("HFactor::buildKernel mc_index.size = %d\n", (int)mc_index_size);
+  //  printf("HFactor::buildKernel dim = %d; mc_index.size = %d\n", (int)kernel_dim, (int)mc_index_size);
   HighsInt track_iEl_index = kHighsIInf;
   double track_iEl_value = kHighsInf;
   double track_value = kHighsInf;
@@ -851,7 +866,7 @@ HighsInt HFactor::buildKernel() {
     /**
      * 1. Search for the pivot
      */
-    reportMcColumn(num_pivot, 151955);
+    if (num_pivot>100000) reportMcColumn(num_pivot, 151955);
     if (track_iEl >=0 && track_iEl < (int)mc_index.size()) {
       if (mc_index[track_iEl] != track_iEl_index ||
 	  mc_value[track_iEl] != track_iEl_value) {
@@ -1222,6 +1237,36 @@ HighsInt HFactor::buildKernel() {
 	       mc_value[track_iEl], (int)row_k, (int)iCol);
       }
       // 2.4.2. Elimination on the overlapping part
+      //
+      // The elimination is driven by mwz_column_*, that is set up
+      // above
+      //
+      // mwz_column_count is the number of nonzeros in the pivotal
+      // column
+      //
+      // mwz_column_index is the list of indices of nonzeros in the
+      // pivotal column
+      //
+      // mwz_column_array is the scattered nonzeros in the pivotal
+      // column
+      //
+      // mwz_column_mark is a scattered set of markers corresponding
+      // to nonzeros in the pivotal column
+      //
+      // When considering the action on a non-pivotal column,
+      // initially all operations are assumed to create fill-in
+      //
+      // A loop over the nonzeros in the non-pivotal column identifies
+      // entries in the pivotal column that don't cause fill-in, and
+      // this is recorded by setting the mwz_column_mark entry to
+      // 0
+      //
+      // After completing the loop, cancellations and fill-in are then
+      // handled
+      //
+      // If the net number of nonzeros exceeds the space available for
+      // the column, it's copied to the end of mc_column_index/value
+      //
       HighsInt nFillin = mwz_column_count;
       HighsInt nCancel = 0;
       for (HighsInt my_k = my_start; my_k < my_end; my_k++) {
@@ -1232,6 +1277,8 @@ HighsInt HFactor::buildKernel() {
 				 (int)mc_index[track_iEl],
 				 mc_value[track_iEl], (int)row_k, (int)iCol);
         if (mwz_column_mark[iRow]) {
+	  // The pivotal column has a nonzero in this row, so remove
+	  // the mark and reduce the count of fill-in
           mwz_column_mark[iRow] = 0;
           nFillin--;
 	  if ((iRow == track_iRow && iCol == track_iCol) || report_elimination) {
@@ -1249,9 +1296,9 @@ HighsInt HFactor::buildKernel() {
             nCancel++;
           }
           mc_value[my_k] = value;
-	if (local_report) printf("3d: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
-				 (int)mc_index[track_iEl],
-				 mc_value[track_iEl], (int)row_k, (int)iCol);
+	  if (local_report) printf("3d: MC(%7d; %11.4g) row_k = %6d; iCol = %6d\n", 
+				   (int)mc_index[track_iEl],
+				   mc_value[track_iEl], (int)row_k, (int)iCol);
         }
       }
       fake_eliminate += mwz_column_count;
@@ -1285,6 +1332,16 @@ HighsInt HFactor::buildKernel() {
 
       // 2.4.4. Insert fill-in
       if (nFillin > 0) {
+	// 2.4.4.0 Avoid fill-in that's too small
+	//        for (HighsInt i = 0; i < mwz_column_count; i++) {
+	//          HighsInt iRow = mwz_column_index[i];
+	//          if (mwz_column_mark[iRow]) {
+	//	    double value = -my_pivot * mwz_column_array[iRow];
+	//            colInsert(iCol, iRow, -my_pivot * mwz_column_array[iRow]);
+	//	  }
+	//        }
+	//
+	
         // 2.4.4.1 Check column size
         if (mc_count_a[iCol] + mc_count_n[iCol] + nFillin > mc_space[iCol]) {
           // p1&2=active, p3&4=non active, p5=new p1, p7=new p3
@@ -1306,8 +1363,10 @@ HighsInt HFactor::buildKernel() {
         // 2.4.4.2 Fill into column copy
         for (HighsInt i = 0; i < mwz_column_count; i++) {
           HighsInt iRow = mwz_column_index[i];
-          if (mwz_column_mark[iRow])
+          if (mwz_column_mark[iRow]) {
+	    double value = -my_pivot * mwz_column_array[iRow];
             colInsert(iCol, iRow, -my_pivot * mwz_column_array[iRow]);
+	  }
         }
 
         // 2.4.4.3 Fill into the row copy
