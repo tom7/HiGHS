@@ -863,6 +863,11 @@ HighsInt HFactor::buildKernel() {
   // Row count can be more than the number of rows if num_basic >
   // num_row
   const HighsInt max_count = max(num_row, num_basic);
+  const HighsInt kMarkowitzSearchStrategyOg = 0;
+  const HighsInt kMarkowitzSearchStrategySwitchedOg = 1;
+  const HighsInt kMarkowitzSearchStrategyAlternateBest = 2;
+  const HighsInt markowitz_search_strategy = kMarkowitzSearchStrategyOg;
+  
   while (nwork-- > 0) {
     /**
      * 1. Search for the pivot
@@ -980,11 +985,21 @@ HighsInt HFactor::buildKernel() {
 	// Record the best possible merit: search should stop if an
 	// pivot of this merit is found
 	merit_ideal = 1.0 * (min_row_count-1) * (min_col_count-1);
-	// Now for the loop that searches for a pivot
-	for (HighsInt count = 2; count <= max_count; count++) {
-	  findPivotColSearch(found_pivot, count, jColPivot, iRowPivot, GE_stage_name, report_search);
-	  findPivotRowSearch(found_pivot, count, jColPivot, iRowPivot, GE_stage_name, report_search);
-	  if (found_pivot) break;
+	// Now to search for a pivot
+	if (markowitz_search_strategy == kMarkowitzSearchStrategyOg) {
+	  for (HighsInt count = 2; count <= max_count; count++) {
+	    other_count_ideal = count-1;
+	    findPivotColSearch(found_pivot, count, jColPivot, iRowPivot, GE_stage_name, report_search);
+	    other_count_ideal = count;
+	    findPivotRowSearch(found_pivot, count, jColPivot, iRowPivot, GE_stage_name, report_search);
+	    if (found_pivot) break;
+	  }
+	} else if (markowitz_search_strategy == kMarkowitzSearchStrategySwitchedOg) {
+	  for (HighsInt count = 2; count <= max_count; count++) {
+	    findPivotRowSearch(found_pivot, count, jColPivot, iRowPivot, GE_stage_name, report_search);
+	    findPivotColSearch(found_pivot, count, jColPivot, iRowPivot, GE_stage_name, report_search);
+	    if (found_pivot) break;
+	  }
 	}
       }
     }
@@ -1301,6 +1316,8 @@ void HFactor::findPivotColSearch(bool& found_pivot,
 	  jColPivot = j;
 	  iRowPivot = i;
 	  found_pivot = found_pivot || (row_count < count);
+	  assert((row_count < count) == (row_count <= other_count_ideal));
+	  assert(row_count >= other_count_ideal);
 	}
       }
       if (report_search) {
@@ -1357,6 +1374,8 @@ void HFactor::findPivotRowSearch(bool& found_pivot,
 	  jColPivot = j;
 	  iRowPivot = i;
 	  found_pivot = found_pivot || (column_count <= count);
+	  assert((column_count <= count) == (column_count <= other_count_ideal));
+	  assert(column_count >= other_count_ideal);
 	}
       }
       if (report_search) {

@@ -297,6 +297,7 @@ class HFactor {
   // shared buildKernel values 
   HighsInt search_limit;
   HighsInt search_count;
+  HighsInt other_count_ideal;
   double merit_ideal;
   double merit_pivot;
   double merit_limit;
