@@ -387,12 +387,14 @@ class HFactor {
   // Implementation
   void buildSimple();
   HighsInt buildKernel();
-  bool findPivotColSearch(const HighsInt count,
+  void findPivotColSearch(bool& found_pivot,
+			  const HighsInt count,
 			  HighsInt& jColPivot,
 			  HighsInt& iRowPivot,
 			  const std::string GE_stage_name = "",
 			  const bool report_search = false);
-  bool findPivotRowSearch(const HighsInt count,
+  void findPivotRowSearch(bool& found_pivot,
+			  const HighsInt count,
 			  HighsInt& jColPivot,
 			  HighsInt& iRowPivot,
 			  const std::string GE_stage_name = "",
