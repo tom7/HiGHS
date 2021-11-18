@@ -32,6 +32,7 @@ using std::max;
 using std::vector;
 
 const HighsInt kMaxKernelSearch = 8;
+const bool use_merit_ideal = true;
 
 /**
  * @brief Basis matrix factorization, update and solves for HiGHS
@@ -293,6 +294,16 @@ class HFactor {
   HighsInt basis_matrix_limit_size;
   HighsInt update_method;
 
+  // shared buildKernel values 
+  HighsInt search_limit;
+  HighsInt search_count;
+  double merit_ideal;
+  double merit_pivot;
+  double merit_limit;
+  HighsInt fake_search;
+  HighsInt min_col_count;
+  HighsInt min_row_count;
+
   // Working buffer
   HighsInt nwork;
   vector<HighsInt> iwork;
@@ -375,8 +386,17 @@ class HFactor {
 
   // Implementation
   void buildSimple();
-  //    void buildKernel();
   HighsInt buildKernel();
+  bool findPivotColSearch(const HighsInt count,
+			  HighsInt& jColPivot,
+			  HighsInt& iRowPivot,
+			  const std::string GE_stage_name = "",
+			  const bool report_search = false);
+  bool findPivotRowSearch(const HighsInt count,
+			  HighsInt& jColPivot,
+			  HighsInt& iRowPivot,
+			  const std::string GE_stage_name = "",
+			  const bool report_search = false);
   void buildHandleRankDeficiency();
   void buildReportRankDeficiency();
   void buildMarkSingC();

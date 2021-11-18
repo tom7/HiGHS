@@ -818,7 +818,7 @@ void HFactor::buildSimple() {
 HighsInt HFactor::buildKernel() {
   // Deal with the kernel part by 'n-work' pivoting
 
-  double fake_search = 0;
+  fake_search = 0;
   double fake_fill = 0;
   double fake_eliminate = 0;
 
@@ -858,8 +858,8 @@ HighsInt HFactor::buildKernel() {
   const HighsInt num_simple_pivot = num_basic - nwork;
   HighsInt num_pivot = num_simple_pivot;
   HighsInt num_kernel_pivot = 0;
-  HighsInt min_row_count = kHighsIInf;
-  HighsInt min_col_count = kHighsIInf;
+  min_row_count = kHighsIInf;
+  min_col_count = kHighsIInf;
   // Row count can be more than the number of rows if num_basic >
   // num_row
   const HighsInt max_count = max(num_row, num_basic);
@@ -883,34 +883,33 @@ HighsInt HFactor::buildKernel() {
     HighsInt iRowPivot = -1;
     //    int8_t pivot_type = kPivotIllegal;
     // 1.1. Setup search merits
-    HighsInt search_limit = min(nwork, kMaxKernelSearch);
-    HighsInt search_count = 0;
+    search_limit = min(nwork, kMaxKernelSearch);
+    search_count = 0;
 
-    double merit_limit = 1.0 * num_basic * num_row;
-    double merit_pivot = merit_limit;
-    double merit_ideal = 0.0;
-    const bool use_merit_ideal = true;
+    merit_limit = 1.0 * num_basic * num_row;
+    merit_pivot = merit_limit;
+    merit_ideal = 0.0;
 
     if (progress_report) {
       if (num_pivot % progress_frequency == 0 || num_kernel_pivot == 0) {
-        HighsInt min_col_count = kHighsIInf;
-        HighsInt min_row_count = kHighsIInf;
+        HighsInt local_min_col_count = kHighsIInf;
+        HighsInt local_min_row_count = kHighsIInf;
         for (HighsInt count = 1; count < num_row; count++) {
           if (col_link_first[count] >= 0) {
-            min_col_count = count;
+            local_min_col_count = count;
             break;
           }
         }
         for (HighsInt count = 1; count < num_basic; count++) {
           if (row_link_first[count] >= 0) {
-            min_row_count = count;
+            local_min_row_count = count;
             break;
           }
         }
         printf(
             "\nHFactor::buildKernel stage = %6d: min_col_count = %3d; "
             "min_row_count = %3d\n",
-            (int)num_pivot, (int)min_col_count, (int)min_row_count);
+            (int)num_pivot, (int)local_min_col_count, (int)local_min_row_count);
 	ss.str(std::string());
 	ss << "Kernel " << num_pivot << " report ";
 	analyseActiveSubmatrix(ss.str());
@@ -950,19 +949,17 @@ HighsInt HFactor::buildKernel() {
       found_pivot = true;
     }
     const bool singleton_pivot = found_pivot;
-#ifndef NDEBUG
-    double candidate_pivot_value = 0;
-#endif
     // 1.3. Major search loop: skipped if found_pivot is true
     //
     // Markowitz merit of the candidate pivot is merit_pivot,
     // initialised to merit_limit, since any pivot will have better
     // merit than that
     //
+    bool no_pivot = false;
     if (!found_pivot) {
       //
-      // Find the smallest row and columns counts in the active
-      // sub-matrix
+      // Find the smallest row and column counts exceeding 1 in the
+      // active sub-matrix
       min_row_count = kHighsIInf;
       for (HighsInt count = 2; count <= num_row; count++) {
 	if (col_link_first[count] >= 0) {
@@ -970,7 +967,6 @@ HighsInt HFactor::buildKernel() {
 	  break;
 	}
       }
-      assert(min_row_count < kHighsIInf);
       min_col_count = kHighsIInf;
       for (HighsInt count = 2; count <= num_basic; count++) {
 	if (row_link_first[count] >= 0) {
@@ -978,13 +974,20 @@ HighsInt HFactor::buildKernel() {
 	  break;
 	}
       }
-      assert(min_col_count < kHighsIInf);
-      // Record the best possible merit: search should stop if an
-      // pivot of this merit is found
-      merit_ideal = 1.0 * (min_row_count-1) * (min_col_count-1);
+      bool no_row_count = min_row_count == kHighsIInf;
+      bool no_col_count = min_col_count == kHighsIInf;
+      assert(no_row_count == no_col_count);
+      no_pivot = no_row_count;
+      if (no_pivot) {
+	merit_ideal = kHighsInf;
+      } else {
+	// Record the best possible merit: search should stop if an
+	// pivot of this merit is found
+	merit_ideal = 1.0 * (min_row_count-1) * (min_col_count-1);
+      }
     }
-    // Now for the loop that searches for a pivot if there is no singleton
-    for (HighsInt count = 2; !found_pivot && count <= max_count; count++) {
+    // Now for the loop that searches for a pivot if there is not no pivot and no singleton
+    for (HighsInt count = 2; !no_pivot && !found_pivot && count <= max_count; count++) {
       // Column count cannot exceed the number of rows
       //
       // Best pivot Markowitz-wise has row and column count of "count"
@@ -1013,9 +1016,6 @@ HighsInt HFactor::buildKernel() {
               if (merit_pivot > merit_local) {
 		// Better than the current best merit
 		report_new_candidate = true;
-#ifndef NDEBUG
-                candidate_pivot_value = fabs(mc_value[k]);
-#endif
                 merit_pivot = merit_local;
                 jColPivot = j;
                 iRowPivot = i;
@@ -1067,9 +1067,6 @@ HighsInt HFactor::buildKernel() {
 	      min_pivot_required = mc_min_pivot[j];
               if (fabs(mc_value[ifind]) >= mc_min_pivot[j]) {
 		report_new_candidate = true;
-#ifndef NDEBUG
-                candidate_pivot_value = fabs(mc_value[ifind]);
-#endif
                 merit_pivot = merit_local;
                 jColPivot = j;
                 iRowPivot = i;
@@ -1113,9 +1110,6 @@ HighsInt HFactor::buildKernel() {
      */
     // 2.1. Delete the pivot
     double pivot_multiplier = colDelete(jColPivot, iRowPivot);
-    if (!singleton_pivot)
-      assert(candidate_pivot_value == fabs(pivot_multiplier));
-
     if (progress_report) {
       updateValueDistribution((HighsInt)merit_pivot, pivot_merit);
       updateValueDistribution(pivot_multiplier, pivot_value);
@@ -1375,6 +1369,121 @@ HighsInt HFactor::buildKernel() {
     logValueDistribution(log_options, pivot_value);
   }
   return rank_deficiency;
+}
+
+bool HFactor::findPivotColSearch(const HighsInt count,
+				 HighsInt& jColPivot,
+				 HighsInt& iRowPivot,
+				 const std::string GE_stage_name,
+				 const bool report_search) {
+  if (count > num_row) return false;
+  bool found_pivot = false;
+  // 1.3.1 Search through any columns with row count = count
+  for (HighsInt j = col_link_first[count]; j != -1;
+       j = col_link_next[j]) {
+    assert(count >= min_row_count);
+    double min_pivot = mc_min_pivot[j];
+    HighsInt start = mc_start[j];
+    HighsInt end = start + mc_count_a[j];
+    // Look for possible pivots in this column. 
+    for (HighsInt k = start; k < end; k++) {
+      HighsInt report_row_count = -1;
+      HighsInt report_row_index = -1;
+      bool report_new_candidate = false;
+      double merit_local = -1;
+      if (fabs(mc_value[k]) >= min_pivot) {
+	// This entry is big enough to be a pivot, but what's
+	// its merit?
+	HighsInt i = mc_index[k];
+	HighsInt row_count = mr_count[i];
+	merit_local = 1.0 * (count - 1) * (row_count - 1);
+	report_row_count = row_count;
+	report_row_index = i;
+	if (merit_pivot > merit_local) {
+	  // Better than the current best merit
+	  report_new_candidate = true;
+	  merit_pivot = merit_local;
+	  jColPivot = j;
+	  iRowPivot = i;
+	  found_pivot = found_pivot || (row_count < count);
+	}
+      }
+      if (report_search) {
+	printf("%s: Search %6d (Col) Count %3d; merit (local %10.4g; ideal %10.4g): "
+	       "Col %6d searched   0 indices for Row %6d (count %3d; value %11.4g)",
+	       GE_stage_name.c_str(), (int)search_count,
+	       (int)count, merit_local, merit_ideal, 
+	       (int)j, (int)report_row_index,
+	       (int)report_row_count, mc_value[k]);
+	if (report_new_candidate) printf(" new_cdd merit %10.4g", merit_pivot);
+	printf("\n");
+      }
+      if (use_merit_ideal && merit_pivot <= merit_ideal) break;
+    }
+    
+    if ((search_count++ >= search_limit && merit_pivot < merit_limit) ||
+	(use_merit_ideal && merit_pivot <= merit_ideal)) found_pivot = true;
+    if (found_pivot) break;
+    
+    fake_search += count;
+  }
+  return found_pivot;
+}
+
+bool HFactor::findPivotRowSearch(const HighsInt count,
+				 HighsInt& jColPivot,
+				 HighsInt& iRowPivot,
+				 const std::string GE_stage_name,
+				 const bool report_search) {
+  if (count > num_basic) return false;
+  bool found_pivot = false;
+  // 1.3.2 Search for rows
+  for (HighsInt i = row_link_first[count]; i != -1;
+       i = row_link_next[i]) {
+    assert(count >= min_col_count);
+    HighsInt start = mr_start[i];
+    HighsInt end = start + mr_count[i];
+    for (HighsInt k = start; k < end; k++) {
+      HighsInt j = mr_index[k];
+      HighsInt column_count = mc_count_a[j];
+      double merit_local = 1.0 * (count - 1) * (column_count - 1);
+      HighsInt num_index_searched = 0;
+      double value_found = kHighsInf;
+      double min_pivot_required = kHighsInf;
+      bool report_new_candidate = false;
+      if (merit_pivot > merit_local) {
+	HighsInt ifind = mc_start[j];
+	while (mc_index[ifind] != i) ifind++;
+	num_index_searched = ifind-mc_start[j]+1;
+	value_found = mc_value[ifind];
+	min_pivot_required = mc_min_pivot[j];
+	if (fabs(mc_value[ifind]) >= mc_min_pivot[j]) {
+	  report_new_candidate = true;
+	  merit_pivot = merit_local;
+	  jColPivot = j;
+	  iRowPivot = i;
+	  found_pivot = found_pivot || (column_count <= count);
+	}
+      }
+      if (report_search) {
+	printf("%s: Search %6d (Row) Count %3d; merit (local %10.4g; ideal %10.4g): "
+	       "Row %6d searched %3d indices for Col %6d (count %3d; value %11.4g; rq %11.4g)",
+	       GE_stage_name.c_str(), (int)search_count,
+	       (int)count, merit_local, merit_ideal, 
+	       (int)i, (int)num_index_searched,
+	       (int)j, (int)column_count, value_found, min_pivot_required);
+	if (report_new_candidate) printf(" new_cdd merit %10.4g", merit_pivot);
+	printf("\n");
+      }
+      if (use_merit_ideal && merit_pivot <= merit_ideal) break;
+    }
+    if ((search_count++ >= search_limit && merit_pivot < merit_limit) ||
+	(use_merit_ideal && merit_pivot <= merit_ideal)) found_pivot = true;
+    if (found_pivot) break;
+  }
+
+  fake_search += count;
+  return found_pivot;
 }
 
 void HFactor::buildHandleRankDeficiency() {
