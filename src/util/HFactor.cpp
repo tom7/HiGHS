@@ -955,7 +955,6 @@ HighsInt HFactor::buildKernel() {
     // initialised to merit_limit, since any pivot will have better
     // merit than that
     //
-    bool no_pivot = false;
     if (!found_pivot) {
       //
       // Find the smallest row and column counts exceeding 1 in the
@@ -977,19 +976,17 @@ HighsInt HFactor::buildKernel() {
       bool no_row_count = min_row_count == kHighsIInf;
       bool no_col_count = min_col_count == kHighsIInf;
       assert(no_row_count == no_col_count);
-      no_pivot = no_row_count;
-      if (no_pivot) {
-	merit_ideal = kHighsInf;
-      } else {
+      if (!no_row_count) {
 	// Record the best possible merit: search should stop if an
 	// pivot of this merit is found
 	merit_ideal = 1.0 * (min_row_count-1) * (min_col_count-1);
+	// Now for the loop that searches for a pivot
+	for (HighsInt count = 2; count <= max_count; count++) {
+	  findPivotColSearch(found_pivot, count, jColPivot, iRowPivot, GE_stage_name, report_search);
+	  findPivotRowSearch(found_pivot, count, jColPivot, iRowPivot, GE_stage_name, report_search);
+	  if (found_pivot) break;
+	}
       }
-    }
-    // Now for the loop that searches for a pivot if there is not no pivot and no singleton
-    for (HighsInt count = 2; !no_pivot && !found_pivot && count <= max_count; count++) {
-      findPivotColSearch(found_pivot, count, jColPivot, iRowPivot, GE_stage_name, report_search);
-      findPivotRowSearch(found_pivot, count, jColPivot, iRowPivot, GE_stage_name, report_search);
     }
     // 1.4. If we found nothing: tell singular
     if (!found_pivot) {
