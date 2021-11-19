@@ -863,10 +863,7 @@ HighsInt HFactor::buildKernel() {
   // Row count can be more than the number of rows if num_basic >
   // num_row
   const HighsInt max_count = max(num_row, num_basic);
-  const HighsInt kMarkowitzSearchStrategyOg = 0;
-  const HighsInt kMarkowitzSearchStrategySwitchedOg = 1;
-  const HighsInt kMarkowitzSearchStrategyAlternateBest = 2;
-  const HighsInt markowitz_search_strategy = kMarkowitzSearchStrategyOg;
+  markowitz_search_strategy = kMarkowitzSearchStrategySwitchedOg;
   
   while (nwork-- > 0) {
     /**
@@ -986,7 +983,8 @@ HighsInt HFactor::buildKernel() {
 	// pivot of this merit is found
 	merit_ideal = 1.0 * (min_row_count-1) * (min_col_count-1);
 	// Now to search for a pivot
-	if (markowitz_search_strategy == kMarkowitzSearchStrategyOg) {
+	if (markowitz_search_strategy == kMarkowitzSearchStrategyOg ||
+	    markowitz_search_strategy == kMarkowitzSearchStrategyRefinedOg) {
 	  for (HighsInt count = 2; count <= max_count; count++) {
 	    other_count_ideal = count-1;
 	    findPivotColSearch(found_pivot, count, jColPivot, iRowPivot, GE_stage_name, report_search);
@@ -996,7 +994,9 @@ HighsInt HFactor::buildKernel() {
 	  }
 	} else if (markowitz_search_strategy == kMarkowitzSearchStrategySwitchedOg) {
 	  for (HighsInt count = 2; count <= max_count; count++) {
+	    other_count_ideal = count-1;
 	    findPivotRowSearch(found_pivot, count, jColPivot, iRowPivot, GE_stage_name, report_search);
+	    other_count_ideal = count;
 	    findPivotColSearch(found_pivot, count, jColPivot, iRowPivot, GE_stage_name, report_search);
 	    if (found_pivot) break;
 	  }
@@ -1288,6 +1288,7 @@ void HFactor::findPivotColSearch(bool& found_pivot,
 				 const std::string GE_stage_name,
 				 const bool report_search) {
   if (count > num_row) return;
+  const bool original = markowitz_search_strategy == kMarkowitzSearchStrategyOg;
   // 1.3.1 Search through any columns with row count = count
   for (HighsInt j = col_link_first[count]; j != -1;
        j = col_link_next[j]) {
@@ -1315,9 +1316,7 @@ void HFactor::findPivotColSearch(bool& found_pivot,
 	  merit_pivot = merit_local;
 	  jColPivot = j;
 	  iRowPivot = i;
-	  found_pivot = found_pivot || (row_count < count);
-	  assert((row_count < count) == (row_count <= other_count_ideal));
-	  assert(row_count >= other_count_ideal);
+	  found_pivot = found_pivot || (row_count <= other_count_ideal);
 	}
       }
       if (report_search) {
@@ -1330,14 +1329,16 @@ void HFactor::findPivotColSearch(bool& found_pivot,
 	if (report_new_candidate) printf(" new_cdd merit %10.4g", merit_pivot);
 	printf("\n");
       }
-      if (use_merit_ideal && merit_pivot <= merit_ideal) break;
+      if (merit_pivot <= merit_ideal) break;
     }
     
     if ((search_count++ >= search_limit && merit_pivot < merit_limit) ||
-	(use_merit_ideal && merit_pivot <= merit_ideal)) found_pivot = true;
+	(merit_pivot <= merit_ideal)) found_pivot = true;
+    if (!original) fake_search += count;
     if (found_pivot) break;
     
-    fake_search += count;
+    // ToDo Should be above break
+    if (original) fake_search += count;
   }
 }
 
@@ -1348,6 +1349,7 @@ void HFactor::findPivotRowSearch(bool& found_pivot,
 				 const std::string GE_stage_name,
 				 const bool report_search) {
   if (count > num_basic) return;
+  const bool original = markowitz_search_strategy == kMarkowitzSearchStrategyOg;
   // 1.3.2 Search for rows
   for (HighsInt i = row_link_first[count]; i != -1;
        i = row_link_next[i]) {
@@ -1373,9 +1375,7 @@ void HFactor::findPivotRowSearch(bool& found_pivot,
 	  merit_pivot = merit_local;
 	  jColPivot = j;
 	  iRowPivot = i;
-	  found_pivot = found_pivot || (column_count <= count);
-	  assert((column_count <= count) == (column_count <= other_count_ideal));
-	  assert(column_count >= other_count_ideal);
+	  found_pivot = found_pivot || (column_count <= other_count_ideal);
 	}
       }
       if (report_search) {
@@ -1388,14 +1388,16 @@ void HFactor::findPivotRowSearch(bool& found_pivot,
 	if (report_new_candidate) printf(" new_cdd merit %10.4g", merit_pivot);
 	printf("\n");
       }
-      if (use_merit_ideal && merit_pivot <= merit_ideal) break;
+      if (merit_pivot <= merit_ideal) break;
     }
     if ((search_count++ >= search_limit && merit_pivot < merit_limit) ||
-	(use_merit_ideal && merit_pivot <= merit_ideal)) found_pivot = true;
+	(merit_pivot <= merit_ideal)) found_pivot = true;
+    if (!original) fake_search += count;
     if (found_pivot) break;
   }
 
-  fake_search += count;
+  // ToDo Should be above break
+  if (original) fake_search += count;
 }
 
 void HFactor::buildHandleRankDeficiency() {

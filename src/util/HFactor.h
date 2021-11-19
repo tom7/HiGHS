@@ -32,7 +32,10 @@ using std::max;
 using std::vector;
 
 const HighsInt kMaxKernelSearch = 8;
-const bool use_merit_ideal = true;
+const HighsInt kMarkowitzSearchStrategyOg = 0;
+const HighsInt kMarkowitzSearchStrategyRefinedOg = 1;
+const HighsInt kMarkowitzSearchStrategySwitchedOg = 2;
+const HighsInt kMarkowitzSearchStrategyAlternateBest = 3;
 
 /**
  * @brief Basis matrix factorization, update and solves for HiGHS
@@ -295,6 +298,7 @@ class HFactor {
   HighsInt update_method;
 
   // shared buildKernel values 
+  HighsInt markowitz_search_strategy;
   HighsInt search_limit;
   HighsInt search_count;
   HighsInt other_count_ideal;
@@ -304,7 +308,6 @@ class HFactor {
   HighsInt fake_search;
   HighsInt min_col_count;
   HighsInt min_row_count;
-
   // Working buffer
   HighsInt nwork;
   vector<HighsInt> iwork;
