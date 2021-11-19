@@ -108,19 +108,20 @@ void HFactor::analyseActiveSubmatrix(const std::string message) const {
   HighsValueDistribution active_submatrix;
   HighsIntValueDistribution row_count;
   HighsIntValueDistribution col_count;
-  initialiseValueDistribution("Active submatrix", "", 1e-20, 1e20, 10.0, active_submatrix);
+  initialiseValueDistribution("Active submatrix", "", 1e-20, 1e20, 10.0,
+                              active_submatrix);
   initialiseValueDistribution("Row counts", "", 1, 16384, 2, row_count);
   initialiseValueDistribution("Col counts", "", 1, 16384, 2, col_count);
   for (HighsInt count = 0; count <= num_row; count++) {
-    for (HighsInt j = col_link_first[count]; j != -1;
-             j = col_link_next[j]) {
+    for (HighsInt j = col_link_first[count]; j != -1; j = col_link_next[j]) {
       updateValueDistribution(count, col_count);
       HighsInt start = mc_start[j];
       HighsInt end = start + mc_count_a[j];
       for (HighsInt k = start; k < end; k++) {
-	if (fabs(mc_value[k]) < 1e-16)
-	  printf("MC entry %7d gives B(%6d, %6d) = %g\n",(int)k, (int)mc_index[k], (int)j, mc_value[k]);
-	updateValueDistribution(mc_value[k], active_submatrix);
+        if (fabs(mc_value[k]) < 1e-16)
+          printf("MC entry %7d gives B(%6d, %6d) = %g\n", (int)k,
+                 (int)mc_index[k], (int)j, mc_value[k]);
+        updateValueDistribution(mc_value[k], active_submatrix);
       }
     }
   }
@@ -131,14 +132,11 @@ void HFactor::analyseActiveSubmatrix(const std::string message) const {
   logValueDistribution(log_options, active_submatrix);
   logValueDistribution(log_options, row_count);
   logValueDistribution(log_options, col_count);
-  
-
 }
 
 void HFactor::reportKernelValueChange(const std::string message,
-				      const HighsInt iRow,
-				      const HighsInt iCol,
-				      double& track_value) {
+                                      const HighsInt iRow, const HighsInt iCol,
+                                      double& track_value) {
   if (iRow < 0 || iCol < 0) return;
   double latest_value = 0;
   HighsInt start = mc_start[iCol];
@@ -151,14 +149,12 @@ void HFactor::reportKernelValueChange(const std::string message,
   }
   if (track_value != latest_value)
     printf("\n%s: Change of %11.4g in B(%6d, %6d) to %11.4g\n", message.c_str(),
-	   latest_value-track_value,
-	   (int)iRow,
-	   (int)iCol,
-	   latest_value);
+           latest_value - track_value, (int)iRow, (int)iCol, latest_value);
   track_value = latest_value;
 }
 
-void HFactor::reportMcColumn(const HighsInt num_pivot, const HighsInt iCol) const {
+void HFactor::reportMcColumn(const HighsInt num_pivot,
+                             const HighsInt iCol) const {
   if (iCol >= num_basic) return;
   const HighsInt iCol_start = mc_start[iCol];
   const HighsInt iCol_count_a = mc_count_a[iCol];
@@ -172,16 +168,20 @@ void HFactor::reportMcColumn(const HighsInt num_pivot, const HighsInt iCol) cons
       next_start = mc_start[i];
     }
   }
-  printf("McColumn %d: (Pivot %6d) Var %6d; Start %8d; Count(A %3d; N %3d); Space %6d: Next col is %6d; Start %8d",
-	 (int)iCol, (int)num_pivot, (int)mc_var[iCol], (int)mc_start[iCol],
-	 (int)mc_count_a[iCol], (int)mc_count_n[iCol],
-	 (int)mc_space[iCol], (int)next_col, (int)next_start);
+  printf(
+      "McColumn %d: (Pivot %6d) Var %6d; Start %8d; Count(A %3d; N %3d); Space "
+      "%6d: Next col is %6d; Start %8d",
+      (int)iCol, (int)num_pivot, (int)mc_var[iCol], (int)mc_start[iCol],
+      (int)mc_count_a[iCol], (int)mc_count_n[iCol], (int)mc_space[iCol],
+      (int)next_col, (int)next_start);
   HighsInt en = 0;
-  for (HighsInt iEl = mc_start[iCol]; iEl<mc_start[iCol]+mc_count_a[iCol]; iEl++) {
+  for (HighsInt iEl = mc_start[iCol]; iEl < mc_start[iCol] + mc_count_a[iCol];
+       iEl++) {
     if (en % 5 == 0) printf("\n");
     en++;
     printf("[%6d %11.4g] ", (int)mc_index[iEl], mc_value[iEl]);
   }
-  printf("\n"); fflush(stdout);
-  assert(iCol_start+iCol_count_a <= next_start);
+  printf("\n");
+  fflush(stdout);
+  assert(iCol_start + iCol_count_a <= next_start);
 }

@@ -297,7 +297,7 @@ class HFactor {
   HighsInt basis_matrix_limit_size;
   HighsInt update_method;
 
-  // shared buildKernel values 
+  // shared buildKernel values
   HighsInt markowitz_search_strategy;
   HighsInt search_limit;
   HighsInt search_count;
@@ -391,18 +391,14 @@ class HFactor {
   // Implementation
   void buildSimple();
   HighsInt buildKernel();
-  void findPivotColSearch(bool& found_pivot,
-			  const HighsInt count,
-			  HighsInt& jColPivot,
-			  HighsInt& iRowPivot,
-			  const std::string GE_stage_name = "",
-			  const bool report_search = false);
-  void findPivotRowSearch(bool& found_pivot,
-			  const HighsInt count,
-			  HighsInt& jColPivot,
-			  HighsInt& iRowPivot,
-			  const std::string GE_stage_name = "",
-			  const bool report_search = false);
+  void findPivotColSearch(bool& found_pivot, const HighsInt count,
+                          HighsInt& jColPivot, HighsInt& iRowPivot,
+                          const std::string GE_stage_name = "",
+                          const bool report_search = false);
+  void findPivotRowSearch(bool& found_pivot, const HighsInt count,
+                          HighsInt& jColPivot, HighsInt& iRowPivot,
+                          const std::string GE_stage_name = "",
+                          const bool report_search = false);
   void buildHandleRankDeficiency();
   void buildReportRankDeficiency();
   void buildMarkSingC();
@@ -420,10 +416,8 @@ class HFactor {
   void reportDoubleVector(const std::string name,
                           const vector<double> entry) const;
   void analyseActiveSubmatrix(const std::string message = "") const;
-  void reportKernelValueChange(const std::string message,
-			       const HighsInt iRow,
-			       const HighsInt iCol,
-			       double& track_value);
+  void reportKernelValueChange(const std::string message, const HighsInt iRow,
+                               const HighsInt iCol, double& track_value);
   void reportMcColumn(const HighsInt num_pivot, const HighsInt iCol) const;
   void ftranL(HVector& vector, const double expected_density,
               HighsTimerClock* factor_timer_clock_pointer = NULL) const;
@@ -454,9 +448,10 @@ class HFactor {
    */
   void colInsert(const HighsInt iCol, const HighsInt iRow, const double value) {
     if (fabs(value) < kHighsTiny) {
-      printf("colInsert:  value %11.4g inserted in (%6d, %6d)\n", value, (int)iRow, (int)iCol);
+      printf("colInsert:  value %11.4g inserted in (%6d, %6d)\n", value,
+             (int)iRow, (int)iCol);
       fflush(stdout);
-      assert(1==0);
+      assert(1 == 0);
     }
     const HighsInt iput = mc_start[iCol] + mc_count_a[iCol]++;
     mc_index[iput] = iRow;
@@ -489,15 +484,16 @@ class HFactor {
       printf("mc_count_a_iCol_og = %d\n", (int)mc_count_a_iCol_og);
       printf("mc_count_a[iCol] =   %d\n", (int)mc_count_a[iCol]);
       printf("mc_count_n[iCol] =   %d\n", (int)mc_count_n[iCol]);
-      printf("mc_start[iCol+1] =     %d\n", (int)mc_start[iCol+1]);
+      printf("mc_start[iCol+1] =     %d\n", (int)mc_start[iCol + 1]);
       printf("idel = %d; imov = %d\n", (int)idel, (int)imov);
       printf("mc_index.size() = %d\n", (int)mc_index.size());
       printf("mc_value.size() = %d\n", (int)mc_value.size());
       printf("mc_count_a.size() = %d\n", (int)mc_count_a.size());
       printf("mc_count_n.size() = %d\n", (int)mc_count_n.size());
-      printf("colDelete(%6d, %6d) creates value %g\n", (int)iCol, (int)iRow, mc_value[idel]);
+      printf("colDelete(%6d, %6d) creates value %g\n", (int)iCol, (int)iRow,
+             mc_value[idel]);
       fflush(stdout);
-      assert(1==0);
+      assert(1 == 0);
     }
     return pivot_multiplier;
   }

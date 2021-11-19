@@ -603,12 +603,11 @@ void analyseMatrixSparsity(const HighsLogOptions& log_options,
               maxRowCount, numCol);
 }
 
-bool initialiseValueDistribution(const std::string distribution_name,
-                                 const std::string value_name,
-                                 const HighsInt min_value_limit,
-                                 const HighsInt max_value_limit,
-                                 const HighsInt base_value_limit,
-                                 HighsIntValueDistribution& value_distribution) {
+bool initialiseValueDistribution(
+    const std::string distribution_name, const std::string value_name,
+    const HighsInt min_value_limit, const HighsInt max_value_limit,
+    const HighsInt base_value_limit,
+    HighsIntValueDistribution& value_distribution) {
   assert(min_value_limit > 0);
   assert(max_value_limit > 0);
   assert(base_value_limit > 1);
@@ -765,12 +764,12 @@ bool logValueDistribution(const HighsLogOptions& log_options,
   for (HighsInt i = 0; i < num_count + 1; i++)
     sum_count += value_distribution.count_[i];
   if (!sum_count) return false;
-  //  highsLogDev(log_options, HighsLogType::kInfo, "Min value = %g\n", min_value);
-  highsLogDev(log_options, HighsLogType::kInfo,
-	      "     Minimum %svalue is %4d\n", value_name.c_str(), min_value);
-  highsLogDev(log_options, HighsLogType::kInfo,
-              "     Maximum %svalue is %4d\n", value_name.c_str(),
-              value_distribution.max_value_);
+  //  highsLogDev(log_options, HighsLogType::kInfo, "Min value = %g\n",
+  //  min_value);
+  highsLogDev(log_options, HighsLogType::kInfo, "     Minimum %svalue is %4d\n",
+              value_name.c_str(), min_value);
+  highsLogDev(log_options, HighsLogType::kInfo, "     Maximum %svalue is %4d\n",
+              value_name.c_str(), value_distribution.max_value_);
   HighsInt sum_report_count = 0;
   double percentage;
   HighsInt int_percentage;
@@ -859,9 +858,10 @@ bool logValueDistribution(const HighsLogOptions& log_options,
   for (HighsInt i = 0; i < num_count + 1; i++)
     sum_count += value_distribution.count_[i];
   if (!sum_count) return false;
-  //  highsLogDev(log_options, HighsLogType::kInfo, "Min value = %g\n", min_value);
+  //  highsLogDev(log_options, HighsLogType::kInfo, "Min value = %g\n",
+  //  min_value);
   highsLogDev(log_options, HighsLogType::kInfo,
-	      "     Minimum %svalue is %10.4g", value_name.c_str(), min_value);
+              "     Minimum %svalue is %10.4g", value_name.c_str(), min_value);
   if (mu > 0) {
     highsLogDev(log_options, HighsLogType::kInfo,
                 "  corresponding to  %10" HIGHSINT_FORMAT

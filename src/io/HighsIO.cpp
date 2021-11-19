@@ -223,4 +223,6 @@ std::string highsFormatToString(const char* format, ...) {
   std::string local_string(msgbuffer);
   return local_string;
 }
-const std::string highsBoolToString(const bool b) { return b ? "true" : "false"; }
+const std::string highsBoolToString(const bool b) {
+  return b ? "true" : "false";
+}
