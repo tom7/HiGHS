@@ -434,12 +434,11 @@ HighsInt HFactor::build(HighsTimerClock* factor_timer_clock_pointer) {
   }
 
   // Record the number of entries in the INVERT
-  invert_num_el = l_start[num_row] + u_last_p[num_row - 1] + num_row;
+  analyse_build_.invert_num_nz =
+      l_start[num_row] + u_last_p[num_row - 1] + num_row;
 
-  kernel_dim -= rank_deficiency;
   debugLogRankDeficiency(highs_debug_level, log_options, rank_deficiency,
-                         basis_matrix_num_el, invert_num_el, kernel_dim,
-                         kernel_num_el, nwork);
+                         analyse_build_, nwork);
   factor_timer.stop(FactorInvert, factor_timer_clock_pointer);
   return rank_deficiency;
 }
@@ -611,7 +610,7 @@ void HFactor::buildSimple() {
     b_var[iCol] = iMat;
   }
   // Record the number of elements in the basis matrix
-  basis_matrix_num_el = num_row - nwork + BcountX;
+  analyse_build_.num_nz = num_row - nwork + BcountX;
 
   // count1 = 0;
   // Comments: for pds-20, dfl001: 60 / 80
@@ -753,7 +752,7 @@ void HFactor::buildSimple() {
   mr_count.assign(num_row, 0);
   HighsInt mr_countX = 0;
   // Determine the number of entries in the kernel
-  kernel_num_el = 0;
+  analyse_build_.kernel_original_num_nz = 0;
   for (HighsInt iRow = 0; iRow < num_row; iRow++) {
     HighsInt count = mr_count_before[iRow];
     if (count > 0) {
@@ -761,7 +760,7 @@ void HFactor::buildSimple() {
       mr_space[iRow] = count * 2;
       mr_countX += count * 2;
       rlinkAdd(iRow, count);
-      kernel_num_el += count + 1;
+      analyse_build_.kernel_original_num_nz += count + 1;
     }
   }
   mr_index.resize(mr_countX);
@@ -812,7 +811,7 @@ void HFactor::buildSimple() {
   }
   build_synthetic_tick += (num_row + nwork + MCcountX) * 40 + mr_countX * 20;
   // Record the kernel dimension
-  kernel_dim = nwork;
+  analyse_build_.num_simple_pivot = num_basic - nwork;
   assert((HighsInt)this->refactor_info_.pivot_row.size() == num_basic - nwork);
 }
 
@@ -839,8 +838,6 @@ HighsInt HFactor::buildKernel() {
   const HighsInt track_iCol = -79920;
   const HighsInt track_iEl = -11557924;
   HighsInt mc_index_size = mc_index.size();
-  //  printf("HFactor::buildKernel dim = %d; mc_index.size = %d\n",
-  //  (int)kernel_dim, (int)mc_index_size);
   HighsInt track_iEl_index = kHighsIInf;
   double track_iEl_value = kHighsInf;
   double track_value = kHighsInf;
@@ -1375,10 +1372,10 @@ void HFactor::findPivotRowSearch(bool& found_pivot, const HighsInt count,
       double min_pivot_required = kHighsInf;
       bool report_new_candidate = false;
       if (merit_pivot > merit_local) {
-	// Has a pivot better for sparsity than the current candidate
-	// - but is it numerically OK?
-	//
-	// Have to find its value in the column
+        // Has a pivot better for sparsity than the current candidate
+        // - but is it numerically OK?
+        //
+        // Have to find its value in the column
         HighsInt ifind = mc_start[j];
         while (mc_index[ifind] != i) ifind++;
         num_index_searched = ifind - mc_start[j] + 1;

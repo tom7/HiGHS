@@ -197,4 +197,4 @@ void HFactor::AnalyseBuild::clear() {
   this->kernel_final_num_nz = 0;
   this->invert_num_nz = 0;
   this->sum_merit = 0;
-}  
+}

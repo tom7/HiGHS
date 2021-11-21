@@ -1193,17 +1193,19 @@ void HighsSimplexAnalysis::updateInvertFormData(const HFactor& factor) {
   assert(analyse_factor_data);
   const bool report_kernel = false;
   num_invert++;
-  assert(factor.basis_matrix_num_el);
-  double invert_fill_factor =
-      ((1.0 * factor.invert_num_el) / factor.basis_matrix_num_el);
+  assert(factor.analyse_build_.num_nz);
+  double invert_fill_factor = ((1.0 * factor.analyse_build_.invert_num_nz) /
+                               factor.analyse_build_.num_nz);
   if (report_kernel) printf("INVERT fill = %6.2f", invert_fill_factor);
   sum_invert_fill_factor += invert_fill_factor;
   running_average_invert_fill_factor =
       0.95 * running_average_invert_fill_factor + 0.05 * invert_fill_factor;
 
-  double kernel_relative_dim = (1.0 * factor.kernel_dim) / numRow;
+  const HighsInt kernel_dim = factor.analyse_build_.num_kernel_pivot -
+                              factor.analyse_build_.num_simple_pivot;
+  double kernel_relative_dim = (1.0 * kernel_dim) / numRow;
   if (report_kernel) printf("; kernel dim = %11.4g", kernel_relative_dim);
-  if (factor.kernel_dim) {
+  if (kernel_dim) {
     num_kernel++;
     max_kernel_dim = max(kernel_relative_dim, max_kernel_dim);
     sum_kernel_dim += kernel_relative_dim;
@@ -1211,11 +1213,12 @@ void HighsSimplexAnalysis::updateInvertFormData(const HFactor& factor) {
         0.95 * running_average_kernel_dim + 0.05 * kernel_relative_dim;
 
     HighsInt kernel_invert_num_el =
-        factor.invert_num_el -
-        (factor.basis_matrix_num_el - factor.kernel_num_el);
-    assert(factor.kernel_num_el);
-    double kernel_fill_factor =
-        (1.0 * kernel_invert_num_el) / factor.kernel_num_el;
+        factor.analyse_build_.invert_num_nz -
+        (factor.analyse_build_.num_nz -
+         factor.analyse_build_.kernel_original_num_nz);
+    assert(factor.analyse_build_.kernel_original_num_nz);
+    double kernel_fill_factor = (1.0 * kernel_invert_num_el) /
+                                factor.analyse_build_.kernel_original_num_nz;
     sum_kernel_fill_factor += kernel_fill_factor;
     running_average_kernel_fill_factor =
         0.95 * running_average_kernel_fill_factor + 0.05 * kernel_fill_factor;

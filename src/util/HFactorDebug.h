@@ -18,7 +18,7 @@
 
 #include <vector>
 
-#include "lp_data/HighsOptions.h"
+#include "util/HFactor.h"
 
 using std::vector;
 
@@ -47,10 +47,8 @@ void debugReportMarkSingC(const HighsInt call_id,
 void debugLogRankDeficiency(const HighsInt highs_debug_level,
                             const HighsLogOptions& log_options,
                             const HighsInt rank_deficiency,
-                            const HighsInt basis_matrix_num_el,
-                            const HighsInt invert_num_el,
-                            const HighsInt& kernel_dim,
-                            const HighsInt kernel_num_el, const HighsInt nwork);
+                            const HFactor::AnalyseBuild analyse_build,
+                            const HighsInt nwork);
 
 void debugPivotValueAnalysis(const HighsInt highs_debug_level,
                              const HighsLogOptions& log_options,

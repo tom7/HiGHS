@@ -42,7 +42,7 @@ HighsInt HFactor::rebuild(HighsTimerClock* factor_timer_clock_pointer) {
   luClear();
 
   nwork = 0;
-  basis_matrix_num_el = 0;
+  analyse_build_.num_nz = 0;
   HighsInt stage = num_row;
   HighsInt rank_deficiency = 0;
   vector<bool> has_pivot;
@@ -72,7 +72,7 @@ HighsInt HFactor::rebuild(HighsTimerClock* factor_timer_clock_pointer) {
         // 1.1 Logical column
         if (report_unit) printf("Stage %d: Logical\n", (int)iK);
         assert(iVar >= num_col);
-        basis_matrix_num_el++;
+        analyse_build_.num_nz++;
       } else if (pivot_type == kPivotUnit) {
         //
         // 1.2 (Structural) unit column
@@ -82,7 +82,7 @@ HighsInt HFactor::rebuild(HighsTimerClock* factor_timer_clock_pointer) {
         HighsInt count = a_start[iVar + 1] - start;
         assert(a_index[start] == iRow);
         assert(count == 1 && a_value[start] == 1);
-        basis_matrix_num_el++;
+        analyse_build_.num_nz++;
       }
       // 1.3 Record unit column
       l_start.push_back(l_index.size());

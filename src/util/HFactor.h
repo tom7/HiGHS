@@ -259,12 +259,6 @@ class HFactor {
   // basis
   RefactorInfo refactor_info_;
 
-  // Properties of data held in HFactor.h
-  HighsInt basis_matrix_num_el = 0;
-  HighsInt invert_num_el = 0;
-  HighsInt kernel_dim = 0;
-  HighsInt kernel_num_el = 0;
-
   // Data for analysing factorization
   struct AnalyseBuild {
     HighsInt num_row = 0;
@@ -283,7 +277,7 @@ class HFactor {
   HighsIntValueDistribution analyse_pivot_col_count_;
   HighsIntValueDistribution analyse_pivot_row_count_;
   HighsValueDistribution analyse_pivot_value_;
-  AnalyseBuild analyse_build_;  
+  AnalyseBuild analyse_build_;
 
   /**
    * Data of the factor
