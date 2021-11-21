@@ -353,6 +353,7 @@ HighsInt HFactor::build(HighsTimerClock* factor_timer_clock_pointer) {
   const bool report_lu = false;
   // Ensure that the A matrix is valid for factorization
   assert(this->a_matrix_valid);
+  analyse_build_.clear();
   FactorTimer factor_timer;
   // Possibly use the refactorization information!
   if (refactor_info_.use) {
@@ -1366,6 +1367,7 @@ void HFactor::findPivotRowSearch(bool& found_pivot, const HighsInt count,
     HighsInt end = start + mr_count[i];
     for (HighsInt k = start; k < end; k++) {
       HighsInt j = mr_index[k];
+      // Consider column j in row i
       HighsInt column_count = mc_count_a[j];
       double merit_local = 1.0 * (count - 1) * (column_count - 1);
       HighsInt num_index_searched = 0;
@@ -1373,6 +1375,10 @@ void HFactor::findPivotRowSearch(bool& found_pivot, const HighsInt count,
       double min_pivot_required = kHighsInf;
       bool report_new_candidate = false;
       if (merit_pivot > merit_local) {
+	// Has a pivot better for sparsity than the current candidate
+	// - but is it numerically OK?
+	//
+	// Have to find its value in the column
         HighsInt ifind = mc_start[j];
         while (mc_index[ifind] != i) ifind++;
         num_index_searched = ifind - mc_start[j] + 1;

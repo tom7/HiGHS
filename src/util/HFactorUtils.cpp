@@ -185,3 +185,16 @@ void HFactor::reportMcColumn(const HighsInt num_pivot,
   fflush(stdout);
   assert(iCol_start + iCol_count_a <= next_start);
 }
+
+void HFactor::AnalyseBuild::clear() {
+  this->num_row = 0;
+  this->num_col = 0;
+  this->num_basic = 0;
+  this->num_nz = 0;
+  this->num_simple_pivot = 0;
+  this->num_kernel_pivot = 0;
+  this->kernel_original_num_nz = 0;
+  this->kernel_final_num_nz = 0;
+  this->invert_num_nz = 0;
+  this->sum_merit = 0;
+}  

@@ -265,6 +265,26 @@ class HFactor {
   HighsInt kernel_dim = 0;
   HighsInt kernel_num_el = 0;
 
+  // Data for analysing factorization
+  struct AnalyseBuild {
+    HighsInt num_row = 0;
+    HighsInt num_col = 0;
+    HighsInt num_basic = 0;
+    HighsInt num_nz = 0;
+    HighsInt num_simple_pivot = 0;
+    HighsInt num_kernel_pivot = 0;
+    HighsInt kernel_original_num_nz = 0;
+    HighsInt kernel_final_num_nz = 0;
+    HighsInt invert_num_nz = 0;
+    double sum_merit = 0;
+    void clear();
+  };
+
+  HighsIntValueDistribution analyse_pivot_col_count_;
+  HighsIntValueDistribution analyse_pivot_row_count_;
+  HighsValueDistribution analyse_pivot_value_;
+  AnalyseBuild analyse_build_;  
+
   /**
    * Data of the factor
    */
