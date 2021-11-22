@@ -117,10 +117,8 @@ class HFactor {
 		    const HighsInt* a_index,
 		    const double* a_value,
 		    HighsInt* basic_index,
-		    const double pivot_threshold =
-		    kDefaultPivotThreshold,
-		    const double pivot_tolerance =
-		    kDefaultPivotTolerance,
+		    const double pivot_threshold = kDefaultPivotThreshold,
+		    const double pivot_tolerance = kDefaultPivotTolerance,
 		    const HighsInt highs_debug_level = kHighsDebugLevelMin,
 		    const bool use_original_HFactor_logic = true,
 		    const HighsInt update_method = kUpdateMethodFt);
@@ -136,6 +134,11 @@ class HFactor {
 
   void setupAnalysis(const HighsLogOptions& log_options,
 		     const HighsInt highs_analysis_level = 0);
+
+  void setupLogOptions(const bool output_flag,
+		       const bool log_to_console,
+		       const HighsInt log_dev_level,
+		       FILE* log_file_stream);
 		  
   /**
    * @brief Form \f$PBQ=LU\f$ for basis matrix \f$B\f$ or report degree of rank
@@ -256,8 +259,7 @@ class HFactor {
   void reportLu(const HighsInt l_u_or_both = kReportLuBoth,
                 const bool full = true) const;
 
-  void debugReportAnalyseBuild(const HighsLogOptions& log_options,
-			       const std::string message);
+  void debugReportAnalyseBuild(const std::string message);
 
   // Information required to perform refactorization of the current
   // basis

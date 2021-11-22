@@ -4198,6 +4198,11 @@ HPresolve::Result HPresolve::removeDependentEquations(
   std::iota(colSet.begin(), colSet.end(), 0);
   HFactor factor;
   factor.setup(matrix, colSet);
+  //  factor.setupTimer(solver_object.timer_, options.time_limit);
+  factor.setupAnalysis(options->log_options,
+		       kHighsAnalysisLevelNlaData+
+		       kHighsAnalysisLevelNlaTime);
+  
   HighsInt rank_deficiency = factor.build();
   // Now remove any rows corresponding to rank deficiency
   for (HighsInt k = 0; k < rank_deficiency; k++) {
@@ -4207,7 +4212,7 @@ HPresolve::Result HPresolve::removeDependentEquations(
       removeRow(redundant_row);
     }
   }
-  factor.debugReportAnalyseBuild(options->log_options, "Dependent equations matrix");
+  factor.debugReportAnalyseBuild("Dependent equations matrix");
   return Result::kOk;
 }
 
@@ -4264,7 +4269,7 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
       fixColToZero(postSolveStack, redundant_col);
     }
   }
-  factor.debugReportAnalyseBuild(options->log_options, "Dependent free columns");
+  factor.debugReportAnalyseBuild("Dependent free columns");
   return Result::kOk;
 }
 

@@ -201,39 +201,40 @@ HighsInt HFactor::getKernelNumNz() const {
   return kernel_num_nz;
 }
 
-void HFactor::debugReportAnalyseBuild(const HighsLogOptions& local_log_options,
-				      const std::string message) {
+void HFactor::debugReportAnalyseBuild(const std::string message) {
   const HighsInt report_rank_deficiency =
     analyse_build_record_.num_basic < analyse_build_record_.num_row ?
-			       rank_deficiency - (analyse_build_record_.num_row-analyse_build_record_.num_basic) : rank_deficiency;
-  highsLogDev(local_log_options, HighsLogType::kInfo,
+				      rank_deficiency -
+				      (analyse_build_record_.num_row-analyse_build_record_.num_basic) :
+    rank_deficiency;
+  highsLogDev(this->log_options_, HighsLogType::kInfo,
 	      "\n%s has %d rows, %d columns, %d nonzeros and rank deficiency %d\n",
 	      message.c_str(),
 	      (int)analyse_build_record_.num_row,
 	      (int)analyse_build_record_.num_basic,
 	      (int)analyse_build_record_.basic_num_nz,
 	      (int)report_rank_deficiency);
-  highsLogDev(local_log_options, HighsLogType::kInfo,
+  highsLogDev(this->log_options_, HighsLogType::kInfo,
 	      "   Number of simple pivots = %d\n", (int)analyse_build_record_.num_simple_pivot);
   if (analyse_build_record_.num_kernel_pivot) {
     assert(analyse_build_record_.kernel_initial_num_nz>0);
     const HighsInt kernel_num_row = analyse_build_record_.num_row - analyse_build_record_.num_simple_pivot;
     const HighsInt kernel_num_col = analyse_build_record_.num_basic - analyse_build_record_.num_simple_pivot;
-    highsLogDev(local_log_options, HighsLogType::kInfo,
+    highsLogDev(this->log_options_, HighsLogType::kInfo,
 		"   Kernel has %d rows, %d columns, %d nonzeros\n", (int)kernel_num_row, (int)kernel_num_col,
 		analyse_build_record_.kernel_initial_num_nz);
-    highsLogDev(local_log_options, HighsLogType::kInfo,
+    highsLogDev(this->log_options_, HighsLogType::kInfo,
 		"   Number of kernel pivots = %d\n", (int)analyse_build_record_.num_kernel_pivot);
     double kernel_fill_factor = (1.0 * analyse_build_record_.kernel_final_num_nz) / analyse_build_record_.kernel_initial_num_nz;
-    highsLogDev(local_log_options, HighsLogType::kInfo,
+    highsLogDev(this->log_options_, HighsLogType::kInfo,
 		"   Sum of pivot merit = %g (average %g)\n", analyse_build_record_.sum_merit,
 		analyse_build_record_.sum_merit / analyse_build_record_.num_kernel_pivot);
-    highsLogDev(local_log_options, HighsLogType::kInfo,
+    highsLogDev(this->log_options_, HighsLogType::kInfo,
 		"   Kernel final number of nonzeros = %d: fill factor of %g\n",
 		(int)analyse_build_record_.kernel_final_num_nz, kernel_fill_factor);
   } 
-  logValueDistribution(local_log_options, analyse_pivot_col_count_);
-  logValueDistribution(local_log_options, analyse_pivot_row_count_);
-  logValueDistribution(local_log_options, analyse_pivot_merit_);
-  logValueDistribution(local_log_options, analyse_pivot_value_);
+  logValueDistribution(this->log_options_, analyse_pivot_col_count_);
+  logValueDistribution(this->log_options_, analyse_pivot_row_count_);
+  logValueDistribution(this->log_options_, analyse_pivot_merit_);
+  logValueDistribution(this->log_options_, analyse_pivot_value_);
 }

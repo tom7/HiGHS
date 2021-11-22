@@ -221,13 +221,13 @@ void HFactor::setupGeneral(
   highs_debug_level = highs_debug_level_;
 
   // Set up log_options and default settings
-  log_data = decltype(log_data)(new LogData());
-  log_data->output_flag = false;
-  log_data->log_to_console = true;
-  log_data->log_dev_level = 0;
-  this->log_options_.output_flag = &log_data->output_flag;
-  this->log_options_.log_to_console = &log_data->log_to_console;
-  this->log_options_.log_dev_level = &log_data->log_dev_level;
+  this->log_data = decltype(log_data)(new LogData());
+  this->log_data->output_flag = false;
+  this->log_data->log_to_console = true;
+  this->log_data->log_dev_level = 0;
+  this->log_options_.output_flag = &this->log_data->output_flag;
+  this->log_options_.log_to_console = &this->log_data->log_to_console;
+  this->log_options_.log_dev_level = &this->log_data->log_dev_level;
   this->log_options_.log_file_stream = nullptr;
 
   // Set up null timer and time limit
@@ -344,6 +344,40 @@ void HFactor::setupMatrix(const HighsSparseMatrix* a_matrix) {
   setupMatrix(&a_matrix->start_[0], &a_matrix->index_[0], &a_matrix->value_[0]);
 }
 
+void HFactor::setupTimer(HighsTimer& timer,
+			 const double build_time_limit) {
+  this->timer_ = &timer;
+  this->build_time_limit_ = build_time_limit;
+}
+
+void HFactor::setupAnalysis(const HighsLogOptions& log_options,
+			    const HighsInt highs_analysis_level) {
+  this->log_options_ = log_options;
+  this->analyse_build_ = 
+    kHighsAnalysisLevelNlaData & highs_analysis_level;
+  if (this->analyse_build_) {
+    this->log_data->output_flag = true;
+    this->log_data->log_dev_level = 2;
+    this->log_options_.output_flag = &this->log_data->output_flag;
+    this->log_options_.log_to_console = &this->log_data->log_to_console;
+    this->log_options_.log_dev_level = &this->log_data->log_dev_level;
+    this->log_options_.log_file_stream = stdout;
+  }
+}
+		  
+void HFactor::setupLogOptions(const bool output_flag,
+			      const bool log_to_console,
+			      const HighsInt log_dev_level,
+			      FILE* log_file_stream) {
+  this->log_data->output_flag = output_flag;
+  this->log_data->log_to_console = log_to_console;
+  this->log_data->log_dev_level = log_dev_level;
+  this->log_options_.output_flag = &this->log_data->output_flag;
+  this->log_options_.log_to_console = &this->log_data->log_to_console;
+  this->log_options_.log_dev_level = &this->log_data->log_dev_level;
+  this->log_options_.log_file_stream = log_file_stream; 
+}
+
 HighsInt HFactor::build(HighsTimerClock* factor_timer_clock_pointer) {
   const bool report_lu = false;
   // Ensure that the A matrix is valid for factorization
@@ -442,19 +476,6 @@ HighsInt HFactor::build(HighsTimerClock* factor_timer_clock_pointer) {
   return rank_deficiency;
 }
 
-void HFactor::setupTimer(HighsTimer& timer,
-			 const double build_time_limit) {
-  this->timer_ = &timer;
-  this->build_time_limit_ = build_time_limit;
-}
-
-void HFactor::setupAnalysis(const HighsLogOptions& log_options,
-			    const HighsInt highs_analysis_level) {
-  this->log_options_ = log_options;
-  this->analyse_build_ = 
-    kHighsAnalysisLevelNlaData & highs_analysis_level;
-}
-		  
 void HFactor::ftranCall(HVector& vector, const double expected_density,
                         HighsTimerClock* factor_timer_clock_pointer) const {
   FactorTimer factor_timer;
