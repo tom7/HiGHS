@@ -222,14 +222,7 @@ void HFactor::setupGeneral(
 
   // Set up log_options and default settings
   this->log_data = decltype(log_data)(new LogData());
-  this->log_data->output_flag = false;
-  this->log_data->log_to_console = true;
-  this->log_data->log_dev_level = 0;
-  this->log_options_.output_flag = &this->log_data->output_flag;
-  this->log_options_.log_to_console = &this->log_data->log_to_console;
-  this->log_options_.log_dev_level = &this->log_data->log_dev_level;
-  this->log_options_.log_file_stream = nullptr;
-
+  setupLogOptions(false, false, kHighsLogDevLevelNone, nullptr);
   // Set up null timer and time limit
   this->timer_ = nullptr;
   this->build_time_limit_ = kHighsInf;
@@ -355,14 +348,8 @@ void HFactor::setupAnalysis(const HighsLogOptions& log_options,
   this->log_options_ = log_options;
   this->analyse_build_ = 
     kHighsAnalysisLevelNlaData & highs_analysis_level;
-  if (this->analyse_build_) {
-    this->log_data->output_flag = true;
-    this->log_data->log_dev_level = 2;
-    this->log_options_.output_flag = &this->log_data->output_flag;
-    this->log_options_.log_to_console = &this->log_data->log_to_console;
-    this->log_options_.log_dev_level = &this->log_data->log_dev_level;
-    this->log_options_.log_file_stream = stdout;
-  }
+  if (this->analyse_build_) 
+    setupLogOptions(true, false, kHighsLogDevLevelDetailed, stdout);
 }
 		  
 void HFactor::setupLogOptions(const bool output_flag,
@@ -880,11 +867,9 @@ HighsInt HFactor::buildKernel() {
   double track_value = kHighsInf;
   bool track_pivoted = false;
   reportKernelValueChange(GE_stage_name, track_iRow, track_iCol, track_value);
-  if (progress_report) {
-    log_data->output_flag = true;
-    log_data->log_dev_level = 2;
-    log_options_.log_file_stream = stdout;
-  }
+  if (progress_report) 
+    setupLogOptions(true, false, kHighsLogDevLevelDetailed, stdout);
+
   if (progress_report) {
     initialiseValueDistribution("Kernel pivot col count", "", 1, 1024, 2,
                                 analyse_pivot_col_count_);
