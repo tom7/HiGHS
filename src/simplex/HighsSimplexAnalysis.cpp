@@ -1194,8 +1194,9 @@ void HighsSimplexAnalysis::updateInvertFormData(const HFactor& factor) {
   const bool report_kernel = false;
   num_invert++;
   assert(factor.analyse_build_record_.basic_num_nz);
-  double invert_fill_factor = ((1.0 * factor.analyse_build_record_.invert_num_nz) /
-                               factor.analyse_build_record_.basic_num_nz);
+  double invert_fill_factor =
+      ((1.0 * factor.analyse_build_record_.invert_num_nz) /
+       factor.analyse_build_record_.basic_num_nz);
   if (report_kernel) printf("INVERT fill = %6.2f", invert_fill_factor);
   sum_invert_fill_factor += invert_fill_factor;
   running_average_invert_fill_factor =
@@ -1212,9 +1213,10 @@ void HighsSimplexAnalysis::updateInvertFormData(const HFactor& factor) {
     running_average_kernel_dim =
         0.95 * running_average_kernel_dim + 0.05 * kernel_relative_dim;
 
-    assert(factor.analyse_build_record_.kernel_initial_num_nz>0);
-    double kernel_fill_factor = (1.0 * factor.analyse_build_record_.kernel_final_num_nz) /
-                                factor.analyse_build_record_.kernel_initial_num_nz;
+    assert(factor.analyse_build_record_.kernel_initial_num_nz > 0);
+    double kernel_fill_factor =
+        (1.0 * factor.analyse_build_record_.kernel_final_num_nz) /
+        factor.analyse_build_record_.kernel_initial_num_nz;
     sum_kernel_fill_factor += kernel_fill_factor;
     running_average_kernel_fill_factor =
         0.95 * running_average_kernel_fill_factor + 0.05 * kernel_fill_factor;

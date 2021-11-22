@@ -209,16 +209,17 @@ void debugLogRankDeficiency(const HighsInt highs_debug_level,
                             const HighsInt nwork) {
   if (highs_debug_level == kHighsDebugLevelNone) return;
   if (!rank_deficiency) return;
-  const HighsInt kernel_dim =
-      analyse_build_record.num_kernel_pivot - analyse_build_record.num_simple_pivot;
+  const HighsInt kernel_dim = analyse_build_record.num_kernel_pivot -
+                              analyse_build_record.num_simple_pivot;
   highsLogDev(
       log_options, HighsLogType::kWarning,
       "Rank deficiency %1" HIGHSINT_FORMAT ": basis_matrix (%" HIGHSINT_FORMAT
       " el); INVERT (%" HIGHSINT_FORMAT " el); kernel (%" HIGHSINT_FORMAT
       " "
       "dim; %" HIGHSINT_FORMAT " el): nwork = %" HIGHSINT_FORMAT "\n",
-      rank_deficiency, analyse_build_record.basic_num_nz, analyse_build_record.invert_num_nz,
-      kernel_dim, analyse_build_record.kernel_initial_num_nz, nwork);
+      rank_deficiency, analyse_build_record.basic_num_nz,
+      analyse_build_record.invert_num_nz, kernel_dim,
+      analyse_build_record.kernel_initial_num_nz, nwork);
 }
 
 void debugPivotValueAnalysis(const HighsInt highs_debug_level,

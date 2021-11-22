@@ -140,7 +140,7 @@ void highsLogDev(const HighsLogOptions& log_options_, const HighsLogType type,
   bool output_flag = *log_options_.output_flag;
   bool log_to_console = *log_options_.log_to_console;
   HighsInt log_dev_level = *log_options_.log_dev_level;
-  
+
   if (!*log_options_.output_flag ||
       (log_options_.log_file_stream == NULL && !*log_options_.log_to_console) ||
       !*log_options_.log_dev_level)

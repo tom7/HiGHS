@@ -91,55 +91,44 @@ class HFactor {
              const double pivot_tolerance = kDefaultPivotTolerance,
              const HighsInt highs_debug_level = kHighsDebugLevelMin);
 
-  void setupGeneral(const HighsSparseMatrix* a_matrix,
-		    HighsInt num_basic,
+  void setupGeneral(const HighsSparseMatrix* a_matrix, HighsInt num_basic,
                     HighsInt* basic_index,
                     const double pivot_threshold = kDefaultPivotThreshold,
                     const double pivot_tolerance = kDefaultPivotTolerance,
                     const HighsInt highs_debug_level = kHighsDebugLevelMin);
 
-  void setup(const HighsInt num_col,
-             const HighsInt num_row,
-             const HighsInt* a_start,
-             const HighsInt* a_index,
-             const double* a_value,
-             HighsInt* basic_index,
+  void setup(const HighsInt num_col, const HighsInt num_row,
+             const HighsInt* a_start, const HighsInt* a_index,
+             const double* a_value, HighsInt* basic_index,
              const double pivot_threshold = kDefaultPivotThreshold,
-             const double pivot_tolerance =kDefaultPivotTolerance,
+             const double pivot_tolerance = kDefaultPivotTolerance,
              const HighsInt highs_debug_level = kHighsDebugLevelMin,
              const bool use_original_HFactor_logic = true,
              const HighsInt update_method = kUpdateMethodFt);
 
-  void setupGeneral(const HighsInt num_col,
-		    const HighsInt num_row,
-		    const HighsInt num_basic,
-		    const HighsInt* a_start,
-		    const HighsInt* a_index,
-		    const double* a_value,
-		    HighsInt* basic_index,
-		    const double pivot_threshold = kDefaultPivotThreshold,
-		    const double pivot_tolerance = kDefaultPivotTolerance,
-		    const HighsInt highs_debug_level = kHighsDebugLevelMin,
-		    const bool use_original_HFactor_logic = true,
-		    const HighsInt update_method = kUpdateMethodFt);
+  void setupGeneral(const HighsInt num_col, const HighsInt num_row,
+                    const HighsInt num_basic, const HighsInt* a_start,
+                    const HighsInt* a_index, const double* a_value,
+                    HighsInt* basic_index,
+                    const double pivot_threshold = kDefaultPivotThreshold,
+                    const double pivot_tolerance = kDefaultPivotTolerance,
+                    const HighsInt highs_debug_level = kHighsDebugLevelMin,
+                    const bool use_original_HFactor_logic = true,
+                    const HighsInt update_method = kUpdateMethodFt);
 
-  void setupMatrix(const HighsInt* a_start,
-		   const HighsInt* a_index,
-		   const double* a_value);
+  void setupMatrix(const HighsInt* a_start, const HighsInt* a_index,
+                   const double* a_value);
 
   void setupMatrix(const HighsSparseMatrix* a_matrix);
 
-  void setupTimer(HighsTimer& timer,
-		  const double build_time_limit = kHighsInf);
+  void setupTimer(HighsTimer& timer, const double build_time_limit = kHighsInf);
 
   void setupAnalysis(const HighsLogOptions& log_options,
-		     const HighsInt highs_analysis_level = 0);
+                     const HighsInt highs_analysis_level = 0);
 
-  void setupLogOptions(const bool output_flag,
-		       const bool log_to_console,
-		       const HighsInt log_dev_level,
-		       FILE* log_file_stream);
-		  
+  void setupLogOptions(const bool output_flag, const bool log_to_console,
+                       const HighsInt log_dev_level, FILE* log_file_stream);
+
   /**
    * @brief Form \f$PBQ=LU\f$ for basis matrix \f$B\f$ or report degree of rank
    * deficiency.
@@ -285,6 +274,7 @@ class HFactor {
   };
 
   bool analyse_build_ = false;
+  bool extra_analyse_build_ = false;
   AnalyseBuild analyse_build_record_;
   HighsValueDistribution analyse_initial_kernel_value_;
   HighsIntValueDistribution analyse_initial_kernel_row_count_;
@@ -450,7 +440,8 @@ class HFactor {
   void reportDoubleVector(const std::string name,
                           const vector<double> entry) const;
   HighsInt getKernelNumNz() const;
-  void analyseActiveKernel(const std::string message = "", const bool report = false);
+  void analyseActiveKernel(const std::string message = "",
+                           const bool report = false);
   void reportKernelValueChange(const std::string message, const HighsInt iRow,
                                const HighsInt iCol, double& track_value);
   void reportMcColumn(const HighsInt num_pivot, const HighsInt iCol) const;
