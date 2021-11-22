@@ -47,7 +47,7 @@ void debugReportMarkSingC(const HighsInt call_id,
 void debugLogRankDeficiency(const HighsInt highs_debug_level,
                             const HighsLogOptions& log_options,
                             const HighsInt rank_deficiency,
-                            const HFactor::AnalyseBuild analyse_build,
+                            const HFactor::AnalyseBuild analyse_build_record,
                             const HighsInt nwork);
 
 void debugPivotValueAnalysis(const HighsInt highs_debug_level,

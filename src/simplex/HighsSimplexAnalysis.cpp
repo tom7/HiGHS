@@ -1193,16 +1193,16 @@ void HighsSimplexAnalysis::updateInvertFormData(const HFactor& factor) {
   assert(analyse_factor_data);
   const bool report_kernel = false;
   num_invert++;
-  assert(factor.analyse_build_.num_nz);
-  double invert_fill_factor = ((1.0 * factor.analyse_build_.invert_num_nz) /
-                               factor.analyse_build_.num_nz);
+  assert(factor.analyse_build_record_.basic_num_nz);
+  double invert_fill_factor = ((1.0 * factor.analyse_build_record_.invert_num_nz) /
+                               factor.analyse_build_record_.basic_num_nz);
   if (report_kernel) printf("INVERT fill = %6.2f", invert_fill_factor);
   sum_invert_fill_factor += invert_fill_factor;
   running_average_invert_fill_factor =
       0.95 * running_average_invert_fill_factor + 0.05 * invert_fill_factor;
 
-  const HighsInt kernel_dim = factor.analyse_build_.num_kernel_pivot -
-                              factor.analyse_build_.num_simple_pivot;
+  const HighsInt kernel_dim = factor.analyse_build_record_.num_kernel_pivot -
+                              factor.analyse_build_record_.num_simple_pivot;
   double kernel_relative_dim = (1.0 * kernel_dim) / numRow;
   if (report_kernel) printf("; kernel dim = %11.4g", kernel_relative_dim);
   if (kernel_dim) {
@@ -1212,13 +1212,9 @@ void HighsSimplexAnalysis::updateInvertFormData(const HFactor& factor) {
     running_average_kernel_dim =
         0.95 * running_average_kernel_dim + 0.05 * kernel_relative_dim;
 
-    HighsInt kernel_invert_num_el =
-        factor.analyse_build_.invert_num_nz -
-        (factor.analyse_build_.num_nz -
-         factor.analyse_build_.kernel_original_num_nz);
-    assert(factor.analyse_build_.kernel_original_num_nz);
-    double kernel_fill_factor = (1.0 * kernel_invert_num_el) /
-                                factor.analyse_build_.kernel_original_num_nz;
+    assert(factor.analyse_build_record_.kernel_initial_num_nz>0);
+    double kernel_fill_factor = (1.0 * factor.analyse_build_record_.kernel_final_num_nz) /
+                                factor.analyse_build_record_.kernel_initial_num_nz;
     sum_kernel_fill_factor += kernel_fill_factor;
     running_average_kernel_fill_factor =
         0.95 * running_average_kernel_fill_factor + 0.05 * kernel_fill_factor;

@@ -89,53 +89,54 @@ class HFactor {
              std::vector<HighsInt>& basic_index,
              const double pivot_threshold = kDefaultPivotThreshold,
              const double pivot_tolerance = kDefaultPivotTolerance,
-             const HighsInt highs_debug_level = kHighsDebugLevelMin,
-             const HighsLogOptions* log_options = NULL);
+             const HighsInt highs_debug_level = kHighsDebugLevelMin);
 
-  void setupGeneral(const HighsSparseMatrix* a_matrix, HighsInt num_basic,
+  void setupGeneral(const HighsSparseMatrix* a_matrix,
+		    HighsInt num_basic,
                     HighsInt* basic_index,
                     const double pivot_threshold = kDefaultPivotThreshold,
                     const double pivot_tolerance = kDefaultPivotTolerance,
-                    const HighsInt highs_debug_level = kHighsDebugLevelMin,
-                    const HighsLogOptions* log_options = NULL);
+                    const HighsInt highs_debug_level = kHighsDebugLevelMin);
 
-  void setup(const HighsInt num_col,   //!< Number of columns
-             const HighsInt num_row,   //!< Number of rows
-             const HighsInt* a_start,  //!< Column starts of constraint matrix
-             const HighsInt* a_index,  //!< Row indices of constraint matrix
-             const double* a_value,    //!< Row values of constraint matrix
-             HighsInt* basic_index,    //!< Indices of basic variables
-             const double pivot_threshold =
-                 kDefaultPivotThreshold,  //!< Pivoting threshold
-             const double pivot_tolerance =
-                 kDefaultPivotTolerance,  //!< Min absolute pivot
+  void setup(const HighsInt num_col,
+             const HighsInt num_row,
+             const HighsInt* a_start,
+             const HighsInt* a_index,
+             const double* a_value,
+             HighsInt* basic_index,
+             const double pivot_threshold = kDefaultPivotThreshold,
+             const double pivot_tolerance =kDefaultPivotTolerance,
              const HighsInt highs_debug_level = kHighsDebugLevelMin,
-             const HighsLogOptions* log_options = NULL,
              const bool use_original_HFactor_logic = true,
              const HighsInt update_method = kUpdateMethodFt);
 
-  void setupGeneral(
-      const HighsInt num_col,  //!< Number of columns
-      const HighsInt num_row,  //!< Number of rows
-      const HighsInt num_basic,
-      const HighsInt* a_start,  //!< Column starts of constraint matrix
-      const HighsInt* a_index,  //!< Row indices of constraint matrix
-      const double* a_value,    //!< Row values of constraint matrix
-      HighsInt* basic_index,    //!< Indices of basic variables
-      const double pivot_threshold =
-          kDefaultPivotThreshold,  //!< Pivoting threshold
-      const double pivot_tolerance =
-          kDefaultPivotTolerance,  //!< Min absolute pivot
-      const HighsInt highs_debug_level = kHighsDebugLevelMin,
-      const HighsLogOptions* log_options = NULL,
-      const bool use_original_HFactor_logic = true,
-      const HighsInt update_method = kUpdateMethodFt);
+  void setupGeneral(const HighsInt num_col,
+		    const HighsInt num_row,
+		    const HighsInt num_basic,
+		    const HighsInt* a_start,
+		    const HighsInt* a_index,
+		    const double* a_value,
+		    HighsInt* basic_index,
+		    const double pivot_threshold =
+		    kDefaultPivotThreshold,
+		    const double pivot_tolerance =
+		    kDefaultPivotTolerance,
+		    const HighsInt highs_debug_level = kHighsDebugLevelMin,
+		    const bool use_original_HFactor_logic = true,
+		    const HighsInt update_method = kUpdateMethodFt);
 
-  void setupMatrix(
-      const HighsInt* a_start,  //!< Column starts of constraint matrix
-      const HighsInt* a_index,  //!< Row indices of constraint matrix
-      const double* a_value);   //!< Row values of constraint matrix
+  void setupMatrix(const HighsInt* a_start,
+		   const HighsInt* a_index,
+		   const double* a_value);
+
   void setupMatrix(const HighsSparseMatrix* a_matrix);
+
+  void setupTimer(HighsTimer& timer,
+		  const double build_time_limit = kHighsInf);
+
+  void setupAnalysis(const HighsLogOptions& log_options,
+		     const HighsInt highs_analysis_level = 0);
+		  
   /**
    * @brief Form \f$PBQ=LU\f$ for basis matrix \f$B\f$ or report degree of rank
    * deficiency.
@@ -255,29 +256,44 @@ class HFactor {
   void reportLu(const HighsInt l_u_or_both = kReportLuBoth,
                 const bool full = true) const;
 
+  void debugReportAnalyseBuild(const HighsLogOptions& log_options,
+			       const std::string message);
+
   // Information required to perform refactorization of the current
   // basis
   RefactorInfo refactor_info_;
+
+  // Timeout value and timer
+  double build_time_limit_;
+  HighsTimer* timer_;
 
   // Data for analysing factorization
   struct AnalyseBuild {
     HighsInt num_row = 0;
     HighsInt num_col = 0;
     HighsInt num_basic = 0;
-    HighsInt num_nz = 0;
+    HighsInt basic_num_nz = 0;
     HighsInt num_simple_pivot = 0;
     HighsInt num_kernel_pivot = 0;
-    HighsInt kernel_original_num_nz = 0;
+    HighsInt kernel_initial_num_nz = 0;
     HighsInt kernel_final_num_nz = 0;
     HighsInt invert_num_nz = 0;
     double sum_merit = 0;
     void clear();
   };
 
+  bool analyse_build_ = false;
+  AnalyseBuild analyse_build_record_;
+  HighsValueDistribution analyse_initial_kernel_value_;
+  HighsIntValueDistribution analyse_initial_kernel_row_count_;
+  HighsIntValueDistribution analyse_initial_kernel_col_count_;
+  HighsValueDistribution analyse_kernel_value_;
+  HighsIntValueDistribution analyse_kernel_row_count_;
+  HighsIntValueDistribution analyse_kernel_col_count_;
   HighsIntValueDistribution analyse_pivot_col_count_;
   HighsIntValueDistribution analyse_pivot_row_count_;
+  HighsIntValueDistribution analyse_pivot_merit_;
   HighsValueDistribution analyse_pivot_value_;
-  AnalyseBuild analyse_build_;
 
   /**
    * Data of the factor
@@ -305,7 +321,7 @@ class HFactor {
     HighsInt log_dev_level;
   };
   std::unique_ptr<LogData> log_data;
-  HighsLogOptions log_options;
+  HighsLogOptions log_options_;
 
   bool use_original_HFactor_logic;
   HighsInt basis_matrix_limit_size;
@@ -316,12 +332,14 @@ class HFactor {
   HighsInt search_limit;
   HighsInt search_count;
   HighsInt other_count_ideal;
-  double merit_ideal;
-  double merit_pivot;
-  double merit_limit;
+  double ideal_merit;
+  double pivot_merit;
+  double limit_merit;
   HighsInt fake_search;
   HighsInt min_col_count;
   HighsInt min_row_count;
+  HighsInt pivot_col_count;
+  HighsInt pivot_row_count;
   // Working buffer
   HighsInt nwork;
   vector<HighsInt> iwork;
@@ -429,10 +447,12 @@ class HFactor {
                        const vector<HighsInt> entry) const;
   void reportDoubleVector(const std::string name,
                           const vector<double> entry) const;
-  void analyseActiveSubmatrix(const std::string message = "") const;
+  HighsInt getKernelNumNz() const;
+  void analyseActiveKernel(const std::string message = "", const bool report = false);
   void reportKernelValueChange(const std::string message, const HighsInt iRow,
                                const HighsInt iCol, double& track_value);
   void reportMcColumn(const HighsInt num_pivot, const HighsInt iCol) const;
+
   void ftranL(HVector& vector, const double expected_density,
               HighsTimerClock* factor_timer_clock_pointer = NULL) const;
   void btranL(HVector& vector, const double expected_density,
@@ -493,22 +513,6 @@ class HFactor {
     double pivot_multiplier = mc_value[idel];
     mc_index[idel] = mc_index[imov];
     mc_value[idel] = mc_value[imov];
-    if (std::fabs(mc_value[idel]) < kHighsTiny) {
-      printf("mc_start[iCol] =     %d\n", (int)mc_start[iCol]);
-      printf("mc_count_a_iCol_og = %d\n", (int)mc_count_a_iCol_og);
-      printf("mc_count_a[iCol] =   %d\n", (int)mc_count_a[iCol]);
-      printf("mc_count_n[iCol] =   %d\n", (int)mc_count_n[iCol]);
-      printf("mc_start[iCol+1] =     %d\n", (int)mc_start[iCol + 1]);
-      printf("idel = %d; imov = %d\n", (int)idel, (int)imov);
-      printf("mc_index.size() = %d\n", (int)mc_index.size());
-      printf("mc_value.size() = %d\n", (int)mc_value.size());
-      printf("mc_count_a.size() = %d\n", (int)mc_count_a.size());
-      printf("mc_count_n.size() = %d\n", (int)mc_count_n.size());
-      printf("colDelete(%6d, %6d) creates value %g\n", (int)iCol, (int)iRow,
-             mc_value[idel]);
-      fflush(stdout);
-      assert(1 == 0);
-    }
     return pivot_multiplier;
   }
 

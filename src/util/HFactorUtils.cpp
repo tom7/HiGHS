@@ -103,35 +103,30 @@ void HFactor::reportDoubleVector(const std::string name,
   printf("\n");
 }
 
-void HFactor::analyseActiveSubmatrix(const std::string message) const {
-  highsLogDev(log_options, HighsLogType::kInfo, "\n%s\n", message.c_str());
-  HighsValueDistribution active_submatrix;
-  HighsIntValueDistribution row_count;
-  HighsIntValueDistribution col_count;
-  initialiseValueDistribution("Active submatrix", "", 1e-20, 1e20, 10.0,
-                              active_submatrix);
-  initialiseValueDistribution("Row counts", "", 1, 16384, 2, row_count);
-  initialiseValueDistribution("Col counts", "", 1, 16384, 2, col_count);
+void HFactor::analyseActiveKernel(const std::string message, const bool report) {
+  if (report)
+    highsLogDev(log_options_, HighsLogType::kInfo, "\n%s\n", message.c_str());
+  initialiseValueDistribution("Kernel value", "", 1e-20, 1e20, 10.0, analyse_kernel_value_);
+  initialiseValueDistribution("Kernel row counts", "", 1, 16384, 2, analyse_kernel_row_count_);
+  initialiseValueDistribution("Kernel col counts", "", 1, 16384, 2, analyse_kernel_col_count_);
   for (HighsInt count = 0; count <= num_row; count++) {
     for (HighsInt j = col_link_first[count]; j != -1; j = col_link_next[j]) {
-      updateValueDistribution(count, col_count);
+      updateValueDistribution(count, analyse_kernel_col_count_);
       HighsInt start = mc_start[j];
       HighsInt end = start + mc_count_a[j];
-      for (HighsInt k = start; k < end; k++) {
-        if (fabs(mc_value[k]) < 1e-16)
-          printf("MC entry %7d gives B(%6d, %6d) = %g\n", (int)k,
-                 (int)mc_index[k], (int)j, mc_value[k]);
-        updateValueDistribution(mc_value[k], active_submatrix);
-      }
+      for (HighsInt k = start; k < end; k++)
+        updateValueDistribution(mc_value[k], analyse_kernel_value_);
     }
   }
   for (HighsInt count = 0; count <= num_basic; count++) {
     for (HighsInt j = row_link_first[count]; j != -1; j = row_link_next[j])
-      updateValueDistribution(count, row_count);
+      updateValueDistribution(count, analyse_kernel_row_count_);
   }
-  logValueDistribution(log_options, active_submatrix);
-  logValueDistribution(log_options, row_count);
-  logValueDistribution(log_options, col_count);
+  if (report) {
+    logValueDistribution(log_options_, analyse_kernel_value_);
+    logValueDistribution(log_options_, analyse_kernel_row_count_);
+    logValueDistribution(log_options_, analyse_kernel_col_count_);
+  }
 }
 
 void HFactor::reportKernelValueChange(const std::string message,
@@ -190,11 +185,55 @@ void HFactor::AnalyseBuild::clear() {
   this->num_row = 0;
   this->num_col = 0;
   this->num_basic = 0;
-  this->num_nz = 0;
+  this->basic_num_nz = 0;
   this->num_simple_pivot = 0;
   this->num_kernel_pivot = 0;
-  this->kernel_original_num_nz = 0;
+  this->kernel_initial_num_nz = 0;
   this->kernel_final_num_nz = 0;
   this->invert_num_nz = 0;
   this->sum_merit = 0;
+}
+
+HighsInt HFactor::getKernelNumNz() const {
+  HighsInt kernel_num_nz = 0;
+  for (HighsInt iCol = 0; iCol < num_basic; iCol++) 
+    kernel_num_nz += mc_count_a[iCol] + mc_count_n[iCol];
+  return kernel_num_nz;
+}
+
+void HFactor::debugReportAnalyseBuild(const HighsLogOptions& local_log_options,
+				      const std::string message) {
+  const HighsInt report_rank_deficiency =
+    analyse_build_record_.num_basic < analyse_build_record_.num_row ?
+			       rank_deficiency - (analyse_build_record_.num_row-analyse_build_record_.num_basic) : rank_deficiency;
+  highsLogDev(local_log_options, HighsLogType::kInfo,
+	      "\n%s has %d rows, %d columns, %d nonzeros and rank deficiency %d\n",
+	      message.c_str(),
+	      (int)analyse_build_record_.num_row,
+	      (int)analyse_build_record_.num_basic,
+	      (int)analyse_build_record_.basic_num_nz,
+	      (int)report_rank_deficiency);
+  highsLogDev(local_log_options, HighsLogType::kInfo,
+	      "   Number of simple pivots = %d\n", (int)analyse_build_record_.num_simple_pivot);
+  if (analyse_build_record_.num_kernel_pivot) {
+    assert(analyse_build_record_.kernel_initial_num_nz>0);
+    const HighsInt kernel_num_row = analyse_build_record_.num_row - analyse_build_record_.num_simple_pivot;
+    const HighsInt kernel_num_col = analyse_build_record_.num_basic - analyse_build_record_.num_simple_pivot;
+    highsLogDev(local_log_options, HighsLogType::kInfo,
+		"   Kernel has %d rows, %d columns, %d nonzeros\n", (int)kernel_num_row, (int)kernel_num_col,
+		analyse_build_record_.kernel_initial_num_nz);
+    highsLogDev(local_log_options, HighsLogType::kInfo,
+		"   Number of kernel pivots = %d\n", (int)analyse_build_record_.num_kernel_pivot);
+    double kernel_fill_factor = (1.0 * analyse_build_record_.kernel_final_num_nz) / analyse_build_record_.kernel_initial_num_nz;
+    highsLogDev(local_log_options, HighsLogType::kInfo,
+		"   Sum of pivot merit = %g (average %g)\n", analyse_build_record_.sum_merit,
+		analyse_build_record_.sum_merit / analyse_build_record_.num_kernel_pivot);
+    highsLogDev(local_log_options, HighsLogType::kInfo,
+		"   Kernel final number of nonzeros = %d: fill factor of %g\n",
+		(int)analyse_build_record_.kernel_final_num_nz, kernel_fill_factor);
+  } 
+  logValueDistribution(local_log_options, analyse_pivot_col_count_);
+  logValueDistribution(local_log_options, analyse_pivot_row_count_);
+  logValueDistribution(local_log_options, analyse_pivot_merit_);
+  logValueDistribution(local_log_options, analyse_pivot_value_);
 }

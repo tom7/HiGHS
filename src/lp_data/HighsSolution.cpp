@@ -841,8 +841,11 @@ void accommodateAlienBasis(HighsLpSolverObject& solver_object) {
   HighsInt num_basic_variables = basic_index.size();
   HFactor factor;
   factor.setupGeneral(&lp.a_matrix_, num_basic_variables, &basic_index[0],
-                      kDefaultPivotThreshold, kDefaultPivotTolerance,
-                      kHighsDebugLevelMin, &options.log_options);
+                      kDefaultPivotThreshold,
+		      kDefaultPivotTolerance,
+                      kHighsDebugLevelMin);
+  factor.setupTimer(solver_object.timer_, options.time_limit);
+  factor.setupAnalysis(options.log_options, options.highs_analysis_level);
   HighsInt rank_deficiency = factor.build();
   // Deduce the basis from basic_index
   //
