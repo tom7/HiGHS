@@ -4196,6 +4196,11 @@ HPresolve::Result HPresolve::removeDependentEquations(
 
   std::vector<HighsInt> colSet(matrix.num_col_);
   std::iota(colSet.begin(), colSet.end(), 0);
+  // Consider performing max value scaling on the matrix
+  HighsScale scale;
+  scale.strategy = kSimplexScaleStrategyMaxValue0157;
+  matrix.considerScaling(*options, scale);
+  // Determine the matrix rank deficiency
   HFactor factor;
   factor.setup(matrix, colSet);
   const bool analyse_build = true;
@@ -4270,6 +4275,11 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
 
   std::vector<HighsInt> colSet(matrix.num_col_);
   std::iota(colSet.begin(), colSet.end(), 0);
+  // Consider performing max value scaling on the matrix
+  HighsScale scale;
+  scale.strategy = kSimplexScaleStrategyMaxValue0157;
+  matrix.considerScaling(*options, scale);
+  // Determine the matrix rank deficiency
   HFactor factor;
   factor.setup(matrix, colSet);
   const bool analyse_build = true;

@@ -642,10 +642,8 @@ HighsStatus HighsSparseMatrix::assess(const HighsLogOptions& log_options,
 
 void HighsSparseMatrix::considerScaling(const HighsOptions& options,
                                         HighsScale& scale) {
-  HighsInt numCol = this->num_col_;
-  HighsInt numRow = this->num_row_;
-  vector<double>& col_scale = scale.col;
-  vector<double>& row_scale = scale.row;
+  HighsInt num_col = this->num_col_;
+  HighsInt num_row = this->num_row_;
   vector<HighsInt>& start = this->start_;
   vector<HighsInt>& index = this->index_;
   vector<double>& value = this->value_;
@@ -653,7 +651,6 @@ void HighsSparseMatrix::considerScaling(const HighsOptions& options,
 
   assert(use_scale_strategy == kSimplexScaleStrategyMaxValue015 ||
          use_scale_strategy == kSimplexScaleStrategyMaxValue0157);
-  const double log2 = log(2.0);
   const double max_allow_scale =
       std::ldexp(1, options.allowed_matrix_scale_factor);
   const double min_allow_scale = 1 / max_allow_scale;
@@ -669,8 +666,8 @@ void HighsSparseMatrix::considerScaling(const HighsOptions& options,
   double original_matrix_max_value = 0;
   // Determine the row scaling. Also determine the max/min row scaling
   // factors, and max/min original matrix values
-  vector<double> row_max_value(numRow, 0);
-  for (HighsInt iCol = 0; iCol < numCol; iCol++) {
+  vector<double> row_max_value(num_row, 0);
+  for (HighsInt iCol = 0; iCol < num_col; iCol++) {
     for (HighsInt k = start[iCol]; k < start[iCol + 1]; k++) {
       const HighsInt iRow = index[k];
       const double abs_value = fabs(value[k]);
@@ -693,7 +690,11 @@ void HighsSparseMatrix::considerScaling(const HighsOptions& options,
     scale.clear();
     return;
   }
-  for (HighsInt iRow = 0; iRow < numRow; iRow++) {
+  vector<double>& col_scale = scale.col;
+  vector<double>& row_scale = scale.row;
+  col_scale.assign(num_col, 1);
+  row_scale.assign(num_row, 1);
+  for (HighsInt iRow = 0; iRow < num_row; iRow++) {
     if (row_max_value[iRow]) {
       // Convert the row maximum value to the nearest power of two
       // scaling, and ensure that it is not excessively large or small
@@ -712,7 +713,7 @@ void HighsSparseMatrix::considerScaling(const HighsOptions& options,
   double max_col_scale = 0;
   double matrix_min_value = kHighsInf;
   double matrix_max_value = 0;
-  for (HighsInt iCol = 0; iCol < numCol; iCol++) {
+  for (HighsInt iCol = 0; iCol < num_col; iCol++) {
     double col_max_value = 0;
     for (HighsInt k = start[iCol]; k < start[iCol + 1]; k++) {
       const HighsInt iRow = index[k];
@@ -751,7 +752,7 @@ void HighsSparseMatrix::considerScaling(const HighsOptions& options,
 
   if (poor_improvement) {
     // Unscale the matrix
-    for (HighsInt iCol = 0; iCol < numCol; iCol++) {
+    for (HighsInt iCol = 0; iCol < num_col; iCol++) {
       for (HighsInt k = start[iCol]; k < start[iCol + 1]; k++) {
         HighsInt iRow = index[k];
         value[k] /= (col_scale[iCol] * row_scale[iRow]);
