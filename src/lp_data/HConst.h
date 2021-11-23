@@ -36,6 +36,9 @@ const double kRunningAverageMultiplier = 0.05;
 const HighsInt kHighsPrereleaseRowDualSign = -1;
 const bool kExtendInvertWhenAddingRows = false;
 
+const double kOriginalMatrixMinValueForNoScaling = 0.2;
+const double kOriginalMatrixMaxValueForNoScaling = 5.0;
+
 enum SimplexScaleStrategy {
   kSimplexScaleStrategyMin = 0,
   kSimplexScaleStrategyOff = kSimplexScaleStrategyMin,  // 0

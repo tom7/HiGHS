@@ -91,7 +91,7 @@ void HighsLp::resetScale() {
   //  const bool dimensions_ok =
   //    this->scale_.num_col_ == this->num_col_ &&
   //    this->scale_.num_row_ == this->num_row_;
-  this->clearScale();
+  this->scale_.clear();
 }
 
 bool HighsLp::dimensionsOk(std::string message) const {
@@ -247,24 +247,14 @@ void HighsLp::clear() {
 
   this->integrality_.clear();
 
-  this->clearScale();
+  this->scale_.clear();
   this->is_scaled_ = false;
   this->is_moved_ = false;
 }
 
-void HighsLp::clearScale() {
-  this->scale_.strategy = kSimplexScaleStrategyOff;
-  this->scale_.has_scaling = false;
-  this->scale_.num_col = 0;
-  this->scale_.num_row = 0;
-  this->scale_.cost = 0;
-  this->scale_.col.clear();
-  this->scale_.row.clear();
-}
-
 void HighsLp::clearScaling() {
   this->unapplyScale();
-  this->clearScale();
+  this->scale_.clear();
 }
 
 void HighsLp::applyScale() {

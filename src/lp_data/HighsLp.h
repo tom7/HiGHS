@@ -63,7 +63,6 @@ class HighsLp {
   void ensureRowwise() { this->a_matrix_.ensureRowwise(); };
   void clearScaling();
   void resetScale();
-  void clearScale();
   void applyScale();
   void unapplyScale();
   void moveBackLpAndUnapplyScaling(HighsLp lp);

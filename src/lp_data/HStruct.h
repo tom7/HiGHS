@@ -73,6 +73,7 @@ struct HighsScale {
   double cost;
   std::vector<double> col;
   std::vector<double> row;
+  void clear();
 };
 
 #endif /* LP_DATA_HSTRUCT_H_ */

@@ -68,10 +68,11 @@ class HighsSparseMatrix {
                      const std::string matrix_name,
                      const double small_matrix_value,
                      const double large_matrix_value);
-  void considerColScaling(const HighsInt max_scale_factor_exponent,
-                          double* col_scale);
-  void considerRowScaling(const HighsInt max_scale_factor_exponent,
-                          double* row_scale);
+  void considerScaling(const HighsOptions& options, HighsScale& scale);
+  void performColScaling(const HighsInt max_scale_factor_exponent,
+                         double* col_scale);
+  void performRowScaling(const HighsInt max_scale_factor_exponent,
+                         double* row_scale);
   void scaleCol(const HighsInt col, const double colScale);
   void scaleRow(const HighsInt row, const double rowScale);
   void applyScale(const HighsScale& scale);

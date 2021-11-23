@@ -466,14 +466,12 @@ void scaleLp(const HighsOptions& options, HighsLp& lp) {
   bool allow_cost_scaling = options.allowed_cost_scale_factor > 0;
   // Find out range of matrix values and skip matrix scaling if all
   // |values| are in [0.2, 5]
-  const double no_scaling_original_matrix_min_value = 0.2;
-  const double no_scaling_original_matrix_max_value = 5.0;
   double original_matrix_min_value = kHighsInf;
   double original_matrix_max_value = 0;
   lp.a_matrix_.range(original_matrix_min_value, original_matrix_max_value);
   bool no_scaling =
-      (original_matrix_min_value >= no_scaling_original_matrix_min_value) &&
-      (original_matrix_max_value <= no_scaling_original_matrix_max_value);
+      (original_matrix_min_value >= kOriginalMatrixMinValueForNoScaling) &&
+      (original_matrix_max_value <= kOriginalMatrixMaxValueForNoScaling);
   const bool force_scaling = false;
   if (force_scaling) {
     no_scaling = false;
@@ -487,8 +485,8 @@ void scaleLp(const HighsOptions& options, HighsLp& lp) {
                   "Scaling: Matrix has [min, max] values of [%g, %g] within "
                   "[%g, %g] so no scaling performed\n",
                   original_matrix_min_value, original_matrix_max_value,
-                  no_scaling_original_matrix_min_value,
-                  no_scaling_original_matrix_max_value);
+                  kOriginalMatrixMinValueForNoScaling,
+                  kOriginalMatrixMaxValueForNoScaling);
   } else {
     // Try scaling, so assign unit factors - partly because initial
     // factors may be assumed by the scaling method, but also because
@@ -505,7 +503,9 @@ void scaleLp(const HighsOptions& options, HighsLp& lp) {
     if (equilibration_scaling) {
       scaled_matrix = equilibrationScaleMatrix(options, lp, use_scale_strategy);
     } else {
-      scaled_matrix = maxValueScaleMatrix(options, lp, use_scale_strategy);
+      scale.strategy = use_scale_strategy;
+      maxValueScaleMatrix(options, lp);
+      scaled_matrix = scale.has_scaling;
     }
     if (scaled_matrix) {
       // Matrix is scaled, so scale the bounds and costs
@@ -857,134 +857,8 @@ bool equilibrationScaleMatrix(const HighsOptions& options, HighsLp& lp,
   return true;
 }
 
-bool maxValueScaleMatrix(const HighsOptions& options, HighsLp& lp,
-                         const HighsInt use_scale_strategy) {
-  HighsInt numCol = lp.num_col_;
-  HighsInt numRow = lp.num_row_;
-  HighsScale& scale = lp.scale_;
-  vector<double>& colScale = scale.col;
-  vector<double>& rowScale = scale.row;
-  vector<HighsInt>& Astart = lp.a_matrix_.start_;
-  vector<HighsInt>& Aindex = lp.a_matrix_.index_;
-  vector<double>& Avalue = lp.a_matrix_.value_;
-
-  HighsInt simplex_scale_strategy = use_scale_strategy;
-
-  assert(options.simplex_scale_strategy == kSimplexScaleStrategyMaxValue015 ||
-         options.simplex_scale_strategy == kSimplexScaleStrategyMaxValue0157);
-  const double log2 = log(2.0);
-  const double max_allow_scale = pow(2.0, options.allowed_matrix_scale_factor);
-  const double min_allow_scale = 1 / max_allow_scale;
-
-  const double min_allow_col_scale = min_allow_scale;
-  const double max_allow_col_scale = max_allow_scale;
-  const double min_allow_row_scale = min_allow_scale;
-  const double max_allow_row_scale = max_allow_scale;
-
-  double min_row_scale = kHighsInf;
-  double max_row_scale = 0;
-  double original_matrix_min_value = kHighsInf;
-  double original_matrix_max_value = 0;
-  // Determine the row scaling. Also determine the max/min row scaling
-  // factors, and max/min original matrix values
-  vector<double> row_max_value(numRow, 0);
-  for (HighsInt iCol = 0; iCol < numCol; iCol++) {
-    for (HighsInt k = Astart[iCol]; k < Astart[iCol + 1]; k++) {
-      const HighsInt iRow = Aindex[k];
-      const double value = fabs(Avalue[k]);
-      row_max_value[iRow] = max(row_max_value[iRow], value);
-      original_matrix_min_value = min(original_matrix_min_value, value);
-      original_matrix_max_value = max(original_matrix_max_value, value);
-    }
-  }
-  for (HighsInt iRow = 0; iRow < numRow; iRow++) {
-    if (row_max_value[iRow]) {
-      double row_scale_value = 1 / row_max_value[iRow];
-      // Convert the row scale factor to the nearest power of two, and
-      // ensure that it is not excessively large or small
-      row_scale_value = pow(2.0, floor(log(row_scale_value) / log2 + 0.5));
-      row_scale_value =
-          min(max(min_allow_row_scale, row_scale_value), max_allow_row_scale);
-      min_row_scale = min(row_scale_value, min_row_scale);
-      max_row_scale = max(row_scale_value, max_row_scale);
-      rowScale[iRow] = row_scale_value;
-    }
-  }
-  // Determine the column scaling, whilst applying the row scaling
-  // Also determine the max/min column scaling factors, and max/min
-  // matrix values
-  double min_col_scale = kHighsInf;
-  double max_col_scale = 0;
-  double matrix_min_value = kHighsInf;
-  double matrix_max_value = 0;
-  for (HighsInt iCol = 0; iCol < numCol; iCol++) {
-    double col_max_value = 0;
-    for (HighsInt k = Astart[iCol]; k < Astart[iCol + 1]; k++) {
-      const HighsInt iRow = Aindex[k];
-      Avalue[k] *= rowScale[iRow];
-      const double value = fabs(Avalue[k]);
-      col_max_value = max(col_max_value, value);
-    }
-    if (col_max_value) {
-      double col_scale_value = 1 / col_max_value;
-      // Convert the col scale factor to the nearest power of two, and
-      // ensure that it is not excessively large or small
-      col_scale_value = pow(2.0, floor(log(col_scale_value) / log2 + 0.5));
-      col_scale_value =
-          min(max(min_allow_col_scale, col_scale_value), max_allow_col_scale);
-      min_col_scale = min(col_scale_value, min_col_scale);
-      max_col_scale = max(col_scale_value, max_col_scale);
-      colScale[iCol] = col_scale_value;
-      for (HighsInt k = Astart[iCol]; k < Astart[iCol + 1]; k++) {
-        Avalue[k] *= colScale[iCol];
-        const double value = fabs(Avalue[k]);
-        matrix_min_value = min(matrix_min_value, value);
-        matrix_max_value = max(matrix_max_value, value);
-      }
-    }
-  }
-  const double matrix_value_ratio = matrix_max_value / matrix_min_value;
-  const double original_matrix_value_ratio =
-      original_matrix_max_value / original_matrix_min_value;
-  const double matrix_value_ratio_improvement =
-      original_matrix_value_ratio / matrix_value_ratio;
-
-  const double improvement_factor = matrix_value_ratio_improvement;
-
-  const double improvement_factor_required = 1.0;
-  const bool poor_improvement =
-      improvement_factor < improvement_factor_required;
-
-  if (poor_improvement) {
-    // Unscale the matrix
-    for (HighsInt iCol = 0; iCol < numCol; iCol++) {
-      for (HighsInt k = Astart[iCol]; k < Astart[iCol + 1]; k++) {
-        HighsInt iRow = Aindex[k];
-        Avalue[k] /= (colScale[iCol] * rowScale[iRow]);
-      }
-    }
-    if (options.highs_analysis_level)
-      highsLogDev(options.log_options, HighsLogType::kInfo,
-                  "Scaling: Improvement factor %0.4g < %0.4g required, so no "
-                  "scaling applied\n",
-                  improvement_factor, improvement_factor_required);
-    return false;
-  } else {
-    if (options.highs_analysis_level) {
-      highsLogDev(options.log_options, HighsLogType::kInfo,
-                  "Scaling: Factors are in [%0.4g, %0.4g] for columns and in "
-                  "[%0.4g, %0.4g] for rows\n",
-                  min_col_scale, max_col_scale, min_row_scale, max_row_scale);
-      highsLogDev(
-          options.log_options, HighsLogType::kInfo,
-          "Scaling: Yields [min, max, ratio] matrix values of [%0.4g, %0.4g, "
-          "%0.4g]; Originally [%0.4g, %0.4g, %0.4g]: Improvement of %0.4g\n",
-          matrix_min_value, matrix_max_value, matrix_value_ratio,
-          original_matrix_min_value, original_matrix_max_value,
-          original_matrix_value_ratio, matrix_value_ratio_improvement);
-    }
-    return true;
-  }
+void maxValueScaleMatrix(const HighsOptions& options, HighsLp& lp) {
+  lp.a_matrix_.considerScaling(options, lp.scale_);
 }
 
 HighsStatus applyScalingToLpCol(HighsLp& lp, const HighsInt col,
@@ -2422,4 +2296,14 @@ void removeRowsOfCountOne(const HighsLogOptions& log_options, HighsLp& lp) {
   assert(original_num_nz - num_nz == num_row_count_1);
   highsLogUser(log_options, HighsLogType::kWarning,
                "Removed %d rows of count 1\n", (int)num_row_count_1);
+}
+
+void HighsScale::clear() {
+  this->strategy = kSimplexScaleStrategyOff;
+  this->has_scaling = false;
+  this->num_col = 0;
+  this->num_row = 0;
+  this->cost = 0;
+  this->col.clear();
+  this->row.clear();
 }

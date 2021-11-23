@@ -2065,7 +2065,7 @@ HighsPresolveStatus Highs::runPresolve() {
       presolve_.info_.n_nnz_removed = (HighsInt)original_lp.a_matrix_.numNz() -
                                       (HighsInt)reduced_lp.a_matrix_.numNz();
       // Clear any scaling information inherited by the reduced LP
-      reduced_lp.clearScale();
+      reduced_lp.scale_.clear();
       assert(reduced_lp.dimensionsOk("RunPresolve: reduced_lp"));
       break;
     }

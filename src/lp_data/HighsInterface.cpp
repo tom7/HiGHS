@@ -117,9 +117,9 @@ HighsStatus Highs::addColsInterface(HighsInt XnumNewCol, const double* XcolCost,
     scale.num_col = newNumCol;
     // Apply the existing row scaling to the new columns
     local_a_matrix.applyRowScale(scale);
-    // Consider applying column scaling to the new columns.
-    local_a_matrix.considerColScaling(options.allowed_matrix_scale_factor,
-                                      &scale.col[lp.num_col_]);
+    // Perform column scaling on the new columns.
+    local_a_matrix.performColScaling(options.allowed_matrix_scale_factor,
+                                     &scale.col[lp.num_col_]);
   }
   // Update the basis correponding to new nonbasic columns
   if (valid_basis) appendNonbasicColsToBasisInterface(XnumNewCol);
@@ -231,9 +231,9 @@ HighsStatus Highs::addRowsInterface(HighsInt XnumNewRow,
     scale.num_row = newNumRow;
     // Apply the existing column scaling to the new rows
     local_ar_matrix.applyColScale(scale);
-    // Consider applying row scaling to the new rows.
-    local_ar_matrix.considerRowScaling(options.allowed_matrix_scale_factor,
-                                       &scale.row[lp.num_row_]);
+    // Perform row scaling on the new rows.
+    local_ar_matrix.performRowScaling(options.allowed_matrix_scale_factor,
+                                      &scale.row[lp.num_row_]);
   }
   // Update the basis correponding to new basic rows
   if (valid_basis) appendBasicRowsToBasisInterface(XnumNewRow);
