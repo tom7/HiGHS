@@ -654,7 +654,8 @@ void HighsSparseMatrix::considerScaling(const HighsOptions& options,
   assert(use_scale_strategy == kSimplexScaleStrategyMaxValue015 ||
          use_scale_strategy == kSimplexScaleStrategyMaxValue0157);
   const double log2 = log(2.0);
-  const double max_allow_scale = std::ldexp(1, options.allowed_matrix_scale_factor);
+  const double max_allow_scale =
+      std::ldexp(1, options.allowed_matrix_scale_factor);
   const double min_allow_scale = 1 / max_allow_scale;
 
   const double min_allow_col_scale = min_allow_scale;
