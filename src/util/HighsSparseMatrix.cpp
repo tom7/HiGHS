@@ -644,17 +644,17 @@ void HighsSparseMatrix::considerScaling(const HighsOptions& options,
                                         HighsScale& scale) {
   HighsInt numCol = this->num_col_;
   HighsInt numRow = this->num_row_;
-  vector<double>& colScale = scale.col;
-  vector<double>& rowScale = scale.row;
-  vector<HighsInt>& Astart = this->start_;
-  vector<HighsInt>& Aindex = this->index_;
-  vector<double>& Avalue = this->value_;
+  vector<double>& col_scale = scale.col;
+  vector<double>& row_scale = scale.row;
+  vector<HighsInt>& start = this->start_;
+  vector<HighsInt>& index = this->index_;
+  vector<double>& value = this->value_;
   const HighsInt use_scale_strategy = scale.strategy;
 
   assert(use_scale_strategy == kSimplexScaleStrategyMaxValue015 ||
          use_scale_strategy == kSimplexScaleStrategyMaxValue0157);
   const double log2 = log(2.0);
-  const double max_allow_scale = pow(2.0, options.allowed_matrix_scale_factor);
+  const double max_allow_scale = std::ldexp(1, options.allowed_matrix_scale_factor);
   const double min_allow_scale = 1 / max_allow_scale;
 
   const double min_allow_col_scale = min_allow_scale;
@@ -670,12 +670,12 @@ void HighsSparseMatrix::considerScaling(const HighsOptions& options,
   // factors, and max/min original matrix values
   vector<double> row_max_value(numRow, 0);
   for (HighsInt iCol = 0; iCol < numCol; iCol++) {
-    for (HighsInt k = Astart[iCol]; k < Astart[iCol + 1]; k++) {
-      const HighsInt iRow = Aindex[k];
-      const double value = fabs(Avalue[k]);
-      row_max_value[iRow] = max(row_max_value[iRow], value);
-      original_matrix_min_value = min(original_matrix_min_value, value);
-      original_matrix_max_value = max(original_matrix_max_value, value);
+    for (HighsInt k = start[iCol]; k < start[iCol + 1]; k++) {
+      const HighsInt iRow = index[k];
+      const double abs_value = fabs(value[k]);
+      row_max_value[iRow] = max(row_max_value[iRow], abs_value);
+      original_matrix_min_value = min(original_matrix_min_value, abs_value);
+      original_matrix_max_value = max(original_matrix_max_value, abs_value);
     }
   }
   const bool no_scaling =
@@ -701,7 +701,7 @@ void HighsSparseMatrix::considerScaling(const HighsOptions& options,
           min(max(min_allow_row_scale, row_scale_value), max_allow_row_scale);
       min_row_scale = min(row_scale_value, min_row_scale);
       max_row_scale = max(row_scale_value, max_row_scale);
-      rowScale[iRow] = row_scale_value;
+      row_scale[iRow] = row_scale_value;
     }
   }
   // Determine the column scaling, whilst applying the row scaling
@@ -713,27 +713,26 @@ void HighsSparseMatrix::considerScaling(const HighsOptions& options,
   double matrix_max_value = 0;
   for (HighsInt iCol = 0; iCol < numCol; iCol++) {
     double col_max_value = 0;
-    for (HighsInt k = Astart[iCol]; k < Astart[iCol + 1]; k++) {
-      const HighsInt iRow = Aindex[k];
-      Avalue[k] *= rowScale[iRow];
-      const double value = fabs(Avalue[k]);
-      col_max_value = max(col_max_value, value);
+    for (HighsInt k = start[iCol]; k < start[iCol + 1]; k++) {
+      const HighsInt iRow = index[k];
+      value[k] *= row_scale[iRow];
+      const double abs_value = fabs(value[k]);
+      col_max_value = max(col_max_value, abs_value);
     }
     if (col_max_value) {
       // Convert the col maximum value to the nearest power of two
       // scaking, and ensure that it is not excessively large or small
       double col_scale_value = nearestPowerOfTwoScale(col_max_value);
-      col_scale_value = pow(2.0, floor(log(col_scale_value) / log2 + 0.5));
       col_scale_value =
           min(max(min_allow_col_scale, col_scale_value), max_allow_col_scale);
       min_col_scale = min(col_scale_value, min_col_scale);
       max_col_scale = max(col_scale_value, max_col_scale);
-      colScale[iCol] = col_scale_value;
-      for (HighsInt k = Astart[iCol]; k < Astart[iCol + 1]; k++) {
-        Avalue[k] *= colScale[iCol];
-        const double value = fabs(Avalue[k]);
-        matrix_min_value = min(matrix_min_value, value);
-        matrix_max_value = max(matrix_max_value, value);
+      col_scale[iCol] = col_scale_value;
+      for (HighsInt k = start[iCol]; k < start[iCol + 1]; k++) {
+        value[k] *= col_scale[iCol];
+        const double abs_value = fabs(value[k]);
+        matrix_min_value = min(matrix_min_value, abs_value);
+        matrix_max_value = max(matrix_max_value, abs_value);
       }
     }
   }
@@ -752,9 +751,9 @@ void HighsSparseMatrix::considerScaling(const HighsOptions& options,
   if (poor_improvement) {
     // Unscale the matrix
     for (HighsInt iCol = 0; iCol < numCol; iCol++) {
-      for (HighsInt k = Astart[iCol]; k < Astart[iCol + 1]; k++) {
-        HighsInt iRow = Aindex[k];
-        Avalue[k] /= (colScale[iCol] * rowScale[iRow]);
+      for (HighsInt k = start[iCol]; k < start[iCol + 1]; k++) {
+        HighsInt iRow = index[k];
+        value[k] /= (col_scale[iCol] * row_scale[iRow]);
       }
     }
     if (options.highs_analysis_level)
@@ -855,41 +854,41 @@ void HighsSparseMatrix::performRowScaling(
   }
 }
 
-void HighsSparseMatrix::scaleCol(const HighsInt col, const double colScale) {
+void HighsSparseMatrix::scaleCol(const HighsInt col, const double col_scale) {
   assert(this->formatOk());
   assert(col >= 0);
   assert(col < this->num_col_);
-  assert(colScale);
+  assert(col_scale);
 
   if (this->isColwise()) {
     for (HighsInt iEl = this->start_[col]; iEl < this->start_[col + 1]; iEl++)
-      this->value_[iEl] *= colScale;
+      this->value_[iEl] *= col_scale;
   } else {
     for (HighsInt iRow = 0; iRow < this->num_row_; iRow++) {
       for (HighsInt iEl = this->start_[iRow]; iEl < this->start_[iRow + 1];
            iEl++) {
-        if (this->index_[iEl] == col) this->value_[iEl] *= colScale;
+        if (this->index_[iEl] == col) this->value_[iEl] *= col_scale;
       }
     }
   }
 }
 
-void HighsSparseMatrix::scaleRow(const HighsInt row, const double rowScale) {
+void HighsSparseMatrix::scaleRow(const HighsInt row, const double row_scale) {
   assert(this->formatOk());
   assert(row >= 0);
   assert(row < this->num_row_);
-  assert(rowScale);
+  assert(row_scale);
 
   if (this->isColwise()) {
     for (HighsInt iCol = 0; iCol < this->num_col_; iCol++) {
       for (HighsInt iEl = this->start_[iCol]; iEl < this->start_[iCol + 1];
            iEl++) {
-        if (this->index_[iEl] == row) this->value_[iEl] *= rowScale;
+        if (this->index_[iEl] == row) this->value_[iEl] *= row_scale;
       }
     }
   } else {
     for (HighsInt iEl = this->start_[row]; iEl < this->start_[row + 1]; iEl++)
-      this->value_[iEl] *= rowScale;
+      this->value_[iEl] *= row_scale;
   }
 }
 
