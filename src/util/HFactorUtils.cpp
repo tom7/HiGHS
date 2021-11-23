@@ -103,10 +103,27 @@ void HFactor::reportDoubleVector(const std::string name,
   printf("\n");
 }
 
-void HFactor::analyseActiveKernel(const std::string message,
-                                  const bool report) {
-  if (report)
-    highsLogDev(log_options_, HighsLogType::kInfo, "\n%s\n", message.c_str());
+void HFactor::analyseActiveKernelCounts(const std::string message) {
+  HighsInt local_min_col_count = kHighsIInf;
+  HighsInt local_max_col_count = 0;
+  HighsInt local_min_row_count = kHighsIInf;
+  HighsInt local_max_row_count = 0;
+  for (HighsInt count = 0; count < num_row; count++) {
+    if (col_link_first[count] < 0) continue;
+    local_min_col_count = std::min(count, local_min_col_count);
+    local_max_col_count = std::max(count, local_max_col_count);
+  }
+  for (HighsInt count = 0; count < num_basic; count++) {
+    if (row_link_first[count] < 0) continue;
+    local_min_row_count = std::min(count, local_min_row_count);
+    local_max_row_count = std::max(count, local_max_row_count);
+  }
+  printf("%s: col_counts in [%3d, %4d]; row_counts in [%3d, %4d]\n",
+         message.c_str(), (int)local_min_col_count, (int)local_max_col_count,
+         (int)local_min_row_count, (int)local_max_row_count);
+}
+
+void HFactor::analyseActiveKernel(const bool report) {
   initialiseValueDistribution("Kernel value", "", 1e-20, 1e20, 10.0,
                               analyse_kernel_value_);
   initialiseValueDistribution("Kernel row counts", "", 1, 16384, 2,
@@ -133,56 +150,14 @@ void HFactor::analyseActiveKernel(const std::string message,
   }
 }
 
-void HFactor::reportKernelValueChange(const std::string message,
-                                      const HighsInt iRow, const HighsInt iCol,
-                                      double& track_value) {
-  if (iRow < 0 || iCol < 0) return;
-  double latest_value = 0;
-  HighsInt start = mc_start[iCol];
-  HighsInt end = start + mc_count_a[iCol];
-  for (HighsInt k = start; k < end; k++) {
-    if (mc_index[k] == iRow) {
-      latest_value = mc_value[k];
-      break;
-    }
-  }
-  if (track_value != latest_value)
-    printf("\n%s: Change of %11.4g in B(%6d, %6d) to %11.4g\n", message.c_str(),
-           latest_value - track_value, (int)iRow, (int)iCol, latest_value);
-  track_value = latest_value;
-}
-
-void HFactor::reportMcColumn(const HighsInt num_pivot,
-                             const HighsInt iCol) const {
-  if (iCol >= num_basic) return;
-  const HighsInt iCol_start = mc_start[iCol];
-  const HighsInt iCol_count_a = mc_count_a[iCol];
-  HighsInt next_col = -1;
-  HighsInt next_start = kHighsIInf;
-  const HighsInt num_mc_col = mc_start.size();
-  assert(num_mc_col == num_basic);
-  for (HighsInt i = 0; i < num_basic; i++) {
-    if (mc_start[i] > iCol_start && mc_start[i] < next_start) {
-      next_col = i;
-      next_start = mc_start[i];
-    }
-  }
-  printf(
-      "McColumn %d: (Pivot %6d) Var %6d; Start %8d; Count(A %3d; N %3d); Space "
-      "%6d: Next col is %6d; Start %8d",
-      (int)iCol, (int)num_pivot, (int)mc_var[iCol], (int)mc_start[iCol],
-      (int)mc_count_a[iCol], (int)mc_count_n[iCol], (int)mc_space[iCol],
-      (int)next_col, (int)next_start);
-  HighsInt en = 0;
-  for (HighsInt iEl = mc_start[iCol]; iEl < mc_start[iCol] + mc_count_a[iCol];
-       iEl++) {
-    if (en % 5 == 0) printf("\n");
-    en++;
-    printf("[%6d %11.4g] ", (int)mc_index[iEl], mc_value[iEl]);
-  }
+void HFactor::analyseActiveKernelFinal() {
+  std::string GE_stage_name = "GE final";
+  analyseActiveKernelCounts(GE_stage_name);
+  analyseActiveKernel(true);
+  analyse_kernel_value_.distribution_name_ += " (final)";
+  analyse_kernel_row_count_.distribution_name_ += " (final)";
+  analyse_kernel_col_count_.distribution_name_ += " (final)";
   printf("\n");
-  fflush(stdout);
-  assert(iCol_start + iCol_count_a <= next_start);
 }
 
 void HFactor::AnalyseBuild::clear() {
@@ -193,6 +168,7 @@ void HFactor::AnalyseBuild::clear() {
   this->num_simple_pivot = 0;
   this->num_kernel_pivot = 0;
   this->kernel_initial_num_nz = 0;
+  this->kernel_max_num_nz = 0;
   this->kernel_final_num_nz = 0;
   this->invert_num_nz = 0;
   this->sum_merit = 0;
@@ -223,6 +199,9 @@ void HFactor::debugReportAnalyseBuild(const std::string message) {
               "   Number of simple pivots = %d\n",
               (int)analyse_build_record_.num_simple_pivot);
   if (analyse_build_record_.num_kernel_pivot) {
+    logValueDistribution(this->log_options_, analyse_initial_kernel_value_);
+    logValueDistribution(this->log_options_, analyse_initial_kernel_row_count_);
+    logValueDistribution(this->log_options_, analyse_initial_kernel_col_count_);
     assert(analyse_build_record_.kernel_initial_num_nz > 0);
     const HighsInt kernel_num_row =
         analyse_build_record_.num_row - analyse_build_record_.num_simple_pivot;
@@ -235,18 +214,27 @@ void HFactor::debugReportAnalyseBuild(const std::string message) {
     highsLogDev(this->log_options_, HighsLogType::kInfo,
                 "   Number of kernel pivots = %d\n",
                 (int)analyse_build_record_.num_kernel_pivot);
-    double kernel_fill_factor =
-        (1.0 * analyse_build_record_.kernel_final_num_nz) /
-        analyse_build_record_.kernel_initial_num_nz;
     highsLogDev(this->log_options_, HighsLogType::kInfo,
                 "   Sum of pivot merit = %g (average %g)\n",
                 analyse_build_record_.sum_merit,
                 analyse_build_record_.sum_merit /
                     analyse_build_record_.num_kernel_pivot);
+    double kernel_fill_factor =
+        (1.0 * analyse_build_record_.kernel_max_num_nz) /
+        analyse_build_record_.kernel_initial_num_nz;
+    highsLogDev(this->log_options_, HighsLogType::kInfo,
+                "   Kernel max   number of nonzeros = %d: fill factor of %g\n",
+                (int)analyse_build_record_.kernel_max_num_nz,
+                kernel_fill_factor);
+    kernel_fill_factor = (1.0 * analyse_build_record_.kernel_final_num_nz) /
+                         analyse_build_record_.kernel_initial_num_nz;
     highsLogDev(this->log_options_, HighsLogType::kInfo,
                 "   Kernel final number of nonzeros = %d: fill factor of %g\n",
                 (int)analyse_build_record_.kernel_final_num_nz,
                 kernel_fill_factor);
+    logValueDistribution(this->log_options_, analyse_kernel_value_);
+    logValueDistribution(this->log_options_, analyse_kernel_row_count_);
+    logValueDistribution(this->log_options_, analyse_kernel_col_count_);
     logValueDistribution(this->log_options_, analyse_pivot_col_count_);
     logValueDistribution(this->log_options_, analyse_pivot_row_count_);
     logValueDistribution(this->log_options_, analyse_pivot_merit_);

@@ -267,6 +267,7 @@ class HFactor {
     HighsInt num_simple_pivot = 0;
     HighsInt num_kernel_pivot = 0;
     HighsInt kernel_initial_num_nz = 0;
+    HighsInt kernel_max_num_nz = 0;
     HighsInt kernel_final_num_nz = 0;
     HighsInt invert_num_nz = 0;
     double sum_merit = 0;
@@ -416,13 +417,9 @@ class HFactor {
   void buildSimple();
   HighsInt buildKernel();
   void findPivotColSearch(bool& found_pivot, const HighsInt count,
-                          HighsInt& jColPivot, HighsInt& iRowPivot,
-                          const std::string GE_stage_name = "",
-                          const bool report_search = false);
+                          HighsInt& jColPivot, HighsInt& iRowPivot);
   void findPivotRowSearch(bool& found_pivot, const HighsInt count,
-                          HighsInt& jColPivot, HighsInt& iRowPivot,
-                          const std::string GE_stage_name = "",
-                          const bool report_search = false);
+                          HighsInt& jColPivot, HighsInt& iRowPivot);
   void buildHandleRankDeficiency();
   void buildReportRankDeficiency();
   void buildMarkSingC();
@@ -440,11 +437,9 @@ class HFactor {
   void reportDoubleVector(const std::string name,
                           const vector<double> entry) const;
   HighsInt getKernelNumNz() const;
-  void analyseActiveKernel(const std::string message = "",
-                           const bool report = false);
-  void reportKernelValueChange(const std::string message, const HighsInt iRow,
-                               const HighsInt iCol, double& track_value);
-  void reportMcColumn(const HighsInt num_pivot, const HighsInt iCol) const;
+  void analyseActiveKernelCounts(const std::string message);
+  void analyseActiveKernel(const bool report = false);
+  void analyseActiveKernelFinal();
 
   void ftranL(HVector& vector, const double expected_density,
               HighsTimerClock* factor_timer_clock_pointer = NULL) const;
