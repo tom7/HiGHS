@@ -118,10 +118,10 @@ void HFactor::analyseActiveKernelCounts(const std::string message) {
     local_min_row_count = std::min(count, local_min_row_count);
     local_max_row_count = std::max(count, local_max_row_count);
   }
-  if (local_min_col_count < kHighsIInf) 
+  if (local_min_col_count < kHighsIInf)
     printf("%s: col_counts in [%3d, %4d]; row_counts in [%3d, %4d]\n",
-	   message.c_str(), (int)local_min_col_count, (int)local_max_col_count,
-	   (int)local_min_row_count, (int)local_max_row_count);
+           message.c_str(), (int)local_min_col_count, (int)local_max_col_count,
+           (int)local_min_row_count, (int)local_max_row_count);
 }
 
 void HFactor::analyseActiveKernel(const bool report) {
@@ -244,13 +244,14 @@ void HFactor::debugReportAnalyseBuild(const std::string message) {
   }
 }
 
-void HFactor::getKernelDimAndFill(HighsInt& kernel_dim, double& kernel_fill_in) const {
+void HFactor::getKernelDimAndFill(HighsInt& kernel_dim,
+                                  double& kernel_fill_in) const {
   kernel_dim = num_row - analyse_build_record_.num_simple_pivot;
   const HighsInt initial_nz = analyse_build_record_.kernel_initial_num_nz;
   const HighsInt final_nz = analyse_build_record_.kernel_final_num_nz;
   kernel_fill_in = 0;
   if (kernel_dim) {
-    assert(initial_nz>0);
+    assert(initial_nz > 0);
     kernel_fill_in = (1.0 * final_nz) / initial_nz;
   }
 }

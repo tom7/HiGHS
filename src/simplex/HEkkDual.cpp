@@ -1433,7 +1433,7 @@ void HEkkDual::reportRebuild(const HighsInt reason_for_rebuild) {
   analysis->rebuild_reason_string =
       ekk_instance_.rebuildReason(reason_for_rebuild);
   analysis->fresh_invert = ekk_instance_.status_.has_fresh_invert;
-  if (ekk_instance_.status_.has_fresh_invert) {
+  if (ekk_instance_.status_.has_fresh_invert && analysis->analyse_factor_data) {
     HighsInt dim;
     double fill_in;
     ekk_instance_.simplex_nla_.factor_.getKernelDimAndFill(dim, fill_in);

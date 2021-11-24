@@ -28,13 +28,13 @@ enum UpdateMethod {
  * Markowitz search limit and stratgies
  */
 const HighsInt kMarkowitzSearchLimit = 8;
-enum  MarkowitzSearchStrategy {
+enum MarkowitzSearchStrategy {
   kMarkowitzSearchStrategyMin = 0,
   kMarkowitzSearchStrategyOg = kMarkowitzSearchStrategyMin,
-  kMarkowitzSearchStrategyRefinedOg,     //  1
-  kMarkowitzSearchStrategySwitchedOg,    //  2
-  kMarkowitzSearchStrategyColumn,        //  3
-  kMarkowitzSearchStrategyAlternateBest, //  4
+  kMarkowitzSearchStrategyRefinedOg,      //  1
+  kMarkowitzSearchStrategySwitchedOg,     //  2
+  kMarkowitzSearchStrategyColumn,         //  3
+  kMarkowitzSearchStrategyAlternateBest,  //  4
   kMarkowitzSearchStrategyMax = kMarkowitzSearchStrategyAlternateBest
 };
 

@@ -1586,11 +1586,8 @@ HighsStatus HEkk::initialiseSimplexLpBasisAndFactor(
   } else {
     // todo @ Julian: this fails on glass4
     assert(info_.factor_pivot_threshold >= options_->factor_pivot_threshold);
-    simplex_nla_.setup(&(this->lp_),
-                       &this->basis_.basicIndex_[0],
-                       this->options_,
-                       this->timer_,
-                       &(this->analysis_),
+    simplex_nla_.setup(&(this->lp_), &this->basis_.basicIndex_[0],
+                       this->options_, this->timer_, &(this->analysis_),
                        local_scaled_a_matrix,
                        this->info_.factor_pivot_threshold);
     status_.has_nla = true;

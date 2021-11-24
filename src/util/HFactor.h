@@ -96,7 +96,7 @@ class HFactor {
 
   void setupMatrix(const HighsSparseMatrix* a_matrix);
 
-  void setupTimer(HighsTimer& timer) { this->timer_ = &timer;}
+  void setupTimer(HighsTimer& timer) { this->timer_ = &timer; }
 
   void setupOptions(const HighsOptions& options);
 

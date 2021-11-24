@@ -1213,7 +1213,7 @@ void HighsSimplexAnalysis::updateInvertFormData(const HFactor& factor) {
     sum_kernel_fill_factor += kernel_fill_factor;
     running_average_kernel_fill_factor =
         0.95 * running_average_kernel_fill_factor + 0.05 * kernel_fill_factor;
-    if (report_kernel) printf("; fill = %6.2f", kernel_fill_factor);
+    if (report_kernel) printf("; kernel fill = %6.2f", kernel_fill_factor);
     const double kMajorKernelRelativeDimThreshold = 0.1;
     if (kernel_relative_dim > kMajorKernelRelativeDimThreshold) {
       num_major_kernel++;
@@ -1223,7 +1223,9 @@ void HighsSimplexAnalysis::updateInvertFormData(const HFactor& factor) {
           0.05 * kernel_fill_factor;
     }
   }
-  if (report_kernel) printf("\n");
+  if (report_kernel)
+    printf("; average major kernel fill = %6.2f\n",
+           running_average_major_kernel_fill_factor);
 }
 
 void HighsSimplexAnalysis::reportInvertFormData() {
@@ -1393,11 +1395,12 @@ void HighsSimplexAnalysis::reportInvert(const bool header) {
   if (header) return;
   if (fresh_invert && analyse_factor_data) {
     if (kernel_proportion > 0.2) {
-      *analysis_log << highsFormatToString(" Kernel(%3d%%; Fill ", (int)(100*kernel_proportion));
+      *analysis_log << highsFormatToString(" Kernel(%3d%%; Fill ",
+                                           (int)(100 * kernel_proportion));
       if (kernel_fill_in < 10.0) {
-	*analysis_log << highsFormatToString("%4.2f)", kernel_fill_in);
+        *analysis_log << highsFormatToString("%4.2f)", kernel_fill_in);
       } else {
-	*analysis_log << highsFormatToString("%10.4g)", kernel_fill_in);
+        *analysis_log << highsFormatToString("%10.4g)", kernel_fill_in);
       }
     }
   }

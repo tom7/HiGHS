@@ -177,13 +177,13 @@ void HFactor::setup(const HighsInt num_col_, const HighsInt num_row_,
                     const HighsInt* a_start_, const HighsInt* a_index_,
                     const double* a_value_, HighsInt* basic_index_) {
   this->setupGeneral(num_col_, num_row_, num_row_, a_start_, a_index_, a_value_,
-		     basic_index_);
+                     basic_index_);
 }
 
-void HFactor::setupGeneral(
-    const HighsInt num_col_, const HighsInt num_row_, HighsInt num_basic_,
-    const HighsInt* a_start_, const HighsInt* a_index_, const double* a_value_,
-    HighsInt* basic_index_) {
+void HFactor::setupGeneral(const HighsInt num_col_, const HighsInt num_row_,
+                           HighsInt num_basic_, const HighsInt* a_start_,
+                           const HighsInt* a_index_, const double* a_value_,
+                           HighsInt* basic_index_) {
   // Copy Problem size and (pointer to) coefficient matrix
   num_row = num_row_;
   num_col = num_col_;
@@ -317,7 +317,6 @@ void HFactor::setupMatrix(const HighsSparseMatrix* a_matrix) {
 }
 
 void HFactor::setupOptions(const HighsOptions& options) {
-  
   this->highs_debug_level = options.highs_debug_level;
   this->pivot_threshold = options.factor_pivot_threshold;
   this->pivot_tolerance = options.factor_pivot_tolerance;
@@ -494,7 +493,7 @@ bool HFactor::setAnalysisOptions(const HighsInt highs_analysis_level) {
   this->analyse_build_ = kHighsAnalysisLevelNlaData & highs_analysis_level;
   this->extra_analyse_build_ =
       this->analyse_build_ && (kHighsAnalysisLevelExtra & highs_analysis_level);
-  if (this->analyse_build_) 
+  if (this->analyse_build_)
     setupLogOptions(true, false, kHighsLogDevLevelDetailed, stdout);
   return true;
 }
@@ -853,10 +852,10 @@ HighsInt HFactor::buildKernel() {
   if (analyse_build_) {
     // Record the kernel dimension
     analyse_build_record_.num_simple_pivot = num_basic - nwork;
-    if (nwork>0) {
+    if (nwork > 0) {
       analyse_build_record_.kernel_initial_num_nz = getKernelNumNz();
       analyse_build_record_.kernel_max_num_nz =
-        analyse_build_record_.kernel_initial_num_nz;
+          analyse_build_record_.kernel_initial_num_nz;
       // Analyse and possibly report the initial kernel
       analyseActiveKernelCounts("Initial kernel");
       analyseActiveKernel(extra_analyse_build_);
@@ -868,13 +867,13 @@ HighsInt HFactor::buildKernel() {
       analyse_initial_kernel_col_count_ = analyse_kernel_col_count_;
       analyse_initial_kernel_col_count_.distribution_name_ += " (initial)";
       initialiseValueDistribution("Kernel pivot col count", "", 1, 1024, 2,
-				  analyse_pivot_col_count_);
+                                  analyse_pivot_col_count_);
       initialiseValueDistribution("Kernel pivot row count", "", 1, 1024, 2,
-				  analyse_pivot_row_count_);
+                                  analyse_pivot_row_count_);
       initialiseValueDistribution("Kernel pivot merit", "", 1, 1024 * 1024, 2,
-				  analyse_pivot_merit_);
+                                  analyse_pivot_merit_);
       initialiseValueDistribution("Kernel pivot value", "", 1e-8, 1e16, 10.0,
-				  analyse_pivot_value_);
+                                  analyse_pivot_value_);
       analyse_num_pivot = analyse_build_record_.num_simple_pivot;
     }
   }

@@ -4197,8 +4197,10 @@ HPresolve::Result HPresolve::removeDependentEquations(
   std::vector<HighsInt> colSet(matrix.num_col_);
   std::iota(colSet.begin(), colSet.end(), 0);
   const bool analyse_build = true;
-  if (analyse_build) printf("Dependent equations matrix has %d rows, %d columns and %d nonzeros\n",
-			    (int)matrix.num_row_, (int)matrix.num_col_, (int)matrix.numNz());
+  if (analyse_build)
+    printf(
+        "Dependent equations matrix has %d rows, %d columns and %d nonzeros\n",
+        (int)matrix.num_row_, (int)matrix.num_col_, (int)matrix.numNz());
   // Consider performing max value scaling on the matrix
   HighsScale scale;
   scale.strategy = kSimplexScaleStrategyMaxValue0157;
@@ -4213,8 +4215,8 @@ HPresolve::Result HPresolve::removeDependentEquations(
   if (analyse_build) {
     factor.setupOptions(*options);
     factor.setAnalysisOptions(kHighsAnalysisLevelNlaData +
-			      kHighsAnalysisLevelNlaTime +
-			      kHighsAnalysisLevelExtra);
+                              kHighsAnalysisLevelNlaTime +
+                              kHighsAnalysisLevelExtra);
     build_time = -timer.readRunHighsClock();
   }
   HighsInt rank_deficiency = factor.build();
@@ -4279,8 +4281,11 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
   std::vector<HighsInt> colSet(matrix.num_col_);
   std::iota(colSet.begin(), colSet.end(), 0);
   const bool analyse_build = true;
-  if (analyse_build) printf("Dependent free columns matrix has %d rows, %d columns and %d nonzeros\n",
-			    (int)matrix.num_row_, (int)matrix.num_col_, (int)matrix.numNz());
+  if (analyse_build)
+    printf(
+        "Dependent free columns matrix has %d rows, %d columns and %d "
+        "nonzeros\n",
+        (int)matrix.num_row_, (int)matrix.num_col_, (int)matrix.numNz());
   // Consider performing max value scaling on the matrix
   HighsScale scale;
   scale.strategy = kSimplexScaleStrategyMaxValue0157;
@@ -4295,8 +4300,8 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
   if (analyse_build) {
     factor.setupOptions(*options);
     factor.setAnalysisOptions(kHighsAnalysisLevelNlaData +
-			      kHighsAnalysisLevelNlaTime +
-			      kHighsAnalysisLevelExtra);
+                              kHighsAnalysisLevelNlaTime +
+                              kHighsAnalysisLevelExtra);
     build_time = -timer.readRunHighsClock();
   }
   HighsInt rank_deficiency = factor.build();
