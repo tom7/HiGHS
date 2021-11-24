@@ -314,6 +314,7 @@ struct HighsOptionsStruct {
   HighsInt simplex_price_strategy;
   HighsInt simplex_unscaled_solution_strategy;
   HighsInt presolve_substitution_maxfillin;
+  HighsInt markowitz_search_strategy;
   bool simplex_initial_condition_check;
   bool no_unnecessary_rebuild_refactor;
   double simplex_initial_condition_tolerance;
@@ -847,6 +848,14 @@ class HighsOptions : public HighsOptionsStruct {
                                      "Strategy for CHUZC sort in dual simplex",
                                      advanced, &presolve_substitution_maxfillin,
                                      0, 10, kHighsIInf);
+    records.push_back(record_int);
+
+    record_int = new OptionRecordInt("markowitz_search_strategy",
+                                     "Strategy for Markowitz search",
+                                     advanced, &markowitz_search_strategy,
+                                     kMarkowitzSearchStrategyMin,
+				     kMarkowitzSearchStrategyOg,
+				     kMarkowitzSearchStrategyMax);
     records.push_back(record_int);
 
     record_double = new OptionRecordDouble(

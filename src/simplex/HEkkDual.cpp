@@ -1432,6 +1432,14 @@ void HEkkDual::reportRebuild(const HighsInt reason_for_rebuild) {
   analysis->rebuild_reason = reason_for_rebuild;
   analysis->rebuild_reason_string =
       ekk_instance_.rebuildReason(reason_for_rebuild);
+  analysis->fresh_invert = ekk_instance_.status_.has_fresh_invert;
+  if (ekk_instance_.status_.has_fresh_invert) {
+    HighsInt dim;
+    double fill_in;
+    ekk_instance_.simplex_nla_.factor_.getKernelDimAndFill(dim, fill_in);
+    analysis->kernel_fill_in = fill_in;
+    analysis->kernel_proportion = (1.0 * dim) / solver_num_row;
+  }
   analysis->invertReport();
   analysis->simplexTimerStop(ReportRebuildClock);
 }

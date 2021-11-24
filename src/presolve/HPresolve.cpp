@@ -4196,6 +4196,9 @@ HPresolve::Result HPresolve::removeDependentEquations(
 
   std::vector<HighsInt> colSet(matrix.num_col_);
   std::iota(colSet.begin(), colSet.end(), 0);
+  const bool analyse_build = true;
+  if (analyse_build) printf("Dependent equations matrix has %d rows, %d columns and %d nonzeros\n",
+			    (int)matrix.num_row_, (int)matrix.num_col_, (int)matrix.numNz());
   // Consider performing max value scaling on the matrix
   HighsScale scale;
   scale.strategy = kSimplexScaleStrategyMaxValue0157;
@@ -4203,15 +4206,15 @@ HPresolve::Result HPresolve::removeDependentEquations(
   // Determine the matrix rank deficiency
   HFactor factor;
   factor.setup(matrix, colSet);
-  const bool analyse_build = true;
   HighsTimer timer;
   timer.startRunHighsClock();
   double build_time;
+  //  factor.setupTimer(timer);
   if (analyse_build) {
-    //  factor.setupTimer(timer, options.time_limit);
-    factor.setupAnalysis(options->log_options, kHighsAnalysisLevelNlaData +
-                                                   kHighsAnalysisLevelNlaTime +
-                                                   kHighsAnalysisLevelExtra);
+    factor.setupOptions(*options);
+    factor.setAnalysisOptions(kHighsAnalysisLevelNlaData +
+			      kHighsAnalysisLevelNlaTime +
+			      kHighsAnalysisLevelExtra);
     build_time = -timer.readRunHighsClock();
   }
   HighsInt rank_deficiency = factor.build();
@@ -4275,6 +4278,9 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
 
   std::vector<HighsInt> colSet(matrix.num_col_);
   std::iota(colSet.begin(), colSet.end(), 0);
+  const bool analyse_build = true;
+  if (analyse_build) printf("Dependent free columns matrix has %d rows, %d columns and %d nonzeros\n",
+			    (int)matrix.num_row_, (int)matrix.num_col_, (int)matrix.numNz());
   // Consider performing max value scaling on the matrix
   HighsScale scale;
   scale.strategy = kSimplexScaleStrategyMaxValue0157;
@@ -4282,15 +4288,15 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
   // Determine the matrix rank deficiency
   HFactor factor;
   factor.setup(matrix, colSet);
-  const bool analyse_build = true;
   HighsTimer timer;
   timer.startRunHighsClock();
   double build_time;
+  //  factor.setupTimer(timer);
   if (analyse_build) {
-    //  factor.setupTimer(timer, options.time_limit);
-    factor.setupAnalysis(options->log_options, kHighsAnalysisLevelNlaData +
-                                                   kHighsAnalysisLevelNlaTime +
-                                                   kHighsAnalysisLevelExtra);
+    factor.setupOptions(*options);
+    factor.setAnalysisOptions(kHighsAnalysisLevelNlaData +
+			      kHighsAnalysisLevelNlaTime +
+			      kHighsAnalysisLevelExtra);
     build_time = -timer.readRunHighsClock();
   }
   HighsInt rank_deficiency = factor.build();

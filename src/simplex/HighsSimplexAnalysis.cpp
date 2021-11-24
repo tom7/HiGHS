@@ -311,14 +311,6 @@ void HighsSimplexAnalysis::messaging(const HighsLogOptions& log_options_) {
 }
 
 void HighsSimplexAnalysis::iterationReport() {
-  const bool simple_report = false;
-  if (simple_report) {
-    printf(
-        "Iter %5d: (%6d; %6d) delta_primal = %11.4g; dual_step = %11.4g; "
-        "primal_step = %11.4g\n",
-        (int)simplex_iteration_count, (int)leaving_variable,
-        (int)entering_variable, primal_delta, dual_step, primal_step);
-  }
   if ((HighsInt)kIterationReportLogType > *log_options.log_dev_level) return;
   const bool header = (num_iteration_report_since_last_header < 0) ||
                       (num_iteration_report_since_last_header > 49);
@@ -1202,8 +1194,9 @@ void HighsSimplexAnalysis::updateInvertFormData(const HFactor& factor) {
   running_average_invert_fill_factor =
       0.95 * running_average_invert_fill_factor + 0.05 * invert_fill_factor;
 
-  const HighsInt kernel_dim = factor.analyse_build_record_.num_kernel_pivot -
+  const HighsInt kernel_dim = factor.analyse_build_record_.num_row -
                               factor.analyse_build_record_.num_simple_pivot;
+  assert(kernel_dim >= 0);
   double kernel_relative_dim = (1.0 * kernel_dim) / numRow;
   if (report_kernel) printf("; kernel dim = %11.4g", kernel_relative_dim);
   if (kernel_dim) {
@@ -1398,6 +1391,16 @@ void HighsSimplexAnalysis::reportDensity(const bool header) {
 
 void HighsSimplexAnalysis::reportInvert(const bool header) {
   if (header) return;
+  if (fresh_invert && analyse_factor_data) {
+    if (kernel_proportion > 0.2) {
+      *analysis_log << highsFormatToString(" Kernel(%3d%%; Fill ", (int)(100*kernel_proportion));
+      if (kernel_fill_in < 10.0) {
+	*analysis_log << highsFormatToString("%4.2f)", kernel_fill_in);
+      } else {
+	*analysis_log << highsFormatToString("%10.4g)", kernel_fill_in);
+      }
+    }
+  }
   *analysis_log << " " << rebuild_reason_string;
 }
 /*

@@ -31,12 +31,6 @@
 using std::max;
 using std::vector;
 
-const HighsInt kMaxKernelSearch = 8;
-const HighsInt kMarkowitzSearchStrategyOg = 0;
-const HighsInt kMarkowitzSearchStrategyRefinedOg = 1;
-const HighsInt kMarkowitzSearchStrategySwitchedOg = 2;
-const HighsInt kMarkowitzSearchStrategyAlternateBest = 3;
-
 /**
  * @brief Basis matrix factorization, update and solves for HiGHS
  *
@@ -86,48 +80,25 @@ class HFactor {
    */
 
   void setup(const HighsSparseMatrix& a_matrix,
-             std::vector<HighsInt>& basic_index,
-             const double pivot_threshold = kDefaultPivotThreshold,
-             const double pivot_tolerance = kDefaultPivotTolerance,
-             const HighsInt highs_debug_level = kHighsDebugLevelMin);
-
-  void setupGeneral(const HighsSparseMatrix* a_matrix, HighsInt num_basic,
-                    HighsInt* basic_index,
-                    const double pivot_threshold = kDefaultPivotThreshold,
-                    const double pivot_tolerance = kDefaultPivotTolerance,
-                    const HighsInt highs_debug_level = kHighsDebugLevelMin);
+             std::vector<HighsInt>& basic_index);
 
   void setup(const HighsInt num_col, const HighsInt num_row,
              const HighsInt* a_start, const HighsInt* a_index,
-             const double* a_value, HighsInt* basic_index,
-             const double pivot_threshold = kDefaultPivotThreshold,
-             const double pivot_tolerance = kDefaultPivotTolerance,
-             const HighsInt highs_debug_level = kHighsDebugLevelMin,
-             const bool use_original_HFactor_logic = true,
-             const HighsInt update_method = kUpdateMethodFt);
+             const double* a_value, HighsInt* basic_index);
 
   void setupGeneral(const HighsInt num_col, const HighsInt num_row,
                     const HighsInt num_basic, const HighsInt* a_start,
                     const HighsInt* a_index, const double* a_value,
-                    HighsInt* basic_index,
-                    const double pivot_threshold = kDefaultPivotThreshold,
-                    const double pivot_tolerance = kDefaultPivotTolerance,
-                    const HighsInt highs_debug_level = kHighsDebugLevelMin,
-                    const bool use_original_HFactor_logic = true,
-                    const HighsInt update_method = kUpdateMethodFt);
+                    HighsInt* basic_index);
 
   void setupMatrix(const HighsInt* a_start, const HighsInt* a_index,
                    const double* a_value);
 
   void setupMatrix(const HighsSparseMatrix* a_matrix);
 
-  void setupTimer(HighsTimer& timer, const double build_time_limit = kHighsInf);
+  void setupTimer(HighsTimer& timer) { this->timer_ = &timer;}
 
-  void setupAnalysis(const HighsLogOptions& log_options,
-                     const HighsInt highs_analysis_level = 0);
-
-  void setupLogOptions(const bool output_flag, const bool log_to_console,
-                       const HighsInt log_dev_level, FILE* log_file_stream);
+  void setupOptions(const HighsOptions& options);
 
   /**
    * @brief Form \f$PBQ=LU\f$ for basis matrix \f$B\f$ or report degree of rank
@@ -170,10 +141,15 @@ class HFactor {
   bool setPivotThreshold(
       const double new_pivot_threshold = kDefaultPivotThreshold);
   /**
-   * @brief Sets minimum absolute pivot
+   * @brief Sets pivoting tolerance
    */
-  bool setMinAbsPivot(
+  bool setPivotTolerance(
       const double new_pivot_tolerance = kDefaultPivotTolerance);
+  /**
+   * @brief Sets analysis options
+   */
+  bool setAnalysisOptions(
+      const HighsInt highs_analysis_level = kHighsAnalysisLevelNone);
 
   /**
    * @brief Updates instance with respect to new columns in the
@@ -244,6 +220,11 @@ class HFactor {
    * @brief Gets a_value since it is private
    */
   const double* getAvalue() const { return a_value; }
+
+  /**
+   * @brief Gets the kernel dimension and fill-in
+   */
+  void getKernelDimAndFill(HighsInt& kernel_dim, double& kernel_fill_in) const;
 
   void reportLu(const HighsInt l_u_or_both = kReportLuBoth,
                 const bool full = true) const;
@@ -412,6 +393,9 @@ class HFactor {
   vector<HighsInt> pf_start;
   vector<HighsInt> pf_index;
   vector<double> pf_value;
+
+  void setupLogOptions(const bool output_flag, const bool log_to_console,
+                       const HighsInt log_dev_level, FILE* log_file_stream);
 
   // Implementation
   void buildSimple();

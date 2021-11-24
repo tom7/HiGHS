@@ -163,48 +163,27 @@ void solveHyper(const HighsInt h_size, const HighsInt* h_lookup,
 }
 
 void HFactor::setup(const HighsSparseMatrix& a_matrix,
-                    std::vector<HighsInt>& basic_index,
-                    const double pivot_threshold, const double pivot_tolerance,
-                    const HighsInt highs_debug_level) {
+                    std::vector<HighsInt>& basic_index) {
   HighsInt basic_index_size = basic_index.size();
   // Nothing to do if basic index has no entries, and mustn't try to
   // pass the pointer to entry 0 of a vector of size 0.
   if (basic_index_size <= 0) return;
-  this->setupGeneral(&a_matrix, basic_index_size, &basic_index[0],
-                     pivot_threshold, pivot_tolerance, highs_debug_level);
-  return;
-}
-
-void HFactor::setupGeneral(const HighsSparseMatrix* a_matrix,
-                           HighsInt num_basic, HighsInt* basic_index,
-                           const double pivot_threshold,
-                           const double pivot_tolerance,
-                           const HighsInt highs_debug_level) {
-  this->setupGeneral(a_matrix->num_col_, a_matrix->num_row_, num_basic,
-                     &a_matrix->start_[0], &a_matrix->index_[0],
-                     &a_matrix->value_[0], basic_index, pivot_threshold,
-                     pivot_tolerance, highs_debug_level, true, kUpdateMethodFt);
+  this->setupGeneral(a_matrix.num_col_, a_matrix.num_row_, basic_index_size,
+                     &a_matrix.start_[0], &a_matrix.index_[0],
+                     &a_matrix.value_[0], &basic_index[0]);
 }
 
 void HFactor::setup(const HighsInt num_col_, const HighsInt num_row_,
                     const HighsInt* a_start_, const HighsInt* a_index_,
-                    const double* a_value_, HighsInt* basic_index_,
-                    const double pivot_threshold_,
-                    const double pivot_tolerance_,
-                    const HighsInt highs_debug_level_,
-                    const bool use_original_HFactor_logic_,
-                    const HighsInt update_method_) {
-  setupGeneral(num_col_, num_row_, num_row_, a_start_, a_index_, a_value_,
-               basic_index_, pivot_threshold_, pivot_tolerance_,
-               highs_debug_level_, use_original_HFactor_logic_, update_method_);
+                    const double* a_value_, HighsInt* basic_index_) {
+  this->setupGeneral(num_col_, num_row_, num_row_, a_start_, a_index_, a_value_,
+		     basic_index_);
 }
 
 void HFactor::setupGeneral(
     const HighsInt num_col_, const HighsInt num_row_, HighsInt num_basic_,
     const HighsInt* a_start_, const HighsInt* a_index_, const double* a_value_,
-    HighsInt* basic_index_, const double pivot_threshold_,
-    const double pivot_tolerance_, const HighsInt highs_debug_level_,
-    const bool use_original_HFactor_logic_, const HighsInt update_method_) {
+    HighsInt* basic_index_) {
   // Copy Problem size and (pointer to) coefficient matrix
   num_row = num_row_;
   num_col = num_col_;
@@ -214,21 +193,21 @@ void HFactor::setupGeneral(
   a_index = a_index_;
   a_value = a_value_;
   basic_index = basic_index_;
-  pivot_threshold =
-      max(kMinPivotThreshold, min(pivot_threshold_, kMaxPivotThreshold));
-  pivot_tolerance =
-      max(kMinPivotTolerance, min(pivot_tolerance_, kMaxPivotTolerance));
-  highs_debug_level = highs_debug_level_;
+  // Set default values for internal options
+  highs_debug_level = kHighsDebugLevelMin;
+  pivot_threshold = kDefaultPivotThreshold;
+  pivot_tolerance = kDefaultPivotTolerance;
+  markowitz_search_strategy = kMarkowitzSearchStrategyOg;
+  use_original_HFactor_logic = true;
+  update_method = kUpdateMethodFt;
 
   // Set up log_options and default settings
   this->log_data = decltype(log_data)(new LogData());
   setupLogOptions(false, false, kHighsLogDevLevelNone, nullptr);
+
   // Set up null timer and time limit
   this->timer_ = nullptr;
   this->build_time_limit_ = kHighsInf;
-
-  use_original_HFactor_logic = use_original_HFactor_logic_;
-  update_method = update_method_;
 
   // Allocate for working buffer
   iwork.reserve(num_row * 2);
@@ -337,31 +316,18 @@ void HFactor::setupMatrix(const HighsSparseMatrix* a_matrix) {
   setupMatrix(&a_matrix->start_[0], &a_matrix->index_[0], &a_matrix->value_[0]);
 }
 
-void HFactor::setupTimer(HighsTimer& timer, const double build_time_limit) {
-  this->timer_ = &timer;
-  this->build_time_limit_ = build_time_limit;
-}
+void HFactor::setupOptions(const HighsOptions& options) {
+  
+  this->highs_debug_level = options.highs_debug_level;
+  this->pivot_threshold = options.factor_pivot_threshold;
+  this->pivot_tolerance = options.factor_pivot_tolerance;
+  this->markowitz_search_strategy = options.markowitz_search_strategy;
+  this->use_original_HFactor_logic = options.use_original_HFactor_logic;
+  //  this->update_method = options.update_method;
+  this->build_time_limit_ = options.time_limit;
 
-void HFactor::setupAnalysis(const HighsLogOptions& log_options,
-                            const HighsInt highs_analysis_level) {
-  this->log_options_ = log_options;
-  this->analyse_build_ = kHighsAnalysisLevelNlaData & highs_analysis_level;
-  this->extra_analyse_build_ =
-      this->analyse_build_ && (kHighsAnalysisLevelExtra & highs_analysis_level);
-  if (this->analyse_build_)
-    setupLogOptions(true, false, kHighsLogDevLevelDetailed, stdout);
-}
-
-void HFactor::setupLogOptions(const bool output_flag, const bool log_to_console,
-                              const HighsInt log_dev_level,
-                              FILE* log_file_stream) {
-  this->log_data->output_flag = output_flag;
-  this->log_data->log_to_console = log_to_console;
-  this->log_data->log_dev_level = log_dev_level;
-  this->log_options_.output_flag = &this->log_data->output_flag;
-  this->log_options_.log_to_console = &this->log_data->log_to_console;
-  this->log_options_.log_dev_level = &this->log_data->log_dev_level;
-  this->log_options_.log_file_stream = log_file_stream;
+  this->log_options_ = options.log_options;
+  this->setAnalysisOptions(options.highs_analysis_level);
 }
 
 HighsInt HFactor::build(HighsTimerClock* factor_timer_clock_pointer) {
@@ -511,7 +477,25 @@ void HFactor::update(HVector* aq, HVector* ep, HighsInt* iRow, HighsInt* hint) {
 bool HFactor::setPivotThreshold(const double new_pivot_threshold) {
   if (new_pivot_threshold < kMinPivotThreshold) return false;
   if (new_pivot_threshold > kMaxPivotThreshold) return false;
-  pivot_threshold = new_pivot_threshold;
+  this->pivot_threshold = new_pivot_threshold;
+  return true;
+}
+
+bool HFactor::setPivotTolerance(const double new_pivot_tolerance) {
+  if (new_pivot_tolerance < kMinPivotTolerance) return false;
+  if (new_pivot_tolerance > kMaxPivotTolerance) return false;
+  pivot_tolerance = new_pivot_tolerance;
+  return true;
+}
+
+bool HFactor::setAnalysisOptions(const HighsInt highs_analysis_level) {
+  if (highs_analysis_level < kHighsAnalysisLevelNone) return false;
+  if (highs_analysis_level > kHighsAnalysisLevelMax) return false;
+  this->analyse_build_ = kHighsAnalysisLevelNlaData & highs_analysis_level;
+  this->extra_analyse_build_ =
+      this->analyse_build_ && (kHighsAnalysisLevelExtra & highs_analysis_level);
+  if (this->analyse_build_) 
+    setupLogOptions(true, false, kHighsLogDevLevelDetailed, stdout);
   return true;
 }
 
@@ -527,6 +511,18 @@ void HFactor::luClear() {
   u_start.push_back(0);
   u_index.clear();
   u_value.clear();
+}
+
+void HFactor::setupLogOptions(const bool output_flag, const bool log_to_console,
+                              const HighsInt log_dev_level,
+                              FILE* log_file_stream) {
+  this->log_data->output_flag = output_flag;
+  this->log_data->log_to_console = log_to_console;
+  this->log_data->log_dev_level = log_dev_level;
+  this->log_options_.output_flag = &this->log_data->output_flag;
+  this->log_options_.log_to_console = &this->log_data->log_to_console;
+  this->log_options_.log_dev_level = &this->log_data->log_dev_level;
+  this->log_options_.log_file_stream = log_file_stream;
 }
 
 void HFactor::buildSimple() {
@@ -633,14 +629,18 @@ void HFactor::buildSimple() {
   }
   if (analyse_build_) {
     // Record the number of elements in the basis matrix
-    analyse_build_record_.basic_num_nz = num_row - nwork + BcountX;
+    //
+    // BcountX is the number of nonzeros in basic columns with no
+    // pivot, so have to add 1 for each identitiy column that already
+    // has a pivot
+    analyse_build_record_.basic_num_nz = BcountX + (num_basic - nwork);
   }
 
   // count1 = 0;
   // Comments: for pds-20, dfl001: 60 / 80
   // Comments: when system is large: enlarge
   // Comments: when system is small: decrease
-  build_synthetic_tick += BcountX * 60 + (num_row - nwork) * 80;
+  build_synthetic_tick += BcountX * 60 + (num_basic - nwork) * 80;
 
   /**
    * 2. Search for and deal with singletons
@@ -853,35 +853,36 @@ HighsInt HFactor::buildKernel() {
   if (analyse_build_) {
     // Record the kernel dimension
     analyse_build_record_.num_simple_pivot = num_basic - nwork;
-    analyse_build_record_.kernel_initial_num_nz = getKernelNumNz();
-    analyse_build_record_.kernel_max_num_nz =
+    if (nwork>0) {
+      analyse_build_record_.kernel_initial_num_nz = getKernelNumNz();
+      analyse_build_record_.kernel_max_num_nz =
         analyse_build_record_.kernel_initial_num_nz;
-    // Analyse and possibly report the initial kernel
-    analyseActiveKernelCounts("Initial kernel");
-    analyseActiveKernel(extra_analyse_build_);
-    if (extra_analyse_build_) printf("\n");
-    analyse_initial_kernel_value_ = analyse_kernel_value_;
-    analyse_initial_kernel_value_.distribution_name_ += " (initial)";
-    analyse_initial_kernel_row_count_ = analyse_kernel_row_count_;
-    analyse_initial_kernel_row_count_.distribution_name_ += " (initial)";
-    analyse_initial_kernel_col_count_ = analyse_kernel_col_count_;
-    analyse_initial_kernel_col_count_.distribution_name_ += " (initial)";
-    initialiseValueDistribution("Kernel pivot col count", "", 1, 1024, 2,
-                                analyse_pivot_col_count_);
-    initialiseValueDistribution("Kernel pivot row count", "", 1, 1024, 2,
-                                analyse_pivot_row_count_);
-    initialiseValueDistribution("Kernel pivot merit", "", 1, 1024 * 1024, 2,
-                                analyse_pivot_merit_);
-    initialiseValueDistribution("Kernel pivot value", "", 1e-8, 1e16, 10.0,
-                                analyse_pivot_value_);
-    analyse_num_pivot = analyse_build_record_.num_simple_pivot;
+      // Analyse and possibly report the initial kernel
+      analyseActiveKernelCounts("Initial kernel");
+      analyseActiveKernel(extra_analyse_build_);
+      if (extra_analyse_build_) printf("\n");
+      analyse_initial_kernel_value_ = analyse_kernel_value_;
+      analyse_initial_kernel_value_.distribution_name_ += " (initial)";
+      analyse_initial_kernel_row_count_ = analyse_kernel_row_count_;
+      analyse_initial_kernel_row_count_.distribution_name_ += " (initial)";
+      analyse_initial_kernel_col_count_ = analyse_kernel_col_count_;
+      analyse_initial_kernel_col_count_.distribution_name_ += " (initial)";
+      initialiseValueDistribution("Kernel pivot col count", "", 1, 1024, 2,
+				  analyse_pivot_col_count_);
+      initialiseValueDistribution("Kernel pivot row count", "", 1, 1024, 2,
+				  analyse_pivot_row_count_);
+      initialiseValueDistribution("Kernel pivot merit", "", 1, 1024 * 1024, 2,
+				  analyse_pivot_merit_);
+      initialiseValueDistribution("Kernel pivot value", "", 1e-8, 1e16, 10.0,
+				  analyse_pivot_value_);
+      analyse_num_pivot = analyse_build_record_.num_simple_pivot;
+    }
   }
   min_row_count = kHighsIInf;
   min_col_count = kHighsIInf;
   // Row count can be more than the number of rows if num_basic >
   // num_row
   const HighsInt max_count = max(num_row, num_basic);
-  markowitz_search_strategy = kMarkowitzSearchStrategyOg;  // SwitchedOg;
 
   while (nwork-- > 0) {
     /**
@@ -891,7 +892,7 @@ HighsInt HFactor::buildKernel() {
     HighsInt iRowPivot = -1;
     //    int8_t pivot_type = kPivotIllegal;
     // 1.1. Setup search merits
-    search_limit = min(nwork, kMaxKernelSearch);
+    search_limit = min(nwork, kMarkowitzSearchLimit);
     search_count = 0;
 
     limit_merit = 1.0 * num_basic * num_row;

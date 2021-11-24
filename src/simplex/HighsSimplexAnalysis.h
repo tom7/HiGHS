@@ -174,6 +174,9 @@ class HighsSimplexAnalysis {
   HighsInt entering_variable = 0;
   HighsInt rebuild_reason = 0;
   std::string rebuild_reason_string = "";
+  bool fresh_invert = false;
+  double kernel_proportion = 0;
+  double kernel_fill_in = 0;
   double reduced_rhs_value = 0;
   double reduced_cost_value = 0;
   double edge_weight = 0;

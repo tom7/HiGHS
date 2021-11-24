@@ -18,12 +18,26 @@
 
 #include "util/HighsInt.h"
 
-enum UPDATE_METHOD {
+enum UpdateMethod {
   kUpdateMethodFt = 1,
   kUpdateMethodPf = 2,
   kUpdateMethodMpf = 3,
   kUpdateMethodApf = 4
 };
+/**
+ * Markowitz search limit and stratgies
+ */
+const HighsInt kMarkowitzSearchLimit = 8;
+enum  MarkowitzSearchStrategy {
+  kMarkowitzSearchStrategyMin = 0,
+  kMarkowitzSearchStrategyOg = kMarkowitzSearchStrategyMin,
+  kMarkowitzSearchStrategyRefinedOg,     //  1
+  kMarkowitzSearchStrategySwitchedOg,    //  2
+  kMarkowitzSearchStrategyColumn,        //  3
+  kMarkowitzSearchStrategyAlternateBest, //  4
+  kMarkowitzSearchStrategyMax = kMarkowitzSearchStrategyAlternateBest
+};
+
 /**
  * Limits and default value of pivoting threshold
  */
