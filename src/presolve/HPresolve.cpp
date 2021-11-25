@@ -4211,7 +4211,7 @@ HPresolve::Result HPresolve::removeDependentEquations(
   HighsTimer timer;
   timer.startRunHighsClock();
   double build_time;
-  //  factor.setupTimer(timer);
+  factor.setupTimer(timer);
   if (analyse_build) {
     factor.setupOptions(*options);
     factor.setAnalysisOptions(kHighsAnalysisLevelNlaData +
@@ -4232,7 +4232,7 @@ HPresolve::Result HPresolve::removeDependentEquations(
   if (analyse_build) {
     factor.debugReportAnalyseBuild("Dependent equations");
     highsLogUser(options->log_options, HighsLogType::kInfo,
-                 "Build time is %g seconds\n", build_time);
+                 "Build time is %6.4f seconds\n", build_time);
   }
   return Result::kOk;
 }
@@ -4274,7 +4274,6 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
       matrix.value_.push_back(model->col_cost_[col]);
       matrix.index_.push_back(model->num_row_);
     }
-
     matrix.start_[i + 1] = matrix.value_.size();
   }
 
@@ -4296,7 +4295,7 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
   HighsTimer timer;
   timer.startRunHighsClock();
   double build_time;
-  //  factor.setupTimer(timer);
+  factor.setupTimer(timer);
   if (analyse_build) {
     factor.setupOptions(*options);
     factor.setAnalysisOptions(kHighsAnalysisLevelNlaData +
@@ -4316,7 +4315,7 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
   if (analyse_build) {
     factor.debugReportAnalyseBuild("Dependent free columns");
     highsLogUser(options->log_options, HighsLogType::kInfo,
-                 "Build time is %g seconds\n", build_time);
+                 "Build time is %6.4f seconds\n", build_time);
   }
   return Result::kOk;
 }

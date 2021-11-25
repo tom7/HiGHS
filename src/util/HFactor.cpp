@@ -849,10 +849,12 @@ HighsInt HFactor::buildKernel() {
   HighsInt mc_index_size = mc_index.size();
 
   HighsInt analyse_num_pivot = 0;
+  double start_time = 0;
   if (analyse_build_) {
     // Record the kernel dimension
     analyse_build_record_.num_simple_pivot = num_basic - nwork;
     if (nwork > 0) {
+      start_time = timer_->readRunHighsClock();
       analyse_build_record_.kernel_initial_num_nz = getKernelNumNz();
       analyse_build_record_.kernel_max_num_nz =
           analyse_build_record_.kernel_initial_num_nz;
@@ -906,8 +908,10 @@ HighsInt HFactor::buildKernel() {
       if (extra_analyse_build_) {
         if (analyse_num_pivot % progress_frequency == 0 ||
             analyse_build_record_.num_kernel_pivot == 0) {
+	  const double elapsed_time = timer_->readRunHighsClock() - start_time;
           ss.str(std::string());
           ss << "GE stage " << analyse_num_pivot;
+	  ss << highsFormatToString(" (Time %6.4f)", elapsed_time);
           GE_stage_name = ss.str();
           analyseActiveKernelCounts(GE_stage_name);
           if (analyse_intermidiate_active_kernel) {
@@ -939,6 +943,12 @@ HighsInt HFactor::buildKernel() {
     // Markowitz merit of the candidate pivot is pivot_merit,
     // initialised to limit_merit, since any pivot will have better
     // merit than that
+    //
+    // "Column" count is the number of nonzeros in a column - bounded
+    // by num_row
+    //
+    // "Row" count is the number of nonzeros in a row - bounded by
+    // num_basic
     //
     if (!found_pivot) {
       //
@@ -977,6 +987,7 @@ HighsInt HFactor::buildKernel() {
           }
         } else if (markowitz_search_strategy ==
                    kMarkowitzSearchStrategySwitchedOg) {
+	  // Search over rows before columns
           for (HighsInt count = 2; count <= max_count; count++) {
             other_count_ideal = count - 1;
             findPivotRowSearch(found_pivot, count, jColPivot, iRowPivot);
@@ -984,7 +995,51 @@ HighsInt HFactor::buildKernel() {
             findPivotColSearch(found_pivot, count, jColPivot, iRowPivot);
             if (found_pivot) break;
           }
-        }
+        } else if (markowitz_search_strategy ==
+                   kMarkowitzSearchStrategyColumn) {
+	  // Just search over columns - since row searches require the
+	  // value to be found before it can be assessed as a pivot
+          for (HighsInt col_count = 2; col_count <= max_count; col_count++) {
+            other_count_ideal = min_row_count;
+            findPivotColSearch(found_pivot, col_count, jColPivot, iRowPivot);
+            if (found_pivot) break;
+          }
+        } else {
+	  assert(markowitz_search_strategy ==
+		 kMarkowitzSearchStrategyAlternateBest);
+	  // Initialise the column and row counts to be searched to be
+	  // the absolute minimum achievable values
+	  HighsInt search_col_count = min_col_count;
+	  HighsInt search_row_count = min_row_count;
+	  for (;;) {
+	    // Search columns with count search_col_count
+	    assert(col_link_first[search_col_count] >= 0);
+	    other_count_ideal = search_row_count;
+	    findPivotColSearch(found_pivot, search_col_count, jColPivot, iRowPivot);
+            if (found_pivot) break;
+	    // No pivot with column count search_col_count, so find
+	    // the new minimum achievable column count
+	    for (HighsInt col_count = search_col_count+1; col_count <= num_row; col_count++) {
+	      if (col_link_first[col_count] >= 0) {
+		search_col_count = col_count;
+		break;
+	      }
+	    }
+	    // Search rows with count search_row_count
+	    assert(row_link_first[search_row_count] >= 0);
+	    other_count_ideal = search_col_count;
+	    findPivotRowSearch(found_pivot, search_row_count, jColPivot, iRowPivot);
+            if (found_pivot) break;
+	    // No pivot with row count search_row_count, so find
+	    // the new minimum achievable row count
+	    for (HighsInt row_count = search_row_count+1; row_count <= num_row; row_count++) {
+	      if (row_link_first[row_count] >= 0) {
+		search_row_count = row_count;
+		break;
+	      }
+	    }
+	  }
+	}
         if (analyse_build_) {
           updateValueDistribution(pivot_col_count, analyse_pivot_col_count_);
           updateValueDistribution(pivot_row_count, analyse_pivot_row_count_);
