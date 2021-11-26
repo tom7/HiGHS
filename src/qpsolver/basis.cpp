@@ -32,7 +32,8 @@ void Basis::build() {
       new HighsInt[activeconstraintidx.size() + nonactiveconstraintsidx.size()];
   constraintindexinbasisfactor.clear();
 
-  basisfactor = HFactor();
+  // ToDo This fails when an internal timer is introduced to HFactor! WTF!
+  //  basisfactor = HFactor();
 
   constraintindexinbasisfactor.assign(Atran.num_row + Atran.num_col, -1);
   assert(nonactiveconstraintsidx.size() + activeconstraintidx.size() ==

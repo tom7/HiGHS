@@ -40,7 +40,7 @@ void HSimplexNla::setup(const HighsLp* lp, HighsInt* basic_index,
                              this->lp_->num_row_, &factor_a_matrix->start_[0],
                              &factor_a_matrix->index_[0],
                              &factor_a_matrix->value_[0], this->basic_index_);
-  this->factor_.setupOptions(*this->options_);
+  this->factor_.setupOptions(this->options_);
   this->factor_.setPivotThreshold(factor_pivot_threshold);
   assert(debugCheckData("After HSimplexNla::setup") == HighsDebugStatus::kOk);
 }

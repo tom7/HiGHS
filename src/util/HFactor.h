@@ -96,9 +96,9 @@ class HFactor {
 
   void setupMatrix(const HighsSparseMatrix* a_matrix);
 
-  void setupTimer(HighsTimer& timer) { this->timer_ = &timer; }
+  void setupTimer(HighsTimer* timer);
 
-  void setupOptions(const HighsOptions& options);
+  void setupOptions(const HighsOptions* options);
 
   /**
    * @brief Form \f$PBQ=LU\f$ for basis matrix \f$B\f$ or report degree of rank
@@ -235,9 +235,12 @@ class HFactor {
   // basis
   RefactorInfo refactor_info_;
 
-  // Timeout value and timer
-  double build_time_limit_;
+  // Timer - which uses a pointer to an external timer or, if none is
+  // given, a pointer to internal_timer - start time and limit
   HighsTimer* timer_;
+  HighsTimer internal_timer_;
+  double build_time_start_;
+  double build_time_limit_;
 
   // Data for analysing factorization
   struct AnalyseBuild {
@@ -252,6 +255,9 @@ class HFactor {
     HighsInt kernel_final_num_nz = 0;
     HighsInt invert_num_nz = 0;
     double sum_merit = 0;
+    double build_time = 0;
+    double build_search_time = 0;
+    double build_elimination_time = 0;
     void clear();
   };
 
@@ -259,16 +265,19 @@ class HFactor {
   bool extra_analyse_build_ = false;
   AnalyseBuild analyse_build_record_;
   HighsValueDistribution analyse_initial_kernel_value_;
-  HighsIntValueDistribution analyse_initial_kernel_row_count_;
   HighsIntValueDistribution analyse_initial_kernel_col_count_;
+  HighsIntValueDistribution analyse_initial_kernel_row_count_;
   HighsValueDistribution analyse_kernel_value_;
-  HighsIntValueDistribution analyse_kernel_row_count_;
   HighsIntValueDistribution analyse_kernel_col_count_;
+  HighsIntValueDistribution analyse_kernel_row_count_;
+  HighsValueDistribution analyse_kernel_min_pivot_;
   HighsIntValueDistribution analyse_pivot_col_count_;
   HighsIntValueDistribution analyse_pivot_row_count_;
   HighsIntValueDistribution analyse_pivot_merit_;
   HighsValueDistribution analyse_pivot_value_;
 
+  HighsInt build_search_clock;
+  HighsInt build_elimination_clock;
   /**
    * Data of the factor
    */
@@ -306,14 +315,22 @@ class HFactor {
   HighsInt search_limit;
   HighsInt search_count;
   HighsInt other_count_ideal;
-  double ideal_merit;
   double pivot_merit;
+  double ideal_merit;
   double limit_merit;
+  double ok_merit_multiplier;
   HighsInt fake_search;
   HighsInt min_col_count;
   HighsInt min_row_count;
   HighsInt pivot_col_count;
   HighsInt pivot_row_count;
+
+  HighsInt num_col_search;
+  HighsInt num_col_el_search;
+  HighsInt num_col_el_ok_pivot;
+  HighsInt num_col_el_better_merit;
+
+
   // Working buffer
   HighsInt nwork;
   vector<HighsInt> iwork;
@@ -470,7 +487,7 @@ class HFactor {
     mc_value[iput] = value;
   }
   void colFixMax(const HighsInt iCol) {
-    double max_value = 0;
+    double max_value = -1;
     for (HighsInt k = mc_start[iCol]; k < mc_start[iCol] + mc_count_a[iCol];
          k++)
       max_value = max(max_value, fabs(mc_value[k]));

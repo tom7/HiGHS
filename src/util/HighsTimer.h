@@ -57,7 +57,7 @@ class HighsTimer {
    */
   HighsInt clock_def(
       const char* name,  //!< Full-length name (<=16 characters) for the clock
-      const char* ch3_name  //!< 3-character name for the clock
+      const char* ch3_name = "N/A"  //!< 3-character name for the clock
   ) {
     HighsInt i_clock = num_clock;
     clock_num_call.push_back(0);

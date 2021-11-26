@@ -4208,19 +4208,15 @@ HPresolve::Result HPresolve::removeDependentEquations(
   // Determine the matrix rank deficiency
   HFactor factor;
   factor.setup(matrix, colSet);
-  HighsTimer timer;
-  timer.startRunHighsClock();
-  double build_time;
-  factor.setupTimer(timer);
   if (analyse_build) {
-    factor.setupOptions(*options);
+    factor.setupOptions(options);
     factor.setAnalysisOptions(kHighsAnalysisLevelNlaData +
                               kHighsAnalysisLevelNlaTime +
                               kHighsAnalysisLevelExtra);
-    build_time = -timer.readRunHighsClock();
   }
   HighsInt rank_deficiency = factor.build();
-  if (analyse_build) build_time += timer.readRunHighsClock();
+  if (analyse_build)
+    factor.debugReportAnalyseBuild("Dependent equations");
   // Now remove any rows corresponding to rank deficiency
   for (HighsInt k = 0; k < rank_deficiency; k++) {
     if (factor.var_with_no_pivot[k] >= 0) {
@@ -4228,11 +4224,6 @@ HPresolve::Result HPresolve::removeDependentEquations(
       postSolveStack.redundantRow(redundant_row);
       removeRow(redundant_row);
     }
-  }
-  if (analyse_build) {
-    factor.debugReportAnalyseBuild("Dependent equations");
-    highsLogUser(options->log_options, HighsLogType::kInfo,
-                 "Build time is %6.4f seconds\n", build_time);
   }
   return Result::kOk;
 }
@@ -4292,30 +4283,21 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
   // Determine the matrix rank deficiency
   HFactor factor;
   factor.setup(matrix, colSet);
-  HighsTimer timer;
-  timer.startRunHighsClock();
-  double build_time;
-  factor.setupTimer(timer);
   if (analyse_build) {
-    factor.setupOptions(*options);
+    factor.setupOptions(options);
     factor.setAnalysisOptions(kHighsAnalysisLevelNlaData +
                               kHighsAnalysisLevelNlaTime +
                               kHighsAnalysisLevelExtra);
-    build_time = -timer.readRunHighsClock();
   }
   HighsInt rank_deficiency = factor.build();
-  if (analyse_build) build_time += timer.readRunHighsClock();
+  if (analyse_build)
+    factor.debugReportAnalyseBuild("Dependent free columns");
   // Now remove any columns corresponding to rank deficiency
   for (HighsInt k = 0; k < rank_deficiency; k++) {
     if (factor.var_with_no_pivot[k] >= 0) {
       HighsInt redundant_col = freeCols[factor.var_with_no_pivot[k]];
       fixColToZero(postSolveStack, redundant_col);
     }
-  }
-  if (analyse_build) {
-    factor.debugReportAnalyseBuild("Dependent free columns");
-    highsLogUser(options->log_options, HighsLogType::kInfo,
-                 "Build time is %6.4f seconds\n", build_time);
   }
   return Result::kOk;
 }
