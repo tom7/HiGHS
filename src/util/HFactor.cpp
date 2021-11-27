@@ -914,22 +914,13 @@ HighsInt HFactor::buildKernel() {
   // num_row
   const HighsInt max_count = max(num_row, num_basic);
   HighsInt num_unpivoted_column = nwork;
+  // Initialise the factor to apply to ideal_pivot in order to
+  // determine that a pivot has been found
+  double ok_merit_multiplier = 2;
   while (nwork-- > 0) {
     /**
      * 1. Search for the pivot
      */
-    if (analyse_build_) {
-      HighsInt num_pivoted_column = analyse_build_record_.num_simple_pivot + analyse_build_record_.num_kernel_pivot;
-      if (num_unpivoted_column != num_basic - num_pivoted_column) {
-	printf("%d = num_unpivoted_column != num_basic - num_pivoted_column = %d = %d - (%d + %d)\n",
-	       (int)num_unpivoted_column, (int)(num_basic - num_pivoted_column),
-	       (int)num_basic,
-	       (int)analyse_build_record_.num_simple_pivot,
-	       (int)analyse_build_record_.num_kernel_pivot);
-	fflush(stdout);
-      }
-      assert(num_unpivoted_column == num_basic - num_pivoted_column);
-    }
     HighsInt jColPivot = -1;
     HighsInt iRowPivot = -1;
     //    int8_t pivot_type = kPivotIllegal;
@@ -1006,17 +997,6 @@ HighsInt HFactor::buildKernel() {
     // num_basic
     //
     if (!found_pivot) {
-      // Determine the factor to apply to ideal_pivot in order to
-      // determine that a column search was good
-      if (2*num_unpivoted_column < num_basic) {
-	ok_merit_multiplier = 1e1;
-      }	else if (2*num_unpivoted_column < num_basic) {
-	ok_merit_multiplier = 1e2;
-      }	else if (4*num_unpivoted_column < num_basic) {
-	ok_merit_multiplier = 1e3;
-      }	else {
-	ok_merit_multiplier = kHighsInf;
-      }
       //
       // Find the smallest row and column counts exceeding 1 in the
       // active sub-matrix
@@ -1069,10 +1049,7 @@ HighsInt HFactor::buildKernel() {
 		other_count_ideal = count;
 		findPivotRowSearch(found_pivot, count, jColPivot, iRowPivot);
 	      } else {
-		if (original) {
-		  printf("1: fake_search += count (%d, %d) (%d, %d)\n", (int)fake_search, (int)count, (int)jColPivot, (int)iRowPivot);
-		  fake_search += count;
-		}
+		if (original) fake_search += count;
 	      }
 	    }
             if (found_pivot) break;
@@ -1153,6 +1130,9 @@ HighsInt HFactor::buildKernel() {
           updateValueDistribution(pivot_col_count, analyse_pivot_col_count_);
           updateValueDistribution(pivot_row_count, analyse_pivot_row_count_);
         }
+
+	// If more than half of the unpivoted columns have had to be searched to find a decent pivot, 
+	//	if (2*num_col_search > num_unpivoted_column num_basic) ok_merit_multiplier*=2;
 	if (analyse_build_) timer_->stop(build_search_clock);
       }
     }
@@ -1402,11 +1382,11 @@ HighsInt HFactor::buildKernel() {
 				 analyse_build_record_.build_search_time / analyse_build_record_.build_time : -1);
 	const double elimination_pct = 1e2*(analyse_build_record_.build_time>1 ?
 				      analyse_build_record_.build_elimination_time / analyse_build_record_.build_time : -1);
-	printf("Pivot pass %6d:"
-	       " Search (col = %3d; el = %5d; ok_pv = %5d; better_merit = %4d)"
+	printf("Pivot pass %6d: mu = %4g"
+	       " Search (col = %6d; el = %7d; ok_pv = %6d; better_merit = %4d)"
 	       " Merit (ideal = %5d; pivot = %5d)"
 	       " Time (All = %6.4f; search = %6.4f [%3d%%]; elimination = %6.4f [%3d%%])\n",
-	       (int)analyse_num_pivot,
+	       (int)analyse_num_pivot, ok_merit_multiplier,
 	       (int)num_col_search, (int)num_col_el_search, (int)num_col_el_ok_pivot, (int)num_col_el_better_merit,
 	       (int)ideal_merit, (int)pivot_merit,
 	       analyse_build_record_.build_time,
@@ -1417,9 +1397,6 @@ HighsInt HFactor::buildKernel() {
   }
   build_synthetic_tick +=
       fake_search * 20 + fake_fill * 160 + fake_eliminate * 80;
-  printf("buildKernel: build_synthetic_tick = %g (%d, %g, %g)\n",
-	 build_synthetic_tick, (int)fake_search, fake_fill, + fake_eliminate);
-  //  fflush(stdout);if(fake_search) exit(0);
   rank_deficiency = 0;
   if (extra_analyse_build_) analyseActiveKernelFinal();
   return rank_deficiency;
@@ -1468,23 +1445,14 @@ void HFactor::findPivotColSearch(bool& found_pivot, const HighsInt col_count,
       found_ideal_pivot = !original && pivot_merit <= ideal_merit;
       if (found_ideal_pivot) break;
     }
-    // To avoid accepting pivots with large merits as candidates, only
-    // increment search_count if this column is good
-    bool good_column = best_merit <= ok_merit_multiplier * ideal_merit;
-    if (original) good_column = true;
-	const HighsInt prev_searchCount = search_count;
     if ((search_count >= search_limit && pivot_merit < limit_merit) ||
 	found_ideal_pivot) found_pivot = true;
-    if (good_column) search_count++;
-	printf("prev_searchCount = %d; searchCount = %d; searchLimit = %d: foundPivot = %d\n",
-	       (int)prev_searchCount, (int)search_count, (int)search_limit, (int)found_pivot);
-    
+    search_count++;
     if (!original) fake_search += col_count;
     if (found_pivot) break;
 
     // ToDo Should be above break
     if (original) {
-      printf("0: fake_search += count (%d, %d) (%d, %d)\n", (int)fake_search, (int)col_count, (int)jColPivot, (int)iRowPivot);
       fake_search += col_count;
     }
   }
@@ -1528,20 +1496,15 @@ void HFactor::findPivotRowSearch(bool& found_pivot, const HighsInt row_count,
       found_ideal_pivot = !original && pivot_merit <= ideal_merit;
       if (found_ideal_pivot) break;
     }
-    // To avoid accepting pivots with large merits as candidates, only
-    // increment search_count if this column is good
-    bool good_column = best_merit <= ok_merit_multiplier * ideal_merit;
-    if (original) good_column = true;
     if ((search_count >= search_limit && pivot_merit < limit_merit) ||
 	found_ideal_pivot) found_pivot = true;
-    if (good_column) search_count++;
+    search_count++;
     if (!original) fake_search += row_count;
     if (found_pivot) break;
   }
 
   // ToDo Should be above break
   if (original) {
-    printf("1: fake_search += count (%d, %d) (%d, %d)\n", (int)fake_search, (int)row_count, (int)jColPivot, (int)iRowPivot);
     fake_search += row_count;
   }
 }
