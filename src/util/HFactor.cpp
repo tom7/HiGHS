@@ -1142,10 +1142,9 @@ HighsInt HFactor::buildKernel() {
           updateValueDistribution(pivot_row_count, analyse_pivot_row_count_);
         }
 
-        // If more than half of the unpivoted columns have had to be searched to
-        // find a decent pivot,
-        //	if (2*num_col_search > num_unpivoted_column num_basic)
-        //ok_merit_multiplier*=2;
+        // If more than half of the unpivoted columns have had to be
+        // searched to find a decent pivot, if (2*num_col_search >
+        // num_unpivoted_column num_basic) ok_merit_multiplier*=2;
         if (analyse_build_) timer_->stop(build_search_clock);
       }
     }
