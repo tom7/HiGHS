@@ -4215,8 +4215,7 @@ HPresolve::Result HPresolve::removeDependentEquations(
                               kHighsAnalysisLevelExtra);
   }
   HighsInt rank_deficiency = factor.build();
-  if (analyse_build)
-    factor.debugReportAnalyseBuild("Dependent equations");
+  if (analyse_build) factor.debugReportAnalyseBuild("Dependent equations");
   // Now remove any rows corresponding to rank deficiency
   for (HighsInt k = 0; k < rank_deficiency; k++) {
     if (factor.var_with_no_pivot[k] >= 0) {
@@ -4290,8 +4289,7 @@ HPresolve::Result HPresolve::removeDependentFreeCols(
                               kHighsAnalysisLevelExtra);
   }
   HighsInt rank_deficiency = factor.build();
-  if (analyse_build)
-    factor.debugReportAnalyseBuild("Dependent free columns");
+  if (analyse_build) factor.debugReportAnalyseBuild("Dependent free columns");
   // Now remove any columns corresponding to rank deficiency
   for (HighsInt k = 0; k < rank_deficiency; k++) {
     if (factor.var_with_no_pivot[k] >= 0) {

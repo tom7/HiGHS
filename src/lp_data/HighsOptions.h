@@ -851,8 +851,10 @@ class HighsOptions : public HighsOptionsStruct {
     records.push_back(record_int);
 
     record_int = new OptionRecordInt(
-        "markowitz_search_strategy", "Strategy for Markowitz search 0 => Original; 1 => Refined; 2 => Switched original; 3 => Only column; 4 => Alternate best", advanced,
-        &markowitz_search_strategy, kMarkowitzSearchStrategyMin,
+        "markowitz_search_strategy",
+        "Strategy for Markowitz search 0 => Original; 1 => Refined; 2 => "
+        "Switched original; 3 => Only column; 4 => Alternate best",
+        advanced, &markowitz_search_strategy, kMarkowitzSearchStrategyMin,
         kMarkowitzSearchStrategyOg, kMarkowitzSearchStrategyMax);
     records.push_back(record_int);
 

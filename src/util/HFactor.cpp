@@ -214,7 +214,8 @@ void HFactor::setupGeneral(const HighsInt num_col_, const HighsInt num_row_,
   if (!internal_timer_.runningRunHighsClock())
     internal_timer_.startRunHighsClock();
   this->build_search_clock = internal_timer_.clock_def("Build search");
-  this->build_elimination_clock = internal_timer_.clock_def("Build elimination");
+  this->build_elimination_clock =
+      internal_timer_.clock_def("Build elimination");
 
   // Allocate for working buffer
   iwork.reserve(num_row * 2);
@@ -368,8 +369,9 @@ HighsInt HFactor::build(HighsTimerClock* factor_timer_clock_pointer) {
     rank_deficiency = rebuild(factor_timer_clock_pointer);
     factor_timer.stop(FactorReinvert, factor_timer_clock_pointer);
     if (!rank_deficiency) {
-      if (analyse_build_) analyse_build_record_.build_time =
-	  timer_->readRunHighsClock() - build_time_start_;
+      if (analyse_build_)
+        analyse_build_record_.build_time =
+            timer_->readRunHighsClock() - build_time_start_;
       return 0;
     }
   }
@@ -423,8 +425,9 @@ HighsInt HFactor::build(HighsTimerClock* factor_timer_clock_pointer) {
     assert(!this->refactor_info_.use);
     const HighsInt basic_index_rank_deficiency =
         rank_deficiency - (num_row - num_basic);
-    if (analyse_build_) analyse_build_record_.build_time =
-	timer_->readRunHighsClock() - build_time_start_;
+    if (analyse_build_)
+      analyse_build_record_.build_time =
+          timer_->readRunHighsClock() - build_time_start_;
     return basic_index_rank_deficiency;
   }
   // Complete INVERT
@@ -459,7 +462,7 @@ HighsInt HFactor::build(HighsTimerClock* factor_timer_clock_pointer) {
     debugLogRankDeficiency(highs_debug_level, log_options_, rank_deficiency,
                            analyse_build_record_, nwork);
     analyse_build_record_.build_time =
-      timer_->readRunHighsClock() - build_time_start_;
+        timer_->readRunHighsClock() - build_time_start_;
   }
 
   factor_timer.stop(FactorInvert, factor_timer_clock_pointer);
@@ -886,8 +889,7 @@ HighsInt HFactor::buildKernel() {
       analyse_build_record_.kernel_max_num_nz =
           analyse_build_record_.kernel_initial_num_nz;
       // Analyse and possibly report the initial kernel
-      if (extra_analyse_build_)
-	analyseActiveKernelCounts("Initial kernel");
+      if (extra_analyse_build_) analyseActiveKernelCounts("Initial kernel");
       analyseActiveKernel(extra_analyse_build_);
       if (extra_analyse_build_) printf("\n");
       analyse_initial_kernel_value_ = analyse_kernel_value_;
@@ -905,7 +907,8 @@ HighsInt HFactor::buildKernel() {
       initialiseValueDistribution("Kernel pivot value", "", 1e-8, 1e16, 10.0,
                                   analyse_pivot_value_);
       analyse_num_pivot = analyse_build_record_.num_simple_pivot;
-      analyse_build_time_of_last_report = timer_->readRunHighsClock() - build_time_start_;
+      analyse_build_time_of_last_report =
+          timer_->readRunHighsClock() - build_time_start_;
     }
   }
   min_row_count = kHighsIInf;
@@ -934,36 +937,39 @@ HighsInt HFactor::buildKernel() {
 
     if (analyse_build_) {
       analyse_build_record_.num_kernel_pivot++;
-      const double elapsed_time = timer_->readRunHighsClock() - build_time_start_;
+      const double elapsed_time =
+          timer_->readRunHighsClock() - build_time_start_;
       if (analyse_num_pivot % compute_kernel_num_nz_frequency == 0)
         analyse_build_record_.kernel_max_num_nz =
             std::max(getKernelNumNz(), analyse_build_record_.kernel_max_num_nz);
       if (extra_analyse_build_) {
-	bool analyse_build_report =
-	  analyse_num_pivot % progress_frequency == 0 ||
-	  analyse_build_record_.num_kernel_pivot == 0;
-	/*
-	const double elapsed_time = timer_->readRunHighsClock() - build_time_start_;
-	const double analyse_build_time_since_last_report = elapsed_time - analyse_build_time_of_last_report;
-	if (analyse_build_time_since_last_report > 10.0) {
-	  HighsInt order_of_elapsed_time = log(elapsed_time) / log(10.0);
-	  const double elapsed_time_record_required_interval = pow(10.0, order_of_elapsed_time-1);
-	  if (analyse_build_time_since_last_report >
-	      elapsed_time_record_required_interval) analyse_build_report = true;
-	}
-	*/
+        bool analyse_build_report =
+            analyse_num_pivot % progress_frequency == 0 ||
+            analyse_build_record_.num_kernel_pivot == 0;
+        /*
+        const double elapsed_time = timer_->readRunHighsClock() -
+        build_time_start_; const double analyse_build_time_since_last_report =
+        elapsed_time - analyse_build_time_of_last_report; if
+        (analyse_build_time_since_last_report > 10.0) { HighsInt
+        order_of_elapsed_time = log(elapsed_time) / log(10.0); const double
+        elapsed_time_record_required_interval = pow(10.0,
+        order_of_elapsed_time-1); if (analyse_build_time_since_last_report >
+              elapsed_time_record_required_interval) analyse_build_report =
+        true;
+        }
+        */
         if (analyse_build_report) {
           ss.str(std::string());
           ss << "GE stage " << analyse_num_pivot;
-	  ss << highsFormatToString(" (Time %6.4f)", elapsed_time);
+          ss << highsFormatToString(" (Time %6.4f)", elapsed_time);
           GE_stage_name = ss.str();
           analyseActiveKernelCounts(GE_stage_name);
           if (analyse_intermidiate_active_kernel) {
             analyseActiveKernel(true);
             printf("\n");
-	    fflush(stdout);
+            fflush(stdout);
           }
-	  analyse_build_time_of_last_report = elapsed_time;
+          analyse_build_time_of_last_report = elapsed_time;
         }
         analyse_num_pivot++;
       }
@@ -1018,122 +1024,129 @@ HighsInt HFactor::buildKernel() {
       bool no_col_count = min_row_count == kHighsIInf;
       assert(no_row_count == no_col_count);
       if (!no_row_count) {
-	if (analyse_build_) timer_->start(build_search_clock);
-	num_col_search = 0;
-	num_col_el_search = 0;
-	num_col_el_ok_pivot = 0;
-	num_col_el_better_merit = 0;
+        if (analyse_build_) timer_->start(build_search_clock);
+        num_col_search = 0;
+        num_col_el_search = 0;
+        num_col_el_ok_pivot = 0;
+        num_col_el_better_merit = 0;
         // Record the best possible merit: search should stop if an
         // pivot of this merit is found
         ideal_merit = 1.0 * (min_col_count - 1) * (min_row_count - 1);
         // Now to search for a pivot
-	const bool original = markowitz_search_strategy == kMarkowitzSearchStrategyOg;
+        const bool original =
+            markowitz_search_strategy == kMarkowitzSearchStrategyOg;
         if (markowitz_search_strategy == kMarkowitzSearchStrategyOg ||
             markowitz_search_strategy == kMarkowitzSearchStrategyRefinedOg) {
           for (HighsInt count = 2; count <= max_count; count++) {
-	    if (count <= num_row) {
-	      if (col_link_first[count] >= 0) {
-		// Have searched through (any) columns of lower count,
-		// but could still hit a row of minimum count
-		ideal_merit = 1.0 * (count - 1) * (min_row_count - 1);
-		other_count_ideal = count-1;
-		findPivotColSearch(found_pivot, count, jColPivot, iRowPivot);
-	      }
-	    }
+            if (count <= num_row) {
+              if (col_link_first[count] >= 0) {
+                // Have searched through (any) columns of lower count,
+                // but could still hit a row of minimum count
+                ideal_merit = 1.0 * (count - 1) * (min_row_count - 1);
+                other_count_ideal = count - 1;
+                findPivotColSearch(found_pivot, count, jColPivot, iRowPivot);
+              }
+            }
             if (!original && found_pivot) break;
-	    if (count <= num_basic) {
-	      if (row_link_first[count] >= 0) {
-		// Have searched through (any) rows of lower count, but
-		// could still hit a column of minimum count
-		ideal_merit = 1.0 * (min_col_count - 1) * (count - 1);
-		other_count_ideal = count;
-		findPivotRowSearch(found_pivot, count, jColPivot, iRowPivot);
-	      } else {
-		if (original) fake_search += count;
-	      }
-	    }
+            if (count <= num_basic) {
+              if (row_link_first[count] >= 0) {
+                // Have searched through (any) rows of lower count, but
+                // could still hit a column of minimum count
+                ideal_merit = 1.0 * (min_col_count - 1) * (count - 1);
+                other_count_ideal = count;
+                findPivotRowSearch(found_pivot, count, jColPivot, iRowPivot);
+              } else {
+                if (original) fake_search += count;
+              }
+            }
             if (found_pivot) break;
           }
         } else if (markowitz_search_strategy ==
                    kMarkowitzSearchStrategySwitchedOg) {
-	  // Search over rows before columns
+          // Search over rows before columns
           for (HighsInt count = 2; count <= max_count; count++) {
-	    if (row_link_first[count] >= 0) {
-	      // Have searched through (any) rows of lower count, but
-	      // could still hit a column of minimum count
-	      ideal_merit = 1.0 * (min_col_count - 1) * (count - 1);
-	      other_count_ideal = min_col_count;
-	      findPivotRowSearch(found_pivot, count, jColPivot, iRowPivot);
-	    }
+            if (row_link_first[count] >= 0) {
+              // Have searched through (any) rows of lower count, but
+              // could still hit a column of minimum count
+              ideal_merit = 1.0 * (min_col_count - 1) * (count - 1);
+              other_count_ideal = min_col_count;
+              findPivotRowSearch(found_pivot, count, jColPivot, iRowPivot);
+            }
             if (found_pivot) break;
-	    if (col_link_first[count] >= 0) {
-	      // Have searched through (any) columns of lower count,
-	      // but could still hit a row of minimum count
-	      ideal_merit = 1.0 * (count - 1) * (min_row_count - 1);
-	      other_count_ideal = min_row_count;
-	      findPivotColSearch(found_pivot, count, jColPivot, iRowPivot);
-	    }
+            if (col_link_first[count] >= 0) {
+              // Have searched through (any) columns of lower count,
+              // but could still hit a row of minimum count
+              ideal_merit = 1.0 * (count - 1) * (min_row_count - 1);
+              other_count_ideal = min_row_count;
+              findPivotColSearch(found_pivot, count, jColPivot, iRowPivot);
+            }
             if (found_pivot) break;
           }
         } else if (markowitz_search_strategy ==
                    kMarkowitzSearchStrategyColumn) {
-	  // Just search over columns - since row searches require the
-	  // value to be found before it can be assessed as a pivot
+          // Just search over columns - since row searches require the
+          // value to be found before it can be assessed as a pivot
           for (HighsInt col_count = 2; col_count <= max_count; col_count++) {
-	    if (col_link_first[col_count]<0) continue;
-	    // Have searched through (any) columns of lower count,
-	    // but could still hit a row of minimum count
-	    ideal_merit = 1.0 * (col_count - 1) * (min_row_count - 1);
-	    other_count_ideal = min_row_count;
+            if (col_link_first[col_count] < 0) continue;
+            // Have searched through (any) columns of lower count,
+            // but could still hit a row of minimum count
+            ideal_merit = 1.0 * (col_count - 1) * (min_row_count - 1);
+            other_count_ideal = min_row_count;
             findPivotColSearch(found_pivot, col_count, jColPivot, iRowPivot);
             if (found_pivot) break;
           }
         } else {
-	  assert(markowitz_search_strategy ==
-		 kMarkowitzSearchStrategyAlternateBest);
-	  // Initialise the column and row counts to be searched to be
-	  // the absolute minimum achievable values
-	  HighsInt search_col_count = min_col_count;
-	  HighsInt search_row_count = min_row_count;
-	  for (;;) {
-	    // Search columns with count search_col_count
-	    assert(col_link_first[search_col_count] >= 0);
-	    ideal_merit = 1.0 * (search_col_count - 1) * (min_row_count - 1);
-	    other_count_ideal = min_row_count;
-	    findPivotColSearch(found_pivot, search_col_count, jColPivot, iRowPivot);
+          assert(markowitz_search_strategy ==
+                 kMarkowitzSearchStrategyAlternateBest);
+          // Initialise the column and row counts to be searched to be
+          // the absolute minimum achievable values
+          HighsInt search_col_count = min_col_count;
+          HighsInt search_row_count = min_row_count;
+          for (;;) {
+            // Search columns with count search_col_count
+            assert(col_link_first[search_col_count] >= 0);
+            ideal_merit = 1.0 * (search_col_count - 1) * (min_row_count - 1);
+            other_count_ideal = min_row_count;
+            findPivotColSearch(found_pivot, search_col_count, jColPivot,
+                               iRowPivot);
             if (found_pivot) break;
-	    // No pivot with column count search_col_count, so find
-	    // the new minimum achievable column count
-	    for (HighsInt col_count = search_col_count+1; col_count <= num_row; col_count++) {
-	      if (col_link_first[col_count] >= 0) {
-		search_col_count = col_count;
-		break;
-	      }
-	    }
-	    // Search rows with count search_row_count
-	    assert(row_link_first[search_row_count] >= 0);
-	    ideal_merit = 1.0 * (min_col_count - 1) * (search_row_count - 1);
-	    other_count_ideal = min_col_count;
-	    findPivotRowSearch(found_pivot, search_row_count, jColPivot, iRowPivot);
+            // No pivot with column count search_col_count, so find
+            // the new minimum achievable column count
+            for (HighsInt col_count = search_col_count + 1;
+                 col_count <= num_row; col_count++) {
+              if (col_link_first[col_count] >= 0) {
+                search_col_count = col_count;
+                break;
+              }
+            }
+            // Search rows with count search_row_count
+            assert(row_link_first[search_row_count] >= 0);
+            ideal_merit = 1.0 * (min_col_count - 1) * (search_row_count - 1);
+            other_count_ideal = min_col_count;
+            findPivotRowSearch(found_pivot, search_row_count, jColPivot,
+                               iRowPivot);
             if (found_pivot) break;
-	    // No pivot with row count search_row_count, so find
-	    // the new minimum achievable row count
-	    for (HighsInt row_count = search_row_count+1; row_count <= num_basic; row_count++) {
-	      if (row_link_first[row_count] >= 0) {
-		search_row_count = row_count;
-		break;
-	      }
-	    }
-	  }
-	}
+            // No pivot with row count search_row_count, so find
+            // the new minimum achievable row count
+            for (HighsInt row_count = search_row_count + 1;
+                 row_count <= num_basic; row_count++) {
+              if (row_link_first[row_count] >= 0) {
+                search_row_count = row_count;
+                break;
+              }
+            }
+          }
+        }
         if (analyse_build_) {
           updateValueDistribution(pivot_col_count, analyse_pivot_col_count_);
           updateValueDistribution(pivot_row_count, analyse_pivot_row_count_);
         }
 
-	// If more than half of the unpivoted columns have had to be searched to find a decent pivot, 
-	//	if (2*num_col_search > num_unpivoted_column num_basic) ok_merit_multiplier*=2;
-	if (analyse_build_) timer_->stop(build_search_clock);
+        // If more than half of the unpivoted columns have had to be searched to
+        // find a decent pivot,
+        //	if (2*num_col_search > num_unpivoted_column num_basic)
+        //ok_merit_multiplier*=2;
+        if (analyse_build_) timer_->stop(build_search_clock);
       }
     }
     // 1.4. If we found nothing: tell singular
@@ -1375,23 +1388,34 @@ HighsInt HFactor::buildKernel() {
     if (analyse_build_) {
       timer_->stop(build_elimination_clock);
       analyse_build_record_.build_time = timer_->readRunHighsClock();
-      analyse_build_record_.build_search_time = timer_->read(build_search_clock);
-      analyse_build_record_.build_elimination_time = timer_->read(build_elimination_clock);
+      analyse_build_record_.build_search_time =
+          timer_->read(build_search_clock);
+      analyse_build_record_.build_elimination_time =
+          timer_->read(build_elimination_clock);
       if (analyse_num_pivot > 1000 && analyse_num_pivot % 100 == 0) {
-	const double search_pct = 1e2*(analyse_build_record_.build_time>1 ?
-				 analyse_build_record_.build_search_time / analyse_build_record_.build_time : -1);
-	const double elimination_pct = 1e2*(analyse_build_record_.build_time>1 ?
-				      analyse_build_record_.build_elimination_time / analyse_build_record_.build_time : -1);
-	printf("Pivot pass %6d: mu = %4g"
-	       " Search (col = %6d; el = %7d; ok_pv = %6d; better_merit = %4d)"
-	       " Merit (ideal = %5d; pivot = %5d)"
-	       " Time (All = %6.4f; search = %6.4f [%3d%%]; elimination = %6.4f [%3d%%])\n",
-	       (int)analyse_num_pivot, ok_merit_multiplier,
-	       (int)num_col_search, (int)num_col_el_search, (int)num_col_el_ok_pivot, (int)num_col_el_better_merit,
-	       (int)ideal_merit, (int)pivot_merit,
-	       analyse_build_record_.build_time,
-	       analyse_build_record_.build_search_time, (int)search_pct,
-	       analyse_build_record_.build_elimination_time, (int)elimination_pct);fflush(stdout);
+        const double search_pct =
+            1e2 * (analyse_build_record_.build_time > 1
+                       ? analyse_build_record_.build_search_time /
+                             analyse_build_record_.build_time
+                       : -1);
+        const double elimination_pct =
+            1e2 * (analyse_build_record_.build_time > 1
+                       ? analyse_build_record_.build_elimination_time /
+                             analyse_build_record_.build_time
+                       : -1);
+        printf(
+            "Pivot pass %6d: mu = %4g"
+            " Search (col = %6d; el = %7d; ok_pv = %6d; better_merit = %4d)"
+            " Merit (ideal = %5d; pivot = %5d)"
+            " Time (All = %6.4f; search = %6.4f [%3d%%]; elimination = %6.4f "
+            "[%3d%%])\n",
+            (int)analyse_num_pivot, ok_merit_multiplier, (int)num_col_search,
+            (int)num_col_el_search, (int)num_col_el_ok_pivot,
+            (int)num_col_el_better_merit, (int)ideal_merit, (int)pivot_merit,
+            analyse_build_record_.build_time,
+            analyse_build_record_.build_search_time, (int)search_pct,
+            analyse_build_record_.build_elimination_time, (int)elimination_pct);
+        fflush(stdout);
       }
     }
   }
@@ -1423,15 +1447,15 @@ void HFactor::findPivotColSearch(bool& found_pivot, const HighsInt col_count,
     double best_merit = kHighsInf;
     for (HighsInt k = start; k < end; k++) {
       if (fabs(mc_value[k]) >= min_pivot) {
-	num_col_el_ok_pivot++;
+        num_col_el_ok_pivot++;
         // This entry is big enough to be a pivot, but what's
         // its merit?
         HighsInt i = mc_index[k];
         HighsInt row_count = mr_count[i];
         double local_merit = 1.0 * (col_count - 1) * (row_count - 1);
-	best_merit = std::min(local_merit, best_merit);
+        best_merit = std::min(local_merit, best_merit);
         if (pivot_merit > local_merit) {
-	  num_col_el_better_merit++;
+          num_col_el_better_merit++;
           // Better than the current best merit
           pivot_col_count = col_count;
           pivot_row_count = row_count;
@@ -1446,7 +1470,8 @@ void HFactor::findPivotColSearch(bool& found_pivot, const HighsInt col_count,
       if (found_ideal_pivot) break;
     }
     if ((search_count >= search_limit && pivot_merit < limit_merit) ||
-	found_ideal_pivot) found_pivot = true;
+        found_ideal_pivot)
+      found_pivot = true;
     search_count++;
     if (!original) fake_search += col_count;
     if (found_pivot) break;
@@ -1497,7 +1522,8 @@ void HFactor::findPivotRowSearch(bool& found_pivot, const HighsInt row_count,
       if (found_ideal_pivot) break;
     }
     if ((search_count >= search_limit && pivot_merit < limit_merit) ||
-	found_ideal_pivot) found_pivot = true;
+        found_ideal_pivot)
+      found_pivot = true;
     search_count++;
     if (!original) fake_search += row_count;
     if (found_pivot) break;

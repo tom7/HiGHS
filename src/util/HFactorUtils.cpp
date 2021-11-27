@@ -124,12 +124,13 @@ void HFactor::analyseActiveKernelCounts(const std::string message) {
            (int)local_min_row_count, (int)local_max_row_count);
     if (analyse_build_record_.kernel_initial_num_nz) {
       const HighsInt kernel_num_nz = getKernelNumNz();
-      const double fill_factor = (1.0 * kernel_num_nz) / analyse_build_record_.kernel_initial_num_nz;
-      printf("; Whole kernel has %9d nonzeros (fill factor %10.4g)", (int)kernel_num_nz, fill_factor);
+      const double fill_factor =
+          (1.0 * kernel_num_nz) / analyse_build_record_.kernel_initial_num_nz;
+      printf("; Whole kernel has %9d nonzeros (fill factor %10.4g)",
+             (int)kernel_num_nz, fill_factor);
     }
     printf("\n");
   }
-    
 }
 
 void HFactor::analyseActiveKernel(const bool report) {
@@ -151,7 +152,8 @@ void HFactor::analyseActiveKernel(const bool report) {
     }
   }
   for (HighsInt iCol = 0; iCol < num_basic; iCol++)
-    if (mc_min_pivot[iCol]>0) updateValueDistribution(mc_min_pivot[iCol], analyse_kernel_min_pivot_);
+    if (mc_min_pivot[iCol] > 0)
+      updateValueDistribution(mc_min_pivot[iCol], analyse_kernel_min_pivot_);
 
   for (HighsInt count = 0; count <= num_basic; count++) {
     for (HighsInt j = row_link_first[count]; j != -1; j = row_link_next[j])
@@ -211,8 +213,7 @@ void HFactor::debugReportAnalyseBuild(const std::string message) {
               message.c_str(), (int)analyse_build_record_.num_row,
               (int)analyse_build_record_.num_basic,
               (int)analyse_build_record_.basic_num_nz,
-              (int)report_rank_deficiency,
-	      analyse_build_record_.build_time);
+              (int)report_rank_deficiency, analyse_build_record_.build_time);
   highsLogDev(this->log_options_, HighsLogType::kInfo,
               "   Number of simple pivots = %d\n",
               (int)analyse_build_record_.num_simple_pivot);

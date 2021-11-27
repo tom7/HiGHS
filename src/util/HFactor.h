@@ -330,7 +330,6 @@ class HFactor {
   HighsInt num_col_el_ok_pivot;
   HighsInt num_col_el_better_merit;
 
-
   // Working buffer
   HighsInt nwork;
   vector<HighsInt> iwork;
