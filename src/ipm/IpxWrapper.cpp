@@ -994,15 +994,15 @@ void reportSolveData(const HighsLogOptions& log_options, const ipx::Info& ipx_in
 	 "    Maxvol skipped       = %d\n", (int)ipx_info.maxvol_skipped);
   highsLogDev(log_options, HighsLogType::kInfo,
 	 "    Maxvol passes        = %d\n", (int)ipx_info.maxvol_passes);
-  highsLogDev(log_options, HighsLogType::kInfo,
-	 "    Tableau num nonzeros = %d\n", (int)ipx_info.tbl_nnz);
-  highsLogDev(log_options, HighsLogType::kInfo,
-	 "    Tbl max?             = %11.4g\n", ipx_info.tbl_max);
-  highsLogDev(log_options, HighsLogType::kInfo,
-	 "    Frobnorm squared     = %11.4g\n", ipx_info.frobnorm_squared);
-  highsLogDev(log_options, HighsLogType::kInfo,
-	 "    Lambda max           = %11.4g\n", ipx_info.lambdamax);
-  highsLogDev(log_options, HighsLogType::kInfo,
-	 "    Volume increase      = %11.4g\n\n", ipx_info.volume_increase);
+  //  highsLogDev(log_options, HighsLogType::kInfo,
+  //	 "    Tableau num nonzeros = %d\n", (int)ipx_info.tbl_nnz);
+  //  highsLogDev(log_options, HighsLogType::kInfo,
+  //	 "    Tbl max?             = %11.4g\n", ipx_info.tbl_max);
+  //  highsLogDev(log_options, HighsLogType::kInfo,
+  //	 "    Frobnorm squared     = %11.4g\n", ipx_info.frobnorm_squared);
+  //  highsLogDev(log_options, HighsLogType::kInfo,
+  //	 "    Lambda max           = %11.4g\n", ipx_info.lambdamax);
+  //  highsLogDev(log_options, HighsLogType::kInfo,
+  //	 "    Volume increase      = %11.4g\n\n", ipx_info.volume_increase);
 
 }

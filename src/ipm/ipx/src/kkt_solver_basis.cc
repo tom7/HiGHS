@@ -48,6 +48,10 @@ void KKTSolverBasis::_Factorize(Iterate* iterate, Info* info) {
         info->errflag = maxvol.RunHeuristic(&colscale_[0], basis_);
     }
     info->updates_ipm += maxvol.updates();
+    info->maxvol_updates += maxvol.updates();
+    info->maxvol_skipped += maxvol.skipped();
+    // Since passes = -1 for RunHeuristic 
+    info->maxvol_passes += std::max(0, maxvol.passes()); 
     info->time_maxvol += maxvol.time();
     basis_changes_ += maxvol.updates();
     if (info->errflag)

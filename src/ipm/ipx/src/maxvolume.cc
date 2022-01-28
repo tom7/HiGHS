@@ -150,15 +150,15 @@ Int Maxvolume::RunHeuristic(const double* colscale, Basis& basis) {
     return errflag;
 }
 
-Int Maxvolume::updates() const { return updates_; }
-Int Maxvolume::skipped() const { return skipped_; }
-Int Maxvolume::passes() const { return passes_; }
-Int Maxvolume::slices() const { return slices_; }
-double Maxvolume::volinc() const { return volinc_; }
-double Maxvolume::time() const { return time_; }
-Int Maxvolume::tblnnz() const { return tblnnz_; }
-double Maxvolume::tblmax() const { return tblmax_; }
-double Maxvolume::frobnorm_squared() const { return frobnorm_squared_; }
+  Int Maxvolume::updates() const { return updates_; }
+  Int Maxvolume::skipped() const { return skipped_; }
+  Int Maxvolume::passes() const { return passes_; }
+  //Int Maxvolume::slices() const { return slices_; }
+  //double Maxvolume::volinc() const { return volinc_; }
+  double Maxvolume::time() const { return time_; }
+  //Int Maxvolume::tblnnz() const { return tblnnz_; }
+  //double Maxvolume::tblmax() const { return tblmax_; }
+  //double Maxvolume::frobnorm_squared() const { return frobnorm_squared_; }
 
 void Maxvolume::Reset() {
     updates_ = 0;

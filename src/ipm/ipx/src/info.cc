@@ -88,11 +88,11 @@ std::ostream& operator<<(std::ostream& os, const Info& info) {
     dump(os, "maxvol_updates", info.maxvol_updates);
     dump(os, "maxvol_skipped", info.maxvol_skipped);
     dump(os, "maxvol_passes", info.maxvol_passes);
-    dump(os, "tbl_nnz", info.tbl_nnz);
-    dump(os, "tbl_max", sci2(info.tbl_max));
-    dump(os, "frobnorm_squared", sci2(info.frobnorm_squared));
-    dump(os, "lambdamax", sci2(info.lambdamax));
-    dump(os, "volume_increase", sci2(info.volume_increase));
+    //    dump(os, "tbl_nnz", info.tbl_nnz);
+    //    dump(os, "tbl_max", sci2(info.tbl_max));
+    //    dump(os, "frobnorm_squared", sci2(info.frobnorm_squared));
+    //    dump(os, "lambdamax", sci2(info.lambdamax));
+    //    dump(os, "volume_increase", sci2(info.volume_increase));
 
     return os;
 }
