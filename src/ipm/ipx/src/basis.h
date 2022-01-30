@@ -301,15 +301,19 @@ private:
     Int num_updates_{0};           // # basis updates
     Int num_ftran_{0};             // # FTRAN operations, excluding partial
     Int num_btran_{0};             // # BTRAN operations, excluding partial
+    Int num_price_{0};             // # PRICE operations
     Int num_ftran_sparse_{0};      // # ... with sparse solution
     Int num_btran_sparse_{0};      // # ... with sparse solution
+    Int num_ftran_partial_{0};     // # FTRAN operations (partial)
+    Int num_btran_partial_{0};     // # BTRAN operations (partial)
     double time_ftran_{0.0};       // time for FTRAN ops, including partial
     double time_btran_{0.0};       // time for BTRAN ops, including partial
+    double time_price_{0.0};       // time for PRICE ops, including partial
     double time_update_{0.0};      // time for LU updates
     double time_factorize_{0.0};   // time for LU factorizations
     std::vector<double> fill_factors_; // fill factors from LU factorizations
-    double sum_ftran_density_{0.0};
-    double sum_btran_density_{0.0};
+    double sum_ftran_density_{0.0}; // Total density of FTRAN operations, excluding partial
+    double sum_btran_density_{0.0}; // Total density of BTRAN operations, excluding partial
 };
 
 #include <cassert>

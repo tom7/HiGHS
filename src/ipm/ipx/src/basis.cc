@@ -195,7 +195,6 @@ void Basis::SolveForUpdate(Int j, IndexedVector& lhs) {
         if (lhs.sparse())
             num_btran_sparse_++;
         time_btran_ += timer.Elapsed();
-	//	updateValueDistribution(density, btran_density);
     }
 }
 
@@ -210,10 +209,12 @@ void Basis::SolveForUpdate(Int j) {
         const Int* bi = AI.rowidx() + begin;
         const double* bx = AI.values() + begin;
         lu_->FtranForUpdate(nz, bi, bx);
+	num_ftran_partial_++;
         time_ftran_ += timer.Elapsed();
     }
     else {
         lu_->BtranForUpdate(p);
+	num_btran_partial_++;
         time_btran_ += timer.Elapsed();
     }
 }
@@ -225,6 +226,7 @@ void Basis::TableauRow(Int jb, IndexedVector& btran, IndexedVector& row,
     assert(IsBasic(jb));
     SolveForUpdate(jb, btran);
 
+    Timer timer;
     // Estimate if tableau row is sparse.
     bool is_sparse = btran.sparse();
     if (is_sparse) {
@@ -285,6 +287,8 @@ void Basis::TableauRow(Int jb, IndexedVector& btran, IndexedVector& row,
         }
         row.InvalidatePattern();
     }
+    num_price_++;
+    time_price_ += timer.Elapsed();
 }
 
 Int Basis::ExchangeIfStable(Int jb, Int jn, double tableau_entry, int sys,
@@ -918,13 +922,29 @@ void Basis::reportBasisData() const {
   printf("    Num factorizations = %d\n", (int)this->factorizations());
   printf("    Num updates = %d\n", (int)updates_total());
   if (this->num_ftran_) 
-    printf("    Average density of %7d FTRANs is %6.4f; sparse proportion = %6.4f\n",
+    printf("    Average density of %7d non-partial FTRAN is %6.4f; sparse proportion = %6.4f\n",
 	   (int)this->num_ftran_, this->sum_ftran_density_ / this->num_ftran_, frac_ftran_sparse());
   if (this->num_btran_) 
-    printf("    Average density of %7d BTRANs is %6.4f; sparse proportion = %6.4f\n",
+    printf("    Average density of %7d non-partial BTRAN is %6.4f; sparse proportion = %6.4f\n",
 	   (int)this->num_btran_, this->sum_btran_density_ / this->num_btran_, frac_btran_sparse());
-  printf("    Mean fill-in %11.4g\n", mean_fill());
-  printf("    Max  fill-in %11.4g\n", max_fill());
-
+  if (this->num_ftran_partial_) 
+    printf("    Also               %7d     partial FTRAN\n", (int)this->num_ftran_partial_);
+  if (this->num_btran_partial_) 
+    printf("                       %7d     partial BTRAN\n", (int)this->num_btran_partial_);
+  Int num_ftran = this->num_ftran_+this->num_ftran_partial_;
+  if (num_ftran)
+    printf("    Time for %7d FTRAN is %8.2f: %10.4g per call\n",
+	   (int)num_ftran, this->time_ftran_, this->time_ftran_/(1.0 * num_ftran));
+  Int num_btran = this->num_btran_+this->num_btran_partial_;
+  if (num_btran)
+    printf("    Time for %7d BTRAN is %8.2f: %10.4g per call\n",
+	   (int)num_btran, this->time_btran_, this->time_btran_/(1.0 * num_btran));
+  if (this->num_price_)
+    printf("    Time for %7d PRICE is %8.2f: %10.4g per call\n",
+	   (int)this->num_price_, this->time_price_, this->time_price_/(1.0 * this->num_price_));
+	   
+    
+  printf("    Mean LU fill-in %11.4g\n", mean_fill());
+  printf("    Max  LU fill-in %11.4g\n", max_fill());
 }
 }  // namespace ipx
