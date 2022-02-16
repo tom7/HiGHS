@@ -1235,6 +1235,7 @@ TEST_CASE("LP-interval-changes", "[highs_data]") {
   REQUIRE(optimal_objective_function_value ==
           avgas_optimal_objective_function_value);
 }
+
 TEST_CASE("LP-delete", "[highs_data]") {
   // Rather better testing of deleteCols() and deleteRows()
   Highs highs;
@@ -1387,6 +1388,27 @@ TEST_CASE("LP-delete", "[highs_data]") {
   REQUIRE(
       std::fabs(objective_function_value - adlittle_objective_function_value) <
       double_equal_tolerance);
+}
+
+TEST_CASE("LP-add-del-rows-cols", "[highs_data]") {
+  Highs highs;
+  if (!dev_run) highs.setOptionValue("output_flag", false);
+ 
+  HighsLp lp;
+  lp.num_col_ = 2;
+  lp.num_row_ = 1;
+  lp.col_cost_ = {1, 2};
+  lp.col_lower_ = {0, 0};
+  lp.col_upper_ = {inf, inf};
+  lp.row_lower_ = {1, 2};
+  lp.row_upper_ = {inf};
+  lp.a_matrix_.format_ = MatrixFormat::kColwise;
+  lp.a_matrix_.start_ = {0, 1, 2};
+  lp.a_matrix_.index_ = {0, 0};
+  lp.a_matrix_.value_ = {3, 2};
+  REQUIRE(highs.passModel(lp) == HighsStatus::kOk);
+  REQUIRE(highs.run() == HighsStatus::kOk);
+  if (dev_run) highs.writeSolution("", 1);
 }
 
 void HighsStatusReport(const HighsLogOptions& log_options, std::string message,
