@@ -114,4 +114,3 @@ HighsDebugStatus debugDualChuzcFailHeap(
               workDataNorm, workDualNorm);
   return HighsDebugStatus::kOk;
 }
-

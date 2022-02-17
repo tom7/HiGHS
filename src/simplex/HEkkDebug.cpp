@@ -744,7 +744,8 @@ HighsDebugStatus HEkk::debugBasisConsistent(const HighsLp* pass_lp) const {
   const HighsInt num_row = pass_lp ? pass_lp->num_row_ : this->lp_.num_row_;
   const SimplexBasis& basis = this->basis_;
   // Check consistency of nonbasicFlag
-  if (this->debugNonbasicFlagConsistent(pass_lp) == HighsDebugStatus::kLogicalError) {
+  if (this->debugNonbasicFlagConsistent(pass_lp) ==
+      HighsDebugStatus::kLogicalError) {
     highsLogDev(options.log_options, HighsLogType::kError,
                 "nonbasicFlag inconsistent\n");
     return_status = HighsDebugStatus::kLogicalError;
@@ -788,7 +789,8 @@ HighsDebugStatus HEkk::debugBasisConsistent(const HighsLp* pass_lp) const {
   return return_status;
 }
 
-HighsDebugStatus HEkk::debugNonbasicFlagConsistent(const HighsLp* pass_lp) const {
+HighsDebugStatus HEkk::debugNonbasicFlagConsistent(
+    const HighsLp* pass_lp) const {
   if (this->options_->highs_debug_level < kHighsDebugLevelCheap)
     return HighsDebugStatus::kNotChecked;
   HighsDebugStatus return_status = HighsDebugStatus::kOk;
