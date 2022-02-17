@@ -46,8 +46,4 @@ HighsDebugStatus debugDualChuzcFailHeap(
     const HighsInt numVar, const double* workDual, const double selectTheta,
     const bool force = false);
 
-HighsDebugStatus debugNonbasicFlagConsistent(const HighsOptions& options,
-                                             const HighsLp& lp,
-                                             const SimplexBasis& basis);
-
 #endif  // SIMPLEX_HSIMPLEXDEBUG_H_

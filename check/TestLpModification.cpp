@@ -5,7 +5,7 @@
 #include "util/HighsRandom.h"
 #include "util/HighsUtils.h"
 
-const bool dev_run = true;
+const bool dev_run = false;
 const double inf = kHighsInf;
 const double double_equal_tolerance = 1e-5;
 void HighsStatusReport(const HighsLogOptions& log_options, std::string message,
@@ -581,7 +581,7 @@ TEST_CASE("LP-modification", "[highs_data]") {
   REQUIRE(model_status == HighsModelStatus::kOptimal);
 
   highs.getInfoValue("objective_function_value", optimal_objective_value);
-  REQUIRE(optimal_objective_value == avgas_optimal_objective_value);
+  REQUIRE(std::fabs(optimal_objective_value - avgas_optimal_objective_value) < double_equal_tolerance);
 
   // Delete all the columns: OK
   REQUIRE(highs.deleteCols(0, num_col - 1) == HighsStatus::kOk);
@@ -788,7 +788,7 @@ TEST_CASE("LP-modification", "[highs_data]") {
   REQUIRE(model_status == HighsModelStatus::kOptimal);
 
   highs.getInfoValue("objective_function_value", optimal_objective_value);
-  REQUIRE(optimal_objective_value == avgas_optimal_objective_value);
+  REQUIRE(std::fabs(optimal_objective_value - avgas_optimal_objective_value) < double_equal_tolerance);
 
   // Fix columns 1, 3, 5, 7 to check resetting of their nonbasic status
   col1357_lower[0] = 0;
@@ -817,7 +817,7 @@ TEST_CASE("LP-modification", "[highs_data]") {
   callRun(highs, options.log_options, "highs.run()", HighsStatus::kOk);
 
   highs.getInfoValue("objective_function_value", optimal_objective_value);
-  REQUIRE(optimal_objective_value == avgas_optimal_objective_value);
+  REQUIRE(std::fabs(optimal_objective_value - avgas_optimal_objective_value) < double_equal_tolerance);
 
   const HighsLp& local_lp = highs.getLp();
   row0135789_lower[0] = local_lp.row_lower_[0];

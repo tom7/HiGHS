@@ -714,7 +714,7 @@ HighsDebugStatus HEkk::debugBasisCorrect(const HighsLp* lp) const {
     return HighsDebugStatus::kNotChecked;
   HighsDebugStatus return_status = HighsDebugStatus::kOk;
   const bool consistent =
-      this->debugBasisConsistent() != HighsDebugStatus::kLogicalError;
+      this->debugBasisConsistent(lp) != HighsDebugStatus::kLogicalError;
   if (!consistent) {
     highsLogDev(options.log_options, HighsLogType::kError,
                 "Supposed to be a Simplex basis, but not consistent\n");
@@ -734,22 +734,22 @@ HighsDebugStatus HEkk::debugBasisCorrect(const HighsLp* lp) const {
   return return_status;
 }
 
-HighsDebugStatus HEkk::debugBasisConsistent() const {
+HighsDebugStatus HEkk::debugBasisConsistent(const HighsLp* pass_lp) const {
   // Cheap analysis of a Simplex basis, checking vector sizes, numbers
   // of basic/nonbasic variables and non-repetition of basic variables
   if (this->options_->highs_debug_level < kHighsDebugLevelCheap)
     return HighsDebugStatus::kNotChecked;
   HighsDebugStatus return_status = HighsDebugStatus::kOk;
   const HighsOptions& options = *(this->options_);
-  const HighsLp& lp = this->lp_;
+  const HighsInt num_row = pass_lp ? pass_lp->num_row_ : this->lp_.num_row_;
   const SimplexBasis& basis = this->basis_;
   // Check consistency of nonbasicFlag
-  if (this->debugNonbasicFlagConsistent() == HighsDebugStatus::kLogicalError) {
+  if (this->debugNonbasicFlagConsistent(pass_lp) == HighsDebugStatus::kLogicalError) {
     highsLogDev(options.log_options, HighsLogType::kError,
                 "nonbasicFlag inconsistent\n");
     return_status = HighsDebugStatus::kLogicalError;
   }
-  const bool right_size = (HighsInt)basis.basicIndex_.size() == lp.num_row_;
+  const bool right_size = (HighsInt)basis.basicIndex_.size() == num_row;
   // Check consistency of basicIndex
   if (!right_size) {
     highsLogDev(options.log_options, HighsLogType::kError,
@@ -760,7 +760,7 @@ HighsDebugStatus HEkk::debugBasisConsistent() const {
   // Use localNonbasicFlag so that duplicate entries in basicIndex can
   // be spotted
   vector<int8_t> localNonbasicFlag = basis.nonbasicFlag_;
-  for (HighsInt iRow = 0; iRow < lp.num_row_; iRow++) {
+  for (HighsInt iRow = 0; iRow < num_row; iRow++) {
     HighsInt iCol = basis.basicIndex_[iRow];
     HighsInt flag = localNonbasicFlag[iCol];
     // Indicate that this column has been found in basicIndex
@@ -788,12 +788,12 @@ HighsDebugStatus HEkk::debugBasisConsistent() const {
   return return_status;
 }
 
-HighsDebugStatus HEkk::debugNonbasicFlagConsistent() const {
+HighsDebugStatus HEkk::debugNonbasicFlagConsistent(const HighsLp* pass_lp) const {
   if (this->options_->highs_debug_level < kHighsDebugLevelCheap)
     return HighsDebugStatus::kNotChecked;
   HighsDebugStatus return_status = HighsDebugStatus::kOk;
   const HighsOptions& options = *(this->options_);
-  const HighsLp& lp = this->lp_;
+  const HighsLp& lp = pass_lp ? *pass_lp : this->lp_;
   const SimplexBasis& basis = this->basis_;
   HighsInt numTot = lp.num_col_ + lp.num_row_;
   const bool right_size = (HighsInt)basis.nonbasicFlag_.size() == numTot;

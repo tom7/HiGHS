@@ -337,8 +337,8 @@ class HEkk {
                                     const double computed_dual) const;
 
   HighsDebugStatus debugBasisCorrect(const HighsLp* lp = NULL) const;
-  HighsDebugStatus debugBasisConsistent() const;
-  HighsDebugStatus debugNonbasicFlagConsistent() const;
+  HighsDebugStatus debugBasisConsistent(const HighsLp* lp = NULL) const;
+  HighsDebugStatus debugNonbasicFlagConsistent(const HighsLp* pass_lp = NULL) const;
   HighsDebugStatus debugNonbasicMove(const HighsLp* lp = NULL) const;
   HighsDebugStatus debugOkForSolve(const SimplexAlgorithm algorithm,
                                    const HighsInt phase) const;

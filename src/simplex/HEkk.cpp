@@ -349,7 +349,7 @@ void HEkk::updateStatus(LpAction action) {
       // Was just this->clear(); but can be much more efficient
       // this->clear();
       // Methods from this->clear();
-      this->clearEkkLp(); // OK to clear this?
+      //      this->clearEkkLp(); // OK to clear this?
       this->clearEkkDualise(); // Must clear any dual
       this->clearEkkData(); // Must clear everything but the simplex
 			    // LP, DSE weights, simplex basis or NLA
@@ -1798,6 +1798,7 @@ void HEkk::chooseSimplexStrategyThreads(const HighsOptions& options,
     } else {
       // Primal feasible. so use primal simplex
       simplex_strategy = kSimplexStrategyPrimal;
+      printf("HEkk::chooseSimplexStrategyThreads Choose primal since primal feasible\n");
     }
   }
   // Set min/max_threads to correspond to serial code. They will be

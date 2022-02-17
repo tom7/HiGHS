@@ -115,36 +115,3 @@ HighsDebugStatus debugDualChuzcFailHeap(
   return HighsDebugStatus::kOk;
 }
 
-HighsDebugStatus debugNonbasicFlagConsistent(const HighsOptions& options,
-                                             const HighsLp& lp,
-                                             const SimplexBasis& basis) {
-  if (options.highs_debug_level < kHighsDebugLevelCheap)
-    return HighsDebugStatus::kNotChecked;
-  HighsDebugStatus return_status = HighsDebugStatus::kOk;
-  HighsInt numTot = lp.num_col_ + lp.num_row_;
-  const bool right_size = (HighsInt)basis.nonbasicFlag_.size() == numTot;
-  if (!right_size) {
-    highsLogDev(options.log_options, HighsLogType::kError,
-                "nonbasicFlag size error\n");
-    assert(right_size);
-    return_status = HighsDebugStatus::kLogicalError;
-  }
-  HighsInt num_basic_variables = 0;
-  for (HighsInt var = 0; var < numTot; var++) {
-    if (basis.nonbasicFlag_[var] == kNonbasicFlagFalse) {
-      num_basic_variables++;
-    } else {
-      assert(basis.nonbasicFlag_[var] == kNonbasicFlagTrue);
-    }
-  }
-  bool right_num_basic_variables = num_basic_variables == lp.num_row_;
-  if (!right_num_basic_variables) {
-    highsLogDev(options.log_options, HighsLogType::kError,
-                "nonbasicFlag has %" HIGHSINT_FORMAT ", not %" HIGHSINT_FORMAT
-                " basic variables\n",
-                num_basic_variables, lp.num_row_);
-    assert(right_num_basic_variables);
-    return_status = HighsDebugStatus::kLogicalError;
-  }
-  return return_status;
-}
