@@ -114,9 +114,9 @@ void HEkk::clearEkkData() {
   // Clears Ekk-specific data scalars and vectors. Doesn't clear
   // status, as this is done elsewhere
   //
-  // Doesn't clear the LP, simplex NLA or simplex basis as part of
-  // clearing Ekk data, so that the simplex basis and HFactor instance
-  // are maintained
+  // Doesn't clear the simplex LP, DSE weights, simplex basis or
+  // simplex NLA as part of clearing Ekk data, so that the simplex
+  // basis, DSE weights and HFactor instance are maintained
   //
   // Does clear any frozen basis data
   if (this->status_.has_nla) this->simplex_nla_.frozenBasisClearAllData();
@@ -323,31 +323,63 @@ void HEkk::invalidateBasisArtifacts() {
 }
 
 void HEkk::updateStatus(LpAction action) {
-  assert(!this->status_.is_dualised);
-  assert(!this->status_.is_permuted);
+  HighsSimplexStatus& status = this->status_;
+  assert(!status.is_dualised);
+  assert(!status.is_permuted);
   switch (action) {
     case LpAction::kScale:
       this->invalidateBasisMatrix();
       this->clearHotStart();
       break;
     case LpAction::kNewCosts:
-      this->status_.has_fresh_rebuild = false;
-      this->status_.has_dual_objective_value = false;
-      this->status_.has_primal_objective_value = false;
+      status.has_fresh_rebuild = false;
+      status.has_dual_objective_value = false;
+      status.has_primal_objective_value = false;
       break;
     case LpAction::kNewBounds:
-      this->status_.has_fresh_rebuild = false;
-      this->status_.has_dual_objective_value = false;
-      this->status_.has_primal_objective_value = false;
+      status.has_fresh_rebuild = false;
+      status.has_dual_objective_value = false;
+      status.has_primal_objective_value = false;
       break;
     case LpAction::kNewBasis:
       this->invalidateBasis();
       this->clearHotStart();
       break;
     case LpAction::kNewCols:
-      this->clear();
+      // Was just this->clear(); but can be much more efficient
+      // this->clear();
+      // Methods from this->clear();
+      this->clearEkkLp(); // OK to clear this?
+      this->clearEkkDualise(); // Must clear any dual
+      this->clearEkkData(); // Must clear everything but the simplex
+			    // LP, DSE weights, simplex basis or NLA
+      /*
+      this->clearEkkDualEdgeWeightData(); // No need to do this since
+					  // basis matrix is
+					  // unaffected
+					  */
+      /*
+      this->clearEkkPointers(); // Must not clear this
+      */
+      /*
+      this->basis_.clear(); // No need to do this since simplex basis
+      is updated
+      */
+      /*
+      this->simplex_nla_.clear(); // No need to do this since simplex basis
+      is updated
+      */
+      /*
+      this->clearEkkAllStatus(); // Only the following should be cleared
+      */
+      status.has_ar_matrix = false;
+      status.has_fresh_rebuild = false;
+      status.has_dual_objective_value = false;
+      status.has_primal_objective_value = false;
+      status.has_dual_ray = false;
+      status.has_primal_ray = false;
+      // Not in this->clear();
       this->clearHotStart();
-      //    this->invalidateBasisArtifacts();
       break;
     case LpAction::kNewRows:
       if (kExtendInvertWhenAddingRows) {
@@ -393,10 +425,10 @@ void HEkk::updateStatus(LpAction action) {
       this->clearNlaInvertStatus();
       break;
     case LpAction::kBacktracking:
-      this->status_.has_ar_matrix = false;
-      this->status_.has_fresh_rebuild = false;
-      this->status_.has_dual_objective_value = false;
-      this->status_.has_primal_objective_value = false;
+      status.has_ar_matrix = false;
+      status.has_fresh_rebuild = false;
+      status.has_dual_objective_value = false;
+      status.has_primal_objective_value = false;
       break;
     default:
       break;
