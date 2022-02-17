@@ -2517,19 +2517,24 @@ HighsStatus Highs::callSolveMip() {
     solution_.value_valid = true;
   }
   // Run the MIP solver
-  HighsInt log_dev_level = options_.log_dev_level;
-  //  options_.log_dev_level = kHighsLogDevLevelInfo;
   // Check that the model isn't row-wise
   assert(model_.lp_.a_matrix_.format_ != MatrixFormat::kRowwise);
+  // Convert any semi-variables to standard MIP
   const bool has_semi_variables = model_.lp_.hasSemiVariables();
   HighsLp use_lp;
-  if (has_semi_variables) {
-    use_lp = withoutSemiVariables(model_.lp_);
-  }
+  if (has_semi_variables) use_lp = withoutSemiVariables(model_.lp_);
   HighsLp& lp = has_semi_variables ? use_lp : model_.lp_;
+  // Possibly overrule some option settings
+  HighsInt log_dev_level = options_.log_dev_level;
+  //  options_.log_dev_level = kHighsLogDevLevelInfo;
+  HighsInt simplex_strategy = options_.simplex_strategy;
+  // Force dual simplex in MIP solver
+  options_.simplex_strategy = kSimplexStrategyDual;
   HighsMipSolver solver(options_, lp, solution_);
   solver.run();
+  // Recover any overruled option settings
   options_.log_dev_level = log_dev_level;
+  options_.simplex_strategy = simplex_strategy;
   // Set the return_status, model status and, for completeness, scaled
   // model status
   HighsStatus return_status =
