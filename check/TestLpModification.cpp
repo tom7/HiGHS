@@ -5,7 +5,7 @@
 #include "util/HighsRandom.h"
 #include "util/HighsUtils.h"
 
-const bool dev_run = false;
+const bool dev_run = true;
 const double inf = kHighsInf;
 const double double_equal_tolerance = 1e-5;
 void HighsStatusReport(const HighsLogOptions& log_options, std::string message,
@@ -1392,23 +1392,48 @@ TEST_CASE("LP-delete", "[highs_data]") {
 
 TEST_CASE("LP-add-del-rows-cols", "[highs_data]") {
   Highs highs;
+  const HighsBasis& basis = highs.getBasis();
+  const HighsLp& lp = highs.getLp();
+  const HighsInfo& info = highs.getInfo();
   if (!dev_run) highs.setOptionValue("output_flag", false);
- 
-  HighsLp lp;
-  lp.num_col_ = 2;
-  lp.num_row_ = 1;
-  lp.col_cost_ = {1, 2};
-  lp.col_lower_ = {0, 0};
-  lp.col_upper_ = {inf, inf};
-  lp.row_lower_ = {1, 2};
-  lp.row_upper_ = {inf};
-  lp.a_matrix_.format_ = MatrixFormat::kColwise;
-  lp.a_matrix_.start_ = {0, 1, 2};
-  lp.a_matrix_.index_ = {0, 0};
-  lp.a_matrix_.value_ = {3, 2};
-  REQUIRE(highs.passModel(lp) == HighsStatus::kOk);
+  std::string model_file =
+      std::string(HIGHS_DIR) + "/check/instances/avgas.mps";
+  REQUIRE(highs.readModel(model_file) == HighsStatus::kOk);
   REQUIRE(highs.run() == HighsStatus::kOk);
-  if (dev_run) highs.writeSolution("", 1);
+  if (dev_run) {
+    highs.writeSolution("", 1);
+    printf("Required %d simplex iterations\n",
+           (int)info.simplex_iteration_count);
+  }
+  // Add two columns
+  std::vector<double> costs = {-6, -10};
+  std::vector<double> lower = {0, 0};
+  std::vector<double> upper = {1, 0.5};
+  std::vector<HighsInt> start = {0, 5};
+  std::vector<HighsInt> index = {0, 2, 4, 6, 8, 1, 3, 5, 7, 9};
+  std::vector<double> value = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+  REQUIRE(highs.addCols(2, &costs[0], &lower[0], &upper[0], 10, &start[0],
+                        &index[0], &value[0]) == HighsStatus::kOk);
+  REQUIRE(highs.run() == HighsStatus::kOk);
+  if (dev_run) {
+    highs.writeSolution("", 1);
+    printf("Required %d simplex iterations\n",
+           (int)info.simplex_iteration_count);
+  }
+  std::vector<HighsInt> delete_col_set;
+  for (HighsInt iCol = 0; iCol < lp.num_col_; iCol++)
+    if (basis.col_status[iCol] != HighsBasisStatus::kBasic)
+      delete_col_set.push_back(iCol);
+
+  HighsInt num_del_col = delete_col_set.size();
+  REQUIRE(highs.deleteCols(num_del_col, &delete_col_set[0]) ==
+          HighsStatus::kOk);
+  REQUIRE(highs.run() == HighsStatus::kOk);
+  if (dev_run) {
+    highs.writeSolution("", 1);
+    printf("Required %d simplex iterations\n",
+           (int)info.simplex_iteration_count);
+  }
 }
 
 void HighsStatusReport(const HighsLogOptions& log_options, std::string message,
