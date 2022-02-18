@@ -91,8 +91,8 @@ void HEkk::clearEkkPointers() {
 }
 
 void HEkk::clearEkkLp() {
-  this->lp_.clear();
-  lp_name_ = "";
+  //  this->lp_.clear();
+  //  lp_name_ = "";
 }
 
 void HEkk::clearEkkDualise() {
@@ -1792,8 +1792,8 @@ void HEkk::chooseSimplexStrategyThreads(const HighsOptions& options,
   simplex_strategy = options.simplex_strategy;
   if (simplex_strategy == kSimplexStrategyChoose) {
     // HiGHS is left to choose the simplex strategy
-    if (info.num_primal_infeasibilities > 0) {
-      // Not primal feasible, so use dual simplex
+    if (info.num_primal_infeasibilities > 0 || !this->status_.has_basis) {
+      // Not primal feasible, or have no basis, so use dual simplex
       simplex_strategy = kSimplexStrategyDual;
     } else {
       // Primal feasible. so use primal simplex
