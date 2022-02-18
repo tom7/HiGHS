@@ -31,7 +31,6 @@ class HEkk {
    * @brief Interface to simplex solvers
    */
   void clear();
-  void clearEkkLp();
   void clearEkkData();
   void clearEkkDualise();
   void clearEkkDualEdgeWeightData();

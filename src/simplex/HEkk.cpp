@@ -36,7 +36,6 @@ using std::min;
 void HEkk::clear() {
   // Clears Ekk entirely. Clears all associated pointers, data scalars
   // and vectors, and the status values.
-  this->clearEkkLp();
   this->clearEkkDualise();
   this->clearEkkData();
   this->clearEkkDualEdgeWeightData();
@@ -88,11 +87,6 @@ void HEkk::clearNlaInvertStatus() {
 void HEkk::clearEkkPointers() {
   this->options_ = NULL;
   this->timer_ = NULL;
-}
-
-void HEkk::clearEkkLp() {
-  //  this->lp_.clear();
-  //  lp_name_ = "";
 }
 
 void HEkk::clearEkkDualise() {
@@ -349,7 +343,6 @@ void HEkk::updateStatus(LpAction action) {
       // Was just this->clear(); but can be much more efficient
       // this->clear();
       // Methods from this->clear();
-      //      this->clearEkkLp(); // OK to clear this?
       this->clearEkkDualise();  // Must clear any dual
       this->clearEkkData();     // Must clear everything but the simplex
                                 // LP, DSE weights, simplex basis or NLA
