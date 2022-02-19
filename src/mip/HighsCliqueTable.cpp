@@ -1080,6 +1080,14 @@ void HighsCliqueTable::cliquePartition(std::vector<CliqueVar>& clqVars,
 void HighsCliqueTable::cliquePartition(const std::vector<double>& objective,
                                        std::vector<CliqueVar>& clqVars,
                                        std::vector<HighsInt>& partitionStart) {
+  bool sorted = false;
+  auto minElem = std::min_element(
+      clqVars.begin(), clqVars.end(), [&](CliqueVar v1, CliqueVar v2) {
+        return (2 * v1.val - 1) * objective[v1.col] >
+               (2 * v2.val - 1) * objective[v2.col];
+      });
+  if (minElem != clqVars.end()) std::swap(clqVars[0], *minElem);
+
   pdqsort_branchless(clqVars.begin(), clqVars.end(),
                      [&](CliqueVar v1, CliqueVar v2) {
                        return (2 * v1.val - 1) * objective[v1.col] >
@@ -1095,17 +1103,30 @@ void HighsCliqueTable::cliquePartition(const std::vector<double>& objective,
     if (i == extensionEnd) {
       partitionStart.push_back(i);
       extensionEnd = numClqVars;
-      pdqsort_branchless(clqVars.begin() + i, clqVars.end(),
-                         [&](CliqueVar v1, CliqueVar v2) {
-                           return (2 * v1.val - 1) * objective[v1.col] >
-                                  (2 * v2.val - 1) * objective[v2.col];
-                         });
+      sorted = false;
+      minElem = std::min_element(clqVars.begin() + i, clqVars.end(),
+                                 [&](CliqueVar v1, CliqueVar v2) {
+                                   return (2 * v1.val - 1) * objective[v1.col] >
+                                          (2 * v2.val - 1) * objective[v2.col];
+                                 });
+      assert(minElem != clqVars.end());
+      std::swap(clqVars[i], *minElem);
     }
     CliqueVar v = clqVars[i];
     HighsInt extensionStart = i + 1;
     extensionEnd = partitionNeighborhood(v, clqVars.data() + extensionStart,
                                          extensionEnd - extensionStart) +
                    extensionStart;
+
+    if (!sorted) {
+      pdqsort_branchless(clqVars.begin() + extensionStart,
+                         clqVars.begin() + extensionEnd,
+                         [&](CliqueVar v1, CliqueVar v2) {
+                           return (2 * v1.val - 1) * objective[v1.col] >
+                                  (2 * v2.val - 1) * objective[v2.col];
+                         });
+      sorted = true;
+    }
   }
 
   partitionStart.push_back(numClqVars);
