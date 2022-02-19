@@ -1080,8 +1080,6 @@ void HighsCliqueTable::cliquePartition(std::vector<CliqueVar>& clqVars,
 void HighsCliqueTable::cliquePartition(const std::vector<double>& objective,
                                        std::vector<CliqueVar>& clqVars,
                                        std::vector<HighsInt>& partitionStart) {
-  randgen.shuffle(clqVars.data(), clqVars.size());
-
   pdqsort_branchless(clqVars.begin(), clqVars.end(),
                      [&](CliqueVar v1, CliqueVar v2) {
                        return (2 * v1.val - 1) * objective[v1.col] >
