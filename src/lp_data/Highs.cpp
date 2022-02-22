@@ -187,6 +187,20 @@ HighsStatus Highs::getInfoValue(const std::string& info, HighsInt& value) {
   }
 }
 
+#ifndef HIGHSINT64
+HighsStatus Highs::getInfoValue(const std::string& info, int64_t& value) {
+  InfoStatus status =
+      getLocalInfoValue(options_, info, info_.valid, info_.records, value);
+  if (status == InfoStatus::kOk) {
+    return HighsStatus::kOk;
+  } else if (status == InfoStatus::kUnavailable) {
+    return HighsStatus::kWarning;
+  } else {
+    return HighsStatus::kError;
+  }
+}
+#endif
+
 HighsStatus Highs::getInfoValue(const std::string& info, double& value) const {
   InfoStatus status =
       getLocalInfoValue(options_, info, info_.valid, info_.records, value);
@@ -260,12 +274,6 @@ HighsStatus Highs::passModel(HighsModel model) {
   return_status = interpretCallStatus(
       options_.log_options, assessLp(lp, options_), return_status, "assessLp");
   if (return_status == HighsStatus::kError) return return_status;
-  // Check validity of any integrality
-  return_status =
-      interpretCallStatus(options_.log_options, assessIntegrality(lp, options_),
-                          return_status, "assessIntegrality");
-  if (return_status == HighsStatus::kError) return return_status;
-
   // Check validity of any Hessian, normalising its entries
   return_status = interpretCallStatus(
       options_.log_options, assessHessian(hessian, options_, lp.sense_),
@@ -679,8 +687,23 @@ HighsStatus Highs::run() {
     highsLogDev(options_.log_options, HighsLogType::kVerbose,
                 "Solving model: %s\n", model_.lp_.model_name_.c_str());
 
+  // Check validity of any integrality, keeping a record of any upper
+  // bound modifications for semi-variables
+  call_status = assessIntegrality(model_.lp_, options_);
+  if (call_status == HighsStatus::kError) {
+    setHighsModelStatusAndClearSolutionAndBasis(HighsModelStatus::kSolveError);
+    return returnFromRun(HighsStatus::kError);
+  }
+
   if (!options_.solver.compare(kHighsChooseString) && model_.isQp()) {
-    // Solve the model as a QP
+    // Choosing method according to model class, and model is a QP
+    //
+    // Ensure that it's not MIQP!
+    if (model_.isMip()) {
+      highsLogUser(options_.log_options, HighsLogType::kError,
+                   "Canot solve MIQP problems with HiGHS\n");
+      return returnFromRun(HighsStatus::kError);
+    }
     call_status = callSolveQp();
     return_status = interpretCallStatus(options_.log_options, call_status,
                                         return_status, "callSolveQp");
@@ -688,7 +711,7 @@ HighsStatus Highs::run() {
   }
 
   if (!options_.solver.compare(kHighsChooseString) && model_.isMip()) {
-    // Solve the model as a MIP
+    // Choosing method according to model class, and model is a MIP
     call_status = callSolveMip();
     return_status = interpretCallStatus(options_.log_options, call_status,
                                         return_status, "callSolveMip");
@@ -2557,6 +2580,14 @@ HighsStatus Highs::callSolveMip() {
     // There is no primal solution: should be so by default
     assert(!solution_.value_valid);
   }
+  // Check that no modified upper bounds for semi-variables are active
+  if (solution_.value_valid &&
+      activeModifiedUpperBounds(options_, model_.lp_, solution_.col_value)) {
+    solution_.value_valid = false;
+    model_status_ = HighsModelStatus::kSolveError;
+    scaled_model_status_ = model_status_;
+    return_status = HighsStatus::kError;
+  }
   // There is no dual solution: should be so by default
   assert(!solution_.dual_valid);
   // There is no basis: should be so by default
@@ -2895,6 +2926,9 @@ HighsStatus Highs::returnFromRun(const HighsStatus run_return_status) {
 
   // Record that returnFromRun() has been called
   called_return_from_run = true;
+  // Unapply any modifications that have not yet been unapplied
+  this->model_.lp_.unapplyMods();
+
   // Unless solved as a MIP, report on the solution
   const bool solved_as_mip =
       !options_.solver.compare(kHighsChooseString) && model_.isMip();
