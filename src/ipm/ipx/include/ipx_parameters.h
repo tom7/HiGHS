@@ -35,6 +35,9 @@ struct ipx_parameters {
     ipxint rows_per_slice;
     ipxint maxskip_updates;
 
+    /* Use basiclu, HFactor or both */
+    ipxint basiclu_or_hfactor;
+
     /* LU factorization */
     ipxint lu_kernel;
     double lu_pivottol;

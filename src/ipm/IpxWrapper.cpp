@@ -109,7 +109,9 @@ HighsStatus solveLpIpx(const HighsOptions& options,
     // tolerances
     parameters.crossover_start = -1;
   }
-
+  // Indicate whether basiclu, HFactor or both should be used
+  parameters.basiclu_or_hfactor = options.ipx_basiclu_or_hfactor;
+  
   // Set the internal IPX parameters
   lps.SetParameters(parameters);
 

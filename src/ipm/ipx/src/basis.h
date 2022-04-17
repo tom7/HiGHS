@@ -8,6 +8,7 @@
 #include "lu_update.h"
 #include "model.h"
 #include "sparse_matrix.h"
+#include "util/HFactor.h"
 
 namespace ipx {
 
@@ -286,6 +287,9 @@ private:
     const Control& control_;
     const Model& model_;
     std::vector<Int> basis_;    // m column indices of AI
+    const HighsSparseMatrix a_matrix_;
+    std::vector<HighsInt> basic_index_;
+    HFactor factor_;
 
     // For 0 <= j < n+m, map2basis_[j] is one of the following:
     //  -2:            variable is NONBASIC_FIXED

@@ -489,6 +489,7 @@ void LpSolver::BuildStartingBasis() {
         info_.status_ipm = IPX_STATUS_debug;
         return;
     }
+// JAJH: This is where the Basis instance is created
     basis_.reset(new Basis(control_, model_));
     control_.Log() << " Constructing starting basis...\n";
     StartingBasis(iterate_.get(), basis_.get(), &info_);

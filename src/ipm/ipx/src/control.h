@@ -80,6 +80,7 @@ public:
     ipxint stop_at_switch() const { return parameters_.stop_at_switch; }
     ipxint update_heuristic() const { return parameters_.update_heuristic; }
     ipxint maxpasses() const { return parameters_.maxpasses; }
+    ipxint basicluOrHfactor() const { return parameters_.basiclu_or_hfactor; }
     bool reportBasisData() const { return parameters_.analyse_basis_data; }
 
     const Parameters& parameters() const;

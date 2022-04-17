@@ -215,6 +215,7 @@ Int Maxvolume::Driver(Basis& basis, Slice& slice) {
     IndexedVector& row = slice.row;
     Vector& work = slice.work;
 
+    printf("\nMaxvolume::Driver\n");
     // Compute column weights.
     for (Int p = 0; p < m; p++)
         work[p] = tblrow_used[p] ? invscale_basic[p] : 0.0;
