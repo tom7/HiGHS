@@ -231,9 +231,12 @@ public:
     bool has_hfactor_invert_{false};
     HFactor factor_;
     std::vector<HighsInt> copyBasis();
-    bool checkHfBasis();
+    bool checkHfBasis() const;
+    bool checkBasicIndex() const;
+    void checkInverts();
   void convertRhs(const Vector& from_rhs, std::vector<double>& to_rhs, char trans); // JhRemoveConst const;
-  void convertSol(const std::vector<double>& sol, char trans); // JhRemoveConst const;
+  void convertSol(std::vector<double>& sol, char trans); // JhRemoveConst const;
+  void checkSol(const Vector& sol0, const std::vector<double>& sol1) const;
 
 private:
     // Basis repair terminates when the maximum absolute entry in inverse(B)

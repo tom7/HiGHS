@@ -217,7 +217,7 @@ Int Maxvolume::Driver(Basis& basis, Slice& slice) {
 
     if (kReportMaxvolumeMethodCall) printf("\nMaxvolume::Driver\n");
     if (control_.basicluOrHfactor() > 0 && !basis.has_hfactor_invert_) {
-      // Construct logical basic_index_
+      // Construct basic_index_
       basis.basic_index_.clear();
       for (HighsInt iRow=0; iRow < m; iRow++) {
 	basis.basic_index_.push_back(basis[iRow]);

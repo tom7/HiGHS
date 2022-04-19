@@ -10,6 +10,7 @@
 #include "symbolic_invert.h"
 #include "timer.h"
 #include "utils.h"
+#include "util/HighsRandom.h"
 
 namespace ipx {
 
@@ -75,6 +76,22 @@ void Basis::SetToSlackBasis() {
     Int err = Factorize();
     // factorization of slack basis cannot fail other than out of memory
     assert(err == 0);
+
+    if (control_.basicluOrHfactor() > 0) {
+      // Construct logical basic_index_
+      basic_index_.clear();
+      for (HighsInt iRow=0; iRow < m; iRow++)
+	basic_index_.push_back(n+iRow);
+      factor_.setup(n, m,
+			  model_.AI().colptr(),
+			  model_.AI().rowidx(),
+			  model_.AI().values(),
+			  &basic_index_[0]);
+      HighsInt rank_deficiency = factor_.build();
+      assert(rank_deficiency == 0);
+      has_hfactor_invert_ = true;
+    }
+    checkInverts();
 }
 
 Int Basis::Load(const int* basic_status) {
@@ -171,6 +188,8 @@ void Basis::GetLuFactors(SparseMatrix *L, SparseMatrix *U, Int *rowperm,
   if (kReportBasisMethodCall) printf("Basis::SolveDense\n");
   lu_->SolveDense(rhs, lhs, trans);
   if (control_.basicluOrHfactor() > 0 && this->has_hfactor_invert_) {
+    const bool basic_index_ok = checkBasicIndex();
+    if (!basic_index_ok) printf("Basis::SolveDense basic_index_ error\n");
     std::vector<double> hf_sol;
     convertRhs(rhs, hf_sol, trans);
     if (trans == 't' || trans == 'T') {
@@ -179,6 +198,7 @@ void Basis::GetLuFactors(SparseMatrix *L, SparseMatrix *U, Int *rowperm,
       factor_.ftranCall(hf_sol);
     }
     convertSol(hf_sol, trans);
+    checkSol(lhs, hf_sol);
   }
 }
 
@@ -961,36 +981,111 @@ void Basis::reportBasisData() const {
 
 }
 
-  std::vector<HighsInt> Basis::copyBasis() {
+std::vector<HighsInt> Basis::copyBasis() {
     
-  }
+}
 
-  void Basis::convertRhs(const Vector& from_rhs, std::vector<double>& to_rhs, char trans) {// JhRemoveConst const {
-    HighsInt num_row = model_.rows();
-    HighsInt num_col = model_.cols();
-    if (trans == 't' || trans == 'T') {
-      // Have to convert for basis ordering in making copy
-      std::vector<double> scatter_;
-      scatter_.assign(num_col+num_row, kHighsInf);
-      for (HighsInt iRow = 0; iRow < num_row; iRow++) {
-	const HighsInt iVar = basis_[iRow];
-	assert(scatter_[iVar] == kHighsInf);
-	scatter_[iVar] = from_rhs[iRow];
-      }
-      for (HighsInt iRow = 0; iRow < num_row; iRow++) {
-	const HighsInt iVar = basic_index_[iRow];
-	assert(scatter_[iVar] != kHighsInf);
-	to_rhs[iRow] = scatter_[iVar];
-	scatter_[iVar] = kHighsInf;
-      }
-    } else {
-      for (HighsInt iRow = 0; iRow < num_row; iRow++)
-	to_rhs[iRow] = from_rhs[iRow];      
+void Basis::convertRhs(const Vector& from_rhs, std::vector<double>& to_rhs, char trans) {// JhRemoveConst const {
+  HighsInt num_row = model_.rows();
+  HighsInt num_col = model_.cols();
+  to_rhs.resize(num_row);
+  if (trans == 't' || trans == 'T') {
+    // Have to convert for basis ordering in making copy
+    std::vector<double> scatter_;
+    scatter_.assign(num_col+num_row, kHighsInf);
+    // Scatter according to basis_
+    for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+      const HighsInt iVar = basis_[iRow];
+      assert(scatter_[iVar] == kHighsInf);
+      scatter_[iVar] = from_rhs[iRow];
+    }
+    // Gather according to basic_index_
+    for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+      const HighsInt iVar = basic_index_[iRow];
+      assert(scatter_[iVar] != kHighsInf);
+      to_rhs[iRow] = scatter_[iVar];
+      scatter_[iVar] = kHighsInf;
+    }
+  } else {
+    for (HighsInt iRow = 0; iRow < num_row; iRow++)
+      to_rhs[iRow] = from_rhs[iRow];      
+  }
+}
+
+void Basis::convertSol(std::vector<double>& sol, char trans) {// JhRemoveConst const {
+  HighsInt num_row = model_.rows();
+  HighsInt num_col = model_.cols();
+  if (trans != 't' && trans != 'T') {
+    // Have to convert for basis ordering in making copy
+    std::vector<double> scatter_;
+    scatter_.assign(num_col+num_row, kHighsInf);
+    // Scatter according to basic_index_
+    for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+      const HighsInt iVar = basic_index_[iRow];
+      assert(scatter_[iVar] == kHighsInf);
+      scatter_[iVar] = sol[iRow];
+    }
+    // Gather according to basis_
+    for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+      const HighsInt iVar = basis_[iRow];
+      assert(scatter_[iVar] != kHighsInf);
+      sol[iRow] = scatter_[iVar];
+      scatter_[iVar] = kHighsInf;
     }
   }
+}
 
-  void Basis::convertSol(const std::vector<double>& sol, char trans) {// JhRemoveConst const {
+void Basis::checkSol(const Vector& sol0, const std::vector<double>& sol1) const {
+  HighsInt num_row = model_.rows();
+  double max_error = 0;
+  for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+    const double error = std::fabs(sol0[iRow] - sol1[iRow]);
+    //    if (error > 1e-5) 
+      printf("checkSol: Ix %2d: %11.4g; %11.4g; error = %g\n", (int)iRow, sol0[iRow], sol1[iRow], error); fflush(stdout);
+    max_error = std::max(error, max_error);
   }
+  if (max_error > 1e-5) {
+    printf("checkSol: Error = %g\n", max_error); fflush(stdout);
+  }
+  assert(max_error < 1e-5);
+}
+
+bool Basis::checkBasicIndex() const {
+  HighsInt num_row = model_.rows();
+  HighsInt num_col = model_.cols();
+  const HighsInt kIllegalIndex = -1;
+  std::vector<HighsInt> scatter_;
+  scatter_.assign(num_col+num_row, kIllegalIndex);
+  for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+    const HighsInt iVar = basis_[iRow];
+    if (scatter_[iVar] != kIllegalIndex) return false;
+    scatter_[iVar] = iRow;
+  }
+  for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+    const HighsInt iVar = basic_index_[iRow];
+    if (scatter_[iVar] == kIllegalIndex) return false;
+    scatter_[iVar] = kIllegalIndex;
+  }
+  return true;
+}
+
+void Basis::checkInverts() {
+  if (!this->has_hfactor_invert_) return;
+  HighsInt num_row = model_.rows();
+  HighsRandom random;
+  std::vector<double> hf_sol(num_row);
+  Vector ls_rhs(num_row);
+  Vector ls_sol(num_row);
+  for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+    hf_sol[iRow] = 1.0;
+    ls_rhs[iRow] = hf_sol[iRow];
+  }
+  char trans = 'N';
+  SolveDense(ls_rhs, ls_sol, trans);
+  factor_.ftranCall(hf_sol);
+  convertSol(hf_sol, trans);
+  checkSol(ls_sol, hf_sol);
+}
 
 }  // namespace ipx
 
