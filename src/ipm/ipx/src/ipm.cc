@@ -591,8 +591,7 @@ void IPM::PrintOutput() {
     const Basis* basis = kkt_->basis();
     if (basis) {
         if (control_.Debug(4)) {
-            control_.Debug(4) << "  "
-                              << Scientific(basis->MinSingularValue(), 9, 2);
+	  // JhRemoveConst           control_.Debug(4) << "  " << Scientific(basis->MinSingularValue(), 9, 2);
             Timer timer;
             double density = basis->DensityInverse();
             info_->time_symb_invert += timer.Elapsed();

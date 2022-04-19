@@ -27,18 +27,6 @@ Basis::Basis(const Control& control, const Model& model)
     }
     lu_->pivottol(control_.lu_pivottol());
     SetToSlackBasis();
-    if (control_.basicluOrHfactor() > 0) {
-      // Construct logical basic_index_
-      for (HighsInt iRow=0; iRow < m; iRow++)
-	basic_index_.push_back(n+iRow);
-      this->factor_.setup(n, m,
-			  model.AI().colptr(),
-			  model.AI().rowidx(),
-			  model.AI().values(),
-			  &basic_index_[0]);
-      HighsInt rank_deficiency = this->factor_.build();
-      assert(rank_deficiency == 0);
-    }
 }
 
 void Basis::FixNonbasicVariable(Int j) {
@@ -75,7 +63,7 @@ void Basis::UnfreeVariables() {
 }
 
 void Basis::SetToSlackBasis() {
-  printf("Basis::SetToSlackBasis()\n");
+  if (kReportBasisMethodCall) printf("Basis::SetToSlackBasis()\n");
     const Int m = model_.rows();
     const Int n = model_.cols();
     for (Int i = 0; i < m; i++)
@@ -90,7 +78,7 @@ void Basis::SetToSlackBasis() {
 }
 
 Int Basis::Load(const int* basic_status) {
-  printf("Basis::Load(const int* basic_status)\n");
+  if (kReportBasisMethodCall) printf("Basis::Load(const int* basic_status)\n");
     const Int m = model_.rows();
     const Int n = model_.cols();
 
@@ -126,7 +114,7 @@ Int Basis::Load(const int* basic_status) {
 }
 
 Int Basis::Factorize() {
-  printf("Basis::Factorize()\n");
+  if (kReportBasisMethodCall) printf("Basis::Factorize()\n");
     const Int m = model_.rows();
     const SparseMatrix& AI = model_.AI();
     Timer timer;
@@ -174,18 +162,28 @@ bool Basis::FactorizationIsFresh() const {
 
 void Basis::GetLuFactors(SparseMatrix *L, SparseMatrix *U, Int *rowperm,
                          Int *colperm) const {
-  printf("Basis::GetLuFactors\n");
+  if (kReportBasisMethodCall) printf("Basis::GetLuFactors\n");
     assert(FactorizationIsFresh());
     lu_->GetFactors(L, U, rowperm, colperm, nullptr);
 }
 
-void Basis::SolveDense(const Vector& rhs, Vector& lhs, char trans) const {
-  printf("Basis::SolveDense\n");
-    lu_->SolveDense(rhs, lhs, trans);
+  void Basis::SolveDense(const Vector& rhs, Vector& lhs, char trans) {// JhRemoveConst const {
+  if (kReportBasisMethodCall) printf("Basis::SolveDense\n");
+  lu_->SolveDense(rhs, lhs, trans);
+  if (control_.basicluOrHfactor() > 0 && this->has_hfactor_invert_) {
+    std::vector<double> hf_sol;
+    convertRhs(rhs, hf_sol, trans);
+    if (trans == 't' || trans == 'T') {
+      factor_.btranCall(hf_sol);
+    } else {
+      factor_.ftranCall(hf_sol);
+    }
+    convertSol(hf_sol, trans);
+  }
 }
 
 void Basis::SolveForUpdate(Int j, IndexedVector& lhs) {
-  printf("Basis::SolveForUpdate(%d, lhs)\n", (int)j);
+  if (kReportBasisMethodCall) printf("Basis::SolveForUpdate(%d, lhs)\n", (int)j);
     const Int p = PositionOf(j);
     Timer timer;
     const Int dim = model_.rows();
@@ -218,7 +216,7 @@ void Basis::SolveForUpdate(Int j, IndexedVector& lhs) {
 }
 
 void Basis::SolveForUpdate(Int j) {
-  printf("Basis::SolveForUpdate(%d)\n", (int)j);
+  if (kReportBasisMethodCall) printf("Basis::SolveForUpdate(%d)\n", (int)j);
     const Int p = PositionOf(j);
     Timer timer;
     if (p < 0) {
@@ -239,7 +237,7 @@ void Basis::SolveForUpdate(Int j) {
 
 void Basis::TableauRow(Int jb, IndexedVector& btran, IndexedVector& row,
                        bool ignore_fixed) {
-  printf("Basis::TableauRow(%d)\n", (int)jb);
+  if (kReportBasisMethodCall) printf("Basis::TableauRow(%d)\n", (int)jb);
     const Int m = model_.rows();
     const Int n = model_.cols();
     assert(IsBasic(jb));
@@ -309,7 +307,7 @@ void Basis::TableauRow(Int jb, IndexedVector& btran, IndexedVector& row,
 
 Int Basis::ExchangeIfStable(Int jb, Int jn, double tableau_entry, int sys,
                        bool* exchanged) {
-  printf("Basis::ExchangeIfStable(jb = %d, jn = %d, tableau_entry = %g, sys = %d)\n",
+  if (kReportBasisMethodCall) printf("Basis::ExchangeIfStable(jb = %d, jn = %d, tableau_entry = %g, sys = %d)\n",
 	 (int)jb, (int)jn, tableau_entry, (int)sys);
     assert(IsBasic(jb));
     assert(IsNonbasic(jn));
@@ -347,8 +345,8 @@ Int Basis::ExchangeIfStable(Int jb, Int jn, double tableau_entry, int sys,
     return 0;
 }
 
-void Basis::ComputeBasicSolution(Vector& x, Vector& y, Vector& z) const {
-  printf("Basis::ComputeBasicSolution\n");
+  void Basis::ComputeBasicSolution(Vector& x, Vector& y, Vector& z) {// JhRemoveConst const {
+  if (kReportBasisMethodCall) printf("Basis::ComputeBasicSolution\n");
     const Int m = model_.rows();
     const Int n = model_.cols();
     const Vector& b = model_.b();
@@ -375,7 +373,7 @@ void Basis::ComputeBasicSolution(Vector& x, Vector& y, Vector& z) const {
 }
 
 void Basis::ConstructBasisFromWeights(const double* colscale, Info* info) {
-  printf("Basis::ConstructBasisFromWeights\n");
+  if (kReportBasisMethodCall) printf("Basis::ConstructBasisFromWeights\n");
     const Int m = model_.rows();
     const Int n = model_.cols();
     assert(colscale);
@@ -411,8 +409,8 @@ void Basis::ConstructBasisFromWeights(const double* colscale, Info* info) {
         return;
 }
 
-double Basis::MinSingularValue() const {
-  printf("Basis::MinSingularValue\n");
+  double Basis::MinSingularValue() {// JhRemoveConst const {
+  if (kReportBasisMethodCall) printf("Basis::MinSingularValue\n");
     const Int m = model_.rows();
     Vector v(m);
 
@@ -425,12 +423,12 @@ double Basis::MinSingularValue() const {
 }
 
 void Basis::SymbolicInvert(Int* rowcounts, Int* colcounts) const {
-  printf("Basis::SymbolicInvert\n");
+  if (kReportBasisMethodCall) printf("Basis::SymbolicInvert\n");
     ipx::SymbolicInvert(model_, basis_, rowcounts, colcounts);
 }
 
 double Basis::DensityInverse() const {
-  printf("Basis::DensityInverse\n");
+  if (kReportBasisMethodCall) printf("Basis::DensityInverse\n");
     Int m = model_.rows();
     std::vector<Int> rowcounts(m);
     SymbolicInvert(rowcounts.data(), nullptr);
@@ -533,7 +531,7 @@ bool Basis::TightenLuPivotTol() {
 }
 
 void Basis::CrashBasis(const double* colweights) {
-  printf("Basis::CrashBasis\n");
+  if (kReportBasisMethodCall) printf("Basis::CrashBasis\n");
     const Int m = model_.rows();
 
     // Make a guess for a basis. Then use LU factorization with a strict
@@ -569,7 +567,9 @@ void Basis::CrashBasis(const double* colweights) {
 // [1] N.J. Higham and S.D. Relton, "Estimating the Largest Elements of a
 //     Matrix", MIMS EPrint 2015.116, University of Manchester (2015).
 //
-static std::tuple<Int,Int,double> InverseSearch(const Basis& basis,
+static std::tuple<Int,Int,double> InverseSearch(
+						// JhRemoveConst const
+						Basis& basis,
                                                 Vector& work) {
     const Int m = work.size();
     double inverse_max = 0.0;
@@ -599,7 +599,7 @@ static std::tuple<Int,Int,double> InverseSearch(const Basis& basis,
 }
 
 void Basis::Repair(Info* info) {
-  printf("Basis::Repair\n");
+  if (kReportBasisMethodCall) printf("Basis::Repair\n");
     const Int m = model_.rows();
     const Int n = model_.cols();
     Vector work(m);
@@ -636,7 +636,7 @@ void Basis::Repair(Info* info) {
 }
 
 void Basis::CrashFactorize(Int* num_dropped) {
-  printf("Basis::CrashFactorize\n");
+  if (kReportBasisMethodCall) printf("Basis::CrashFactorize\n");
     const Int m = model_.rows();
     const SparseMatrix& AI = model_.AI();
     Timer timer;
@@ -678,7 +678,7 @@ void Basis::CrashFactorize(Int* num_dropped) {
 
 void Basis::CrashExchange(Int jb, Int jn, double tableau_entry, int sys,
                           Int* num_dropped) {
-  printf("Basis::CrashExchange\n");
+  if (kReportBasisMethodCall) printf("Basis::CrashExchange\n");
     assert(IsBasic(jb));
     assert(IsNonbasic(jn));
     if (sys > 0)                // forward system needs to be solved
@@ -708,7 +708,7 @@ void Basis::CrashExchange(Int jb, Int jn, double tableau_entry, int sys,
 }
 
 void Basis::PivotFreeVariablesIntoBasis(const double* colweights, Info* info) {
-  printf("Basis::PivotFreeVariablesIntoBasis\n");
+  if (kReportBasisMethodCall) printf("Basis::PivotFreeVariablesIntoBasis\n");
     const Int m = model_.rows();
     const Int n = model_.cols();
     IndexedVector ftran(m);
@@ -816,7 +816,7 @@ void Basis::PivotFreeVariablesIntoBasis(const double* colweights, Info* info) {
 }
 
 void Basis::PivotFixedVariablesOutOfBasis(const double* colweights, Info* info){
-  printf("Basis::PivotFixedVariablesOutOfBasis\n");
+  if (kReportBasisMethodCall) printf("Basis::PivotFixedVariablesOutOfBasis\n");
     const Int m = model_.rows();
     const Int n = model_.cols();
     IndexedVector btran(m), row(n+m);
@@ -960,4 +960,37 @@ void Basis::reportBasisData() const {
   printf("    Max  fill-in %11.4g\n", max_fill());
 
 }
+
+  std::vector<HighsInt> Basis::copyBasis() {
+    
+  }
+
+  void Basis::convertRhs(const Vector& from_rhs, std::vector<double>& to_rhs, char trans) {// JhRemoveConst const {
+    HighsInt num_row = model_.rows();
+    HighsInt num_col = model_.cols();
+    if (trans == 't' || trans == 'T') {
+      // Have to convert for basis ordering in making copy
+      std::vector<double> scatter_;
+      scatter_.assign(num_col+num_row, kHighsInf);
+      for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+	const HighsInt iVar = basis_[iRow];
+	assert(scatter_[iVar] == kHighsInf);
+	scatter_[iVar] = from_rhs[iRow];
+      }
+      for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+	const HighsInt iVar = basic_index_[iRow];
+	assert(scatter_[iVar] != kHighsInf);
+	to_rhs[iRow] = scatter_[iVar];
+	scatter_[iVar] = kHighsInf;
+      }
+    } else {
+      for (HighsInt iRow = 0; iRow < num_row; iRow++)
+	to_rhs[iRow] = from_rhs[iRow];      
+    }
+  }
+
+  void Basis::convertSol(const std::vector<double>& sol, char trans) {// JhRemoveConst const {
+  }
+
 }  // namespace ipx
+

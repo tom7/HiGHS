@@ -121,7 +121,7 @@ public:
     // @lhs: size m solution vector
     // @trans: 't' or 'T' for transposed, other character for forward system
     // @rhs and @lhs may refer to the same object.
-    void SolveDense(const Vector& rhs, Vector& lhs, char trans) const;
+  void SolveDense(const Vector& rhs, Vector& lhs, char trans); // JhRemoveConst const;
 
     // Solves linear system in preparation for update.
     // @j:   column index defining the linear system to be solved.
@@ -181,7 +181,7 @@ public:
     // @y vector of size m, undefined on entry.
     // @z vector of size n+m. On entry the basic components of z must be set.
     // On return the remaining components have been computed.
-    void ComputeBasicSolution(Vector& x, Vector& y, Vector& z) const;
+  void ComputeBasicSolution(Vector& x, Vector& y, Vector& z); // JhRemoveConst const;
 
     // Constructs a (nonsingular) basis. Given a nonnegative weight for each
     // column of AI, columns with larger weight are preferably chosen as basic
@@ -198,7 +198,7 @@ public:
     void ConstructBasisFromWeights(const double* colweights, Info* info);
 
     // Estimates the smallest singular value of the basis matrix.
-    double MinSingularValue() const;
+  double MinSingularValue(); // JhRemoveConst const;
 
     // Computes the # structural nonzero entries per row and column of
     // inverse(B).
@@ -225,6 +225,16 @@ public:
     
     void reportBasisData() const;
   
+    const bool kReportBasisMethodCall = true;
+    std::vector<HighsInt> basic_index_;
+    std::vector<HighsInt> hf_basis_;
+    bool has_hfactor_invert_{false};
+    HFactor factor_;
+    std::vector<HighsInt> copyBasis();
+    bool checkHfBasis();
+  void convertRhs(const Vector& from_rhs, std::vector<double>& to_rhs, char trans); // JhRemoveConst const;
+  void convertSol(const std::vector<double>& sol, char trans); // JhRemoveConst const;
+
 private:
     // Basis repair terminates when the maximum absolute entry in inverse(B)
     // is smaller than kBasisRepairThreshold. At most kMaxBasisRepair repair
@@ -287,9 +297,6 @@ private:
     const Control& control_;
     const Model& model_;
     std::vector<Int> basis_;    // m column indices of AI
-    const HighsSparseMatrix a_matrix_;
-    std::vector<HighsInt> basic_index_;
-    HFactor factor_;
 
     // For 0 <= j < n+m, map2basis_[j] is one of the following:
     //  -2:            variable is NONBASIC_FIXED
@@ -314,6 +321,19 @@ private:
     std::vector<double> fill_factors_; // fill factors from LU factorizations
     double sum_ftran_density_{0.0};
     double sum_btran_density_{0.0};
+  // Same data for HFactor 
+    Int num_hf_factorizations_{0};    // # LU factorizations
+    Int num_hf_updates_{0};           // # basis updates
+    Int num_hf_ftran_{0};             // # FTRAN operations, excluding partial
+    Int num_hf_btran_{0};             // # BTRAN operations, excluding partial
+    Int num_hf_ftran_sparse_{0};      // # ... with sparse solution
+    Int num_hf_btran_sparse_{0};      // # ... with sparse solution
+    double time_hf_ftran_{0.0};       // time for FTRAN ops, including partial
+    double time_hf_btran_{0.0};       // time for BTRAN ops, including partial
+    double time_hf_update_{0.0};      // time for LU updates
+    double time_hf_factorize_{0.0};   // time for LU factorizations
+    double sum_hf_ftran_density_{0.0};
+    double sum_hf_btran_density_{0.0};
 };
 
 #include <cassert>

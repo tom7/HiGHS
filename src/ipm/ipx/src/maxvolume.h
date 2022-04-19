@@ -47,6 +47,7 @@ private:
     Int tblnnz_{0};
     double tblmax_{0.0};
     double frobnorm_squared_{0.0};
+  const bool kReportMaxvolumeMethodCall = false;
 };
 
 }  // namespace ipx

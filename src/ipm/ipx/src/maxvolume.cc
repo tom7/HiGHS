@@ -215,7 +215,22 @@ Int Maxvolume::Driver(Basis& basis, Slice& slice) {
     IndexedVector& row = slice.row;
     Vector& work = slice.work;
 
-    printf("\nMaxvolume::Driver\n");
+    if (kReportMaxvolumeMethodCall) printf("\nMaxvolume::Driver\n");
+    if (control_.basicluOrHfactor() > 0 && !basis.has_hfactor_invert_) {
+      // Construct logical basic_index_
+      basis.basic_index_.clear();
+      for (HighsInt iRow=0; iRow < m; iRow++) {
+	basis.basic_index_.push_back(basis[iRow]);
+      }
+      basis.factor_.setup(n, m,
+			  model.AI().colptr(),
+			  model.AI().rowidx(),
+			  model.AI().values(),
+			  &basis.basic_index_[0]);
+      HighsInt rank_deficiency = basis.factor_.build();
+      assert(rank_deficiency == 0);
+      basis.has_hfactor_invert_ = true;
+    }
     // Compute column weights.
     for (Int p = 0; p < m; p++)
         work[p] = tblrow_used[p] ? invscale_basic[p] : 0.0;
