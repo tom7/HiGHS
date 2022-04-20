@@ -184,12 +184,15 @@ void Basis::GetLuFactors(SparseMatrix *L, SparseMatrix *U, Int *rowperm,
     lu_->GetFactors(L, U, rowperm, colperm, nullptr);
 }
 
-  void Basis::SolveDense(const Vector& rhs, Vector& lhs, char trans) {// JhRemoveConst const {
-  if (kReportBasisMethodCall) printf("Basis::SolveDense\n");
-  lu_->SolveDense(rhs, lhs, trans);
-  if (control_.basicluOrHfactor() > 0 && this->has_hfactor_invert_) {
+void Basis::SolveDense(const Vector& rhs, Vector& lhs, char trans) {// JhRemoveConst const {
+  // Cannot assume that rhs and lhs are different memory locations
+  if (kReportBasisMethodCall) printf("Basis::SolveDense(%c)", trans);
+  if (this->has_hfactor_invert_) {
     const bool basic_index_ok = checkBasicIndex();
-    if (!basic_index_ok) printf("Basis::SolveDense basic_index_ error\n");
+    if (!basic_index_ok) {
+      printf(" basic_index_ error\n"); fflush(stdout);
+      assert(basic_index_ok);
+    }
     std::vector<double> hf_sol;
     convertRhs(rhs, hf_sol, trans);
     if (trans == 't' || trans == 'T') {
@@ -198,8 +201,12 @@ void Basis::GetLuFactors(SparseMatrix *L, SparseMatrix *U, Int *rowperm,
       factor_.ftranCall(hf_sol);
     }
     convertSol(hf_sol, trans);
+    lu_->SolveDense(rhs, lhs, trans);
     checkSol(lhs, hf_sol);
+    return;
   }
+  lu_->SolveDense(rhs, lhs, trans);
+  printf("\n");
 }
 
 void Basis::SolveForUpdate(Int j, IndexedVector& lhs) {
@@ -431,6 +438,8 @@ void Basis::ConstructBasisFromWeights(const double* colscale, Info* info) {
 
   double Basis::MinSingularValue() {// JhRemoveConst const {
   if (kReportBasisMethodCall) printf("Basis::MinSingularValue\n");
+  const bool save_has_hfactor_invert_ = has_hfactor_invert_;
+  //  has_hfactor_invert_ = false;
     const Int m = model_.rows();
     Vector v(m);
 
@@ -439,6 +448,7 @@ void Basis::ConstructBasisFromWeights(const double* colscale, Info* info) {
         [this](const Vector& x, Vector& fx) {
             SolveDense(x, fx, 'N');
             SolveDense(fx, fx, 'T'); }, v);
+    has_hfactor_invert_ = save_has_hfactor_invert_;
     return std::sqrt(1.0/lambda);
 }
 
@@ -574,6 +584,14 @@ void Basis::CrashBasis(const double* colweights) {
     }
     Int num_dropped = 0;
     CrashFactorize(&num_dropped);
+    if (control_.basicluOrHfactor() > 0) {
+      assert(basic_index_.size() == m);
+      for (HighsInt iRow=0; iRow < m; iRow++)
+	basic_index_[iRow] = basis_[iRow];
+      HighsInt rank_deficiency = factor_.build();
+      assert(rank_deficiency == 0);
+      has_hfactor_invert_ = true;
+    }
     control_.Debug()
         << Textline("Number of columns dropped from guessed basis:")
         << num_dropped << '\n';
@@ -1038,16 +1056,19 @@ void Basis::convertSol(std::vector<double>& sol, char trans) {// JhRemoveConst c
 void Basis::checkSol(const Vector& sol0, const std::vector<double>& sol1) const {
   HighsInt num_row = model_.rows();
   double max_error = 0;
+  for (HighsInt iRow = 0; iRow < num_row; iRow++)
+    max_error = std::max(std::fabs(sol0[iRow] - sol1[iRow]), max_error);
+  printf(" checkSol error = %g\n", max_error);
+  if (max_error < 1e-5) return;
+  max_error = 0;
   for (HighsInt iRow = 0; iRow < num_row; iRow++) {
     const double error = std::fabs(sol0[iRow] - sol1[iRow]);
-    //    if (error > 1e-5) 
-      printf("checkSol: Ix %2d: %11.4g; %11.4g; error = %g\n", (int)iRow, sol0[iRow], sol1[iRow], error); fflush(stdout);
+    printf("checkSol: Ix %2d: %11.4g; %11.4g; error = %g\n", (int)iRow, sol0[iRow], sol1[iRow], error);
     max_error = std::max(error, max_error);
   }
-  if (max_error > 1e-5) {
-    printf("checkSol: Error = %g\n", max_error); fflush(stdout);
-  }
+  fflush(stdout);
   assert(max_error < 1e-5);
+  return;
 }
 
 bool Basis::checkBasicIndex() const {
@@ -1077,7 +1098,7 @@ void Basis::checkInverts() {
   Vector ls_rhs(num_row);
   Vector ls_sol(num_row);
   for (HighsInt iRow = 0; iRow < num_row; iRow++) {
-    hf_sol[iRow] = 1.0;
+    hf_sol[iRow] = random.fraction();//1.0;
     ls_rhs[iRow] = hf_sol[iRow];
   }
   char trans = 'N';
