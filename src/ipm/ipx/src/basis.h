@@ -228,15 +228,19 @@ public:
     const bool kReportBasisMethodCall = true;
     std::vector<HighsInt> basic_index_;
     std::vector<HighsInt> hf_basis_;
-    bool has_hfactor_invert_{false};
-    HFactor factor_;
+    bool has_hf_factor_invert_{false};
+    HFactor hf_factor_;
+    HVector hf_vector_;
     std::vector<HighsInt> copyBasis();
     bool checkHfBasis() const;
     bool checkBasicIndex() const;
     void checkInverts();
   void convertRhs(const Vector& from_rhs, std::vector<double>& to_rhs, char trans); // JhRemoveConst const;
   void convertSol(std::vector<double>& sol, char trans); // JhRemoveConst const;
-  void checkSol(const Vector& sol0, const std::vector<double>& sol1) const;
+  void convertRhs(HVector& rhs, char trans); // JhRemoveConst const;
+  void convertSol(HVector& sol, char trans); // JhRemoveConst const;
+  double solError(const Vector& sol0, const std::vector<double>& sol1) const;
+  double solError(const IndexedVector& sol0, const HVector& sol1) const;
 
 private:
     // Basis repair terminates when the maximum absolute entry in inverse(B)

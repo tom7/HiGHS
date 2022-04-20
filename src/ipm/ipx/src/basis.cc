@@ -82,14 +82,16 @@ void Basis::SetToSlackBasis() {
       basic_index_.clear();
       for (HighsInt iRow=0; iRow < m; iRow++)
 	basic_index_.push_back(n+iRow);
-      factor_.setup(n, m,
+      hf_factor_.setup(n, m,
 			  model_.AI().colptr(),
 			  model_.AI().rowidx(),
 			  model_.AI().values(),
 			  &basic_index_[0]);
-      HighsInt rank_deficiency = factor_.build();
+      
+      HighsInt rank_deficiency = hf_factor_.build();
       assert(rank_deficiency == 0);
-      has_hfactor_invert_ = true;
+      has_hf_factor_invert_ = true;
+      hf_vector_.setup(m);
     }
     checkInverts();
 }
@@ -187,7 +189,7 @@ void Basis::GetLuFactors(SparseMatrix *L, SparseMatrix *U, Int *rowperm,
 void Basis::SolveDense(const Vector& rhs, Vector& lhs, char trans) {// JhRemoveConst const {
   // Cannot assume that rhs and lhs are different memory locations
   if (kReportBasisMethodCall) printf("Basis::SolveDense(%c)", trans);
-  if (this->has_hfactor_invert_) {
+  if (has_hf_factor_invert_) {
     const bool basic_index_ok = checkBasicIndex();
     if (!basic_index_ok) {
       printf(" basic_index_ error\n"); fflush(stdout);
@@ -196,21 +198,22 @@ void Basis::SolveDense(const Vector& rhs, Vector& lhs, char trans) {// JhRemoveC
     std::vector<double> hf_sol;
     convertRhs(rhs, hf_sol, trans);
     if (trans == 't' || trans == 'T') {
-      factor_.btranCall(hf_sol);
+      hf_factor_.btranCall(hf_sol);
     } else {
-      factor_.ftranCall(hf_sol);
+      hf_factor_.ftranCall(hf_sol);
     }
     convertSol(hf_sol, trans);
     lu_->SolveDense(rhs, lhs, trans);
-    checkSol(lhs, hf_sol);
+    const double error = solError(lhs, hf_sol);
+    if (kReportBasisMethodCall) printf(" error = %g\n", error);
     return;
   }
   lu_->SolveDense(rhs, lhs, trans);
-  printf("\n");
+  if (kReportBasisMethodCall) printf("\n");
 }
 
 void Basis::SolveForUpdate(Int j, IndexedVector& lhs) {
-  if (kReportBasisMethodCall) printf("Basis::SolveForUpdate(%d, lhs)\n", (int)j);
+  if (kReportBasisMethodCall) printf("Basis::SolveForUpdate(%d, lhs)", (int)j);
     const Int p = PositionOf(j);
     Timer timer;
     const Int dim = model_.rows();
@@ -229,6 +232,20 @@ void Basis::SolveForUpdate(Int j, IndexedVector& lhs) {
         if (lhs.sparse())
             num_ftran_sparse_++;
         time_ftran_ += timer.Elapsed();
+	if (has_hf_factor_invert_) {
+	  hf_vector_.clear();
+	  for (Int k = AI.begin(j); k < AI.end(j); k++) {
+	    const Int iRow = AI.rowidx()[k];
+	    hf_vector_.index[k] = iRow;
+	    hf_vector_.array[iRow] = AI.values()[k];
+	    hf_vector_.count++;
+	  }
+	  convertRhs(hf_vector_, 'N');
+	  hf_factor_.ftranCall(hf_vector_, 1.0);
+	  convertSol(hf_vector_, 'N');
+	  const double error = solError(lhs, hf_vector_);
+	  if (kReportBasisMethodCall) printf(" error = %g", error);
+	}
     }
     else {                      // btran
         lu_->BtranForUpdate(p, lhs);
@@ -239,7 +256,19 @@ void Basis::SolveForUpdate(Int j, IndexedVector& lhs) {
             num_btran_sparse_++;
         time_btran_ += timer.Elapsed();
 	//	updateValueDistribution(density, btran_density);
+	if (has_hf_factor_invert_) {
+	  hf_vector_.clear();
+	  hf_vector_.index[0] = j;
+	  hf_vector_.array[j] = 1.0;
+	  hf_vector_.count = 1;
+	  convertRhs(hf_vector_, 'T');
+	  hf_factor_.btranCall(hf_vector_, 1.0);
+	  convertSol(hf_vector_, 'T');
+	  const double error = solError(lhs, hf_vector_);
+	  if (kReportBasisMethodCall) printf(" error = %g", error);
+	}
     }
+    if (kReportBasisMethodCall) printf("\n");
 }
 
 void Basis::SolveForUpdate(Int j) {
@@ -438,8 +467,6 @@ void Basis::ConstructBasisFromWeights(const double* colscale, Info* info) {
 
   double Basis::MinSingularValue() {// JhRemoveConst const {
   if (kReportBasisMethodCall) printf("Basis::MinSingularValue\n");
-  const bool save_has_hfactor_invert_ = has_hfactor_invert_;
-  //  has_hfactor_invert_ = false;
     const Int m = model_.rows();
     Vector v(m);
 
@@ -448,7 +475,6 @@ void Basis::ConstructBasisFromWeights(const double* colscale, Info* info) {
         [this](const Vector& x, Vector& fx) {
             SolveDense(x, fx, 'N');
             SolveDense(fx, fx, 'T'); }, v);
-    has_hfactor_invert_ = save_has_hfactor_invert_;
     return std::sqrt(1.0/lambda);
 }
 
@@ -588,9 +614,9 @@ void Basis::CrashBasis(const double* colweights) {
       assert(basic_index_.size() == m);
       for (HighsInt iRow=0; iRow < m; iRow++)
 	basic_index_[iRow] = basis_[iRow];
-      HighsInt rank_deficiency = factor_.build();
+      HighsInt rank_deficiency = hf_factor_.build();
       assert(rank_deficiency == 0);
-      has_hfactor_invert_ = true;
+      has_hf_factor_invert_ = true;
     }
     control_.Debug()
         << Textline("Number of columns dropped from guessed basis:")
@@ -1003,6 +1029,61 @@ std::vector<HighsInt> Basis::copyBasis() {
     
 }
 
+void Basis::convertRhs(HVector& rhs, char trans) {// JhRemoveConst const {
+  HighsInt num_row = model_.rows();
+  HighsInt num_col = model_.cols();
+  if (trans == 't' || trans == 'T') {
+    // Have to convert for basis ordering
+    std::vector<double> scatter_;
+    scatter_.assign(num_col+num_row, kHighsInf);
+    // Scatter according to basis_
+    for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+      const HighsInt iVar = basis_[iRow];
+      assert(scatter_[iVar] == kHighsInf);
+      scatter_[iVar] = rhs.array[iRow];
+    }
+    // Gather according to basic_index_
+    rhs.clear();
+    for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+      const HighsInt iVar = basic_index_[iRow];
+      assert(scatter_[iVar] != kHighsInf);
+      const double value = scatter_[iVar];
+      if (value) {
+	rhs.array[iRow] = value;
+	rhs.index[rhs.count++] = iRow;
+      }
+      scatter_[iVar] = kHighsInf;
+    }
+  }
+}
+
+void Basis::convertSol(HVector& sol, char trans) {// JhRemoveConst const {
+  HighsInt num_row = model_.rows();
+  HighsInt num_col = model_.cols();
+  if (trans == 'n' || trans == 'N') {
+    // Have to convert for basis ordering in making copy
+    std::vector<double> scatter_;
+    scatter_.assign(num_col+num_row, kHighsInf);
+    // Scatter according to basic_index_
+    for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+      const HighsInt iVar = basic_index_[iRow];
+      assert(scatter_[iVar] == kHighsInf);
+      scatter_[iVar] = sol.array[iRow];
+    }
+    // Gather according to basis_
+    sol.clear();
+    for (HighsInt iRow = 0; iRow < num_row; iRow++) {
+      const HighsInt iVar = basis_[iRow];
+      assert(scatter_[iVar] != kHighsInf);
+      const double value = scatter_[iVar];
+      if (value) {
+	sol.array[iRow] = value;
+	sol.index[sol.count++] = iRow;
+      }
+    }
+  }
+}
+
 void Basis::convertRhs(const Vector& from_rhs, std::vector<double>& to_rhs, char trans) {// JhRemoveConst const {
   HighsInt num_row = model_.rows();
   HighsInt num_col = model_.cols();
@@ -1033,7 +1114,7 @@ void Basis::convertRhs(const Vector& from_rhs, std::vector<double>& to_rhs, char
 void Basis::convertSol(std::vector<double>& sol, char trans) {// JhRemoveConst const {
   HighsInt num_row = model_.rows();
   HighsInt num_col = model_.cols();
-  if (trans != 't' && trans != 'T') {
+  if (trans == 'n' || trans == 'N') {
     // Have to convert for basis ordering in making copy
     std::vector<double> scatter_;
     scatter_.assign(num_col+num_row, kHighsInf);
@@ -1053,22 +1134,60 @@ void Basis::convertSol(std::vector<double>& sol, char trans) {// JhRemoveConst c
   }
 }
 
-void Basis::checkSol(const Vector& sol0, const std::vector<double>& sol1) const {
+double Basis::solError(const Vector& sol0, const std::vector<double>& sol1) const {
   HighsInt num_row = model_.rows();
   double max_error = 0;
   for (HighsInt iRow = 0; iRow < num_row; iRow++)
     max_error = std::max(std::fabs(sol0[iRow] - sol1[iRow]), max_error);
-  printf(" checkSol error = %g\n", max_error);
-  if (max_error < 1e-5) return;
+  if (max_error < 1e-5) return max_error;
+  printf("\nBasis::solError (dense) error = %g\n", max_error);
   max_error = 0;
   for (HighsInt iRow = 0; iRow < num_row; iRow++) {
     const double error = std::fabs(sol0[iRow] - sol1[iRow]);
-    printf("checkSol: Ix %2d: %11.4g; %11.4g; error = %g\n", (int)iRow, sol0[iRow], sol1[iRow], error);
+    printf("Basis::solError: Ix %2d: %11.4g; %11.4g; error = %g\n", (int)iRow, sol0[iRow], sol1[iRow], error);
     max_error = std::max(error, max_error);
   }
   fflush(stdout);
   assert(max_error < 1e-5);
-  return;
+  return max_error;
+}
+
+double Basis::solError(const IndexedVector& sol0, const HVector& sol1) const {
+  HighsInt num_row = model_.rows();
+  double max_error = 0;
+  const Int sol0_num_nz = sol0.nnz();
+  const Int* sol0_index = sol0.pattern();
+  const double* sol0_array = sol0.elements();
+  const Int sol1_num_nz = sol1.count;
+  const std::vector<Int>& sol1_index = sol1.index;
+  const std::vector<double>& sol1_array = sol1.array;
+  assert(sol0_num_nz>=0);
+  for (HighsInt k = 0; k < sol0_num_nz; k++) {
+    const Int iRow = sol0_index[k];
+    max_error = std::max(std::fabs(sol0_array[iRow] - sol1_array[iRow]), max_error);
+  }
+  for (HighsInt k = 0; k < sol1_num_nz; k++) {
+    const Int iRow = sol1_index[k];
+    max_error = std::max(std::fabs(sol0_array[iRow] - sol1_array[iRow]), max_error);
+  }
+  if (max_error < 1e-5) return max_error;
+  printf("\nBasis::solError (sparse) error = %g\n", max_error);
+  max_error = 0;
+  for (HighsInt k = 0; k < sol0_num_nz; k++) {
+    const Int iRow = sol0_index[k];
+    const double error = std::fabs(sol0_array[iRow] - sol1_array[iRow]);
+    printf("solError: Ix %2d: %11.4g; %11.4g; error = %g\n", (int)iRow, sol0_array[iRow], sol1_array[iRow], error);
+    max_error = std::max(std::fabs(sol0_array[iRow] - sol1_array[iRow]), max_error);
+  }
+  for (HighsInt k = 0; k < sol1_num_nz; k++) {
+    const Int iRow = sol1_index[k];
+    const double error = std::fabs(sol0_array[iRow] - sol1_array[iRow]);
+    printf("solError: Ix %2d: %11.4g; %11.4g; error = %g\n", (int)iRow, sol0_array[iRow], sol1_array[iRow], error);
+    max_error = std::max(std::fabs(sol0_array[iRow] - sol1_array[iRow]), max_error);
+  }
+  fflush(stdout);
+  assert(max_error < 1e-5);
+  return max_error;
 }
 
 bool Basis::checkBasicIndex() const {
@@ -1091,21 +1210,16 @@ bool Basis::checkBasicIndex() const {
 }
 
 void Basis::checkInverts() {
-  if (!this->has_hfactor_invert_) return;
+  if (!has_hf_factor_invert_) return;
+  if (kReportBasisMethodCall) printf("Basis::checkInverts\n");
   HighsInt num_row = model_.rows();
   HighsRandom random;
-  std::vector<double> hf_sol(num_row);
   Vector ls_rhs(num_row);
   Vector ls_sol(num_row);
-  for (HighsInt iRow = 0; iRow < num_row; iRow++) {
-    hf_sol[iRow] = random.fraction();//1.0;
-    ls_rhs[iRow] = hf_sol[iRow];
-  }
-  char trans = 'N';
-  SolveDense(ls_rhs, ls_sol, trans);
-  factor_.ftranCall(hf_sol);
-  convertSol(hf_sol, trans);
-  checkSol(ls_sol, hf_sol);
+  for (HighsInt iRow = 0; iRow < num_row; iRow++) 
+    ls_rhs[iRow] = random.fraction();//1.0;
+  SolveDense(ls_rhs, ls_sol, 'N');
+  SolveDense(ls_rhs, ls_sol, 'T');
 }
 
 }  // namespace ipx
