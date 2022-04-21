@@ -31,18 +31,18 @@ Basis::Basis(const Control& control, const Model& model)
 }
 
 void Basis::FixNonbasicVariable(Int j) {
-    if (StatusOf(j) == NONBASIC_FIXED)
+    if (StatusOf(j) == kNonbasicFixed)
         return;
-    assert(StatusOf(j) == NONBASIC);
+    assert(StatusOf(j) == kNonbasic);
     assert(map2basis_[j] == -1);
     map2basis_[j] = -2;
 }
 
 void Basis::FreeBasicVariable(Int j) {
     const Int m = model_.rows();
-    if (StatusOf(j) == BASIC_FREE)
+    if (StatusOf(j) == kBasicFree)
         return;
-    assert(StatusOf(j) == BASIC);
+    assert(StatusOf(j) == kBasic);
     assert(map2basis_[j] >= 0 && map2basis_[j] < m);
     map2basis_[j] += m;
 }
@@ -103,17 +103,17 @@ Int Basis::Load(const int* basic_status) {
     Int p = 0;
     for (Int j = 0; j < n+m; j++) {
         switch (basic_status[j]) {
-        case NONBASIC_FIXED:
+        case kNonbasicFixed:
             map2basis[j] = -2;
             break;
-        case NONBASIC:
+        case kNonbasic:
             map2basis[j] = -1;
             break;
-        case BASIC:
+        case kBasic:
             basis.push_back(j);
             map2basis[j] = p++;
             break;
-        case BASIC_FREE:
+        case kBasicFree:
             basis.push_back(j);
             map2basis[j] = p++ + m;
             break;
@@ -384,8 +384,8 @@ Int Basis::ExchangeIfStable(Int jb, Int jn, double tableau_entry, int sys,
     Int ib = PositionOf(jb);
     assert(basis_[ib] == jb);
     basis_[ib] = jn;
-    map2basis_[jn] = ib;        // status now BASIC
-    map2basis_[jb] = -1;        // status now NONBASIC
+    map2basis_[jn] = ib;        // status now kBasic
+    map2basis_[jb] = kNonbasic;        // status now kNonbasic
     num_updates_++;
     factorization_is_fresh_ = false;
     *exchanged = true;
@@ -394,8 +394,8 @@ Int Basis::ExchangeIfStable(Int jb, Int jn, double tableau_entry, int sys,
       Int ib = basicIndexPositionOf(jb);
       assert(basic_index_[ib] == jb);
       basic_index_[ib] = jn;
-      map2basic_index_[jn] = ib;        // status now BASIC
-      map2basic_index_[jb] = -1;        // status now NONBASIC
+      map2basic_index_[jn] = ib;        // status now kBasic
+      map2basic_index_[jb] = kNonbasic;        // status now kNonbasic
       assert(1==0);
       //      checkInverts();
     }
@@ -568,9 +568,9 @@ Int Basis::AdaptToSingularFactorization() {
         Int jn = n+i;
         assert(map2basis_[jn] < 0);
         basis_[p] = jn;
-        map2basis_[jn] = p; // now BASIC at position p
+        map2basis_[jn] = p; // now kBasic at position p
         if (jb >= 0)
-            map2basis_[jb] = -1; // now NONBASIC
+            map2basis_[jb] = -1; // now kNonbasic
     }
     return dependent_cols.size();
 }
@@ -758,8 +758,8 @@ void Basis::CrashExchange(Int jb, Int jn, double tableau_entry, int sys,
     Int ib = PositionOf(jb);
     assert(basis_[ib] == jb);
     basis_[ib] = jn;
-    map2basis_[jn] = ib;        // status now BASIC
-    map2basis_[jb] = -1;        // status now NONBASIC
+    map2basis_[jn] = ib;        // status now (implied) kBasic
+    map2basis_[jb] = kNonbasic;        // status now kNonbasic
     num_updates_++;
     factorization_is_fresh_ = false;
 

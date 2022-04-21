@@ -55,13 +55,14 @@ public:
     //  NONBASIC_FIXED: variable is not in the basis (and will never enter)
     //  NONBASIC:       variable is not in the basis (but may enter)
     //  BASIC:          variable is in the basis (but may leave)
-    //  BASIC_FREE:     variable is in the basis (and will never leave)
+    //  kBasicFree:     variable is in the basis (and will never leave)
     //
     // The notes in () are not enforced or required by the implementation.
     // From the view point of the class the two nonbasic and the two basic
     // statuses behave the same. The four statuses are provided to make writing
     // user code more convenient.
-    enum BasicStatus { NONBASIC_FIXED = -2, NONBASIC, BASIC, BASIC_FREE };
+  //    enum BasicStatus { NONBASIC_FIXED = -2, NONBASIC, BASIC, BASIC_FREE };
+    enum BasicStatus { kNonbasicFixed = -2, kNonbasic, kBasic, kBasicFree };
 
     // Returns status of variable j.
     BasicStatus StatusOf(Int j) const;
@@ -70,14 +71,14 @@ public:
     // in the basis.
     void FixNonbasicVariable(Int j);
 
-    // Switches status of variable j to BASIC_FREE. The variable must be in the
+    // Switches status of variable j to kBasicFree. The variable must be in the
     // basis.
     void FreeBasicVariable(Int j);
 
     // Switches status from NONBASIC_FIXED to NONBASIC for all variables.
     void UnfixVariables();
 
-    // Switches status from BASIC_FREE to BASIC for all variables.
+    // Switches status from kBasicFree to BASIC for all variables.
     void UnfreeVariables();
 
     // Sets the basis to the slack basis.
@@ -311,7 +312,7 @@ private:
     //  -2:            variable is NONBASIC_FIXED
     //  -1:            variable is NONBASIC
     //   0 <= p < m:   variable is BASIC and at position p in the basis
-    //   m <= p < 2*m: variable is BASIC_FREE and at position p-m in the basis
+    //   m <= p < 2*m: variable is kBasicFree and at position p-m in the basis
     std::vector<Int> map2basis_;
 
     mutable std::unique_ptr<LuUpdate> lu_; // LU factorization of basis matrix
@@ -356,9 +357,9 @@ inline Basis::BasicStatus Basis::StatusOf(Int j) const {
     const Int p = map2basis_[j];
     assert(p >= -2 && p < 2*m);
     if (p < 0)
-        return p == -1 ? NONBASIC : NONBASIC_FIXED;
+        return p == -1 ? kNonbasic : kNonbasicFixed;
     else
-        return p < m ? BASIC : BASIC_FREE;
+        return p < m ? kBasic : kBasicFree;
 }
 
 inline Int Basis::PositionOf(Int j) const {
@@ -376,11 +377,11 @@ inline Int Basis::basicIndexPositionOf(Int j) const {
 }
 
 inline bool Basis::IsBasic(Int j) const {
-    return StatusOf(j) == BASIC || StatusOf(j) == BASIC_FREE;
+    return StatusOf(j) == kBasic || StatusOf(j) == kBasicFree;
 }
 
 inline bool Basis::IsNonbasic(Int j) const {
-    return StatusOf(j) == NONBASIC || StatusOf(j) == NONBASIC_FIXED;
+    return StatusOf(j) == kNonbasic || StatusOf(j) == kNonbasicFixed;
 }
 
 // Returns x[basis] (in Matlab notation).

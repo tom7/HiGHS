@@ -43,7 +43,7 @@ Int Maxvolume::RunSequential(const double* colscale, Basis& basis) {
             const double dj = colscale ? colscale[j] : 1.0;
             if (dj == 0.0)      // all remaining columns have scaling factor 0
                 break;
-            if (basis.StatusOf(j) != Basis::NONBASIC) {
+            if (basis.StatusOf(j) != Basis::kNonbasic) {
                 candidates.pop_back();
                 continue;
             }
@@ -127,7 +127,7 @@ Int Maxvolume::RunHeuristic(const double* colscale, Basis& basis) {
     // We need to work with a copy of the column scaling factors, in which
     // skipped columns are set to zero (and not scanned again).
     for (Int j = 0; j < n+m; j++) {
-        if (basis.StatusOf(j) == Basis::NONBASIC)
+        if (basis.StatusOf(j) == Basis::kNonbasic)
             slice.colscale[j] = colscale ? colscale[j] : 1.0;
     }
 
@@ -234,7 +234,7 @@ Int Maxvolume::Driver(Basis& basis, Slice& slice) {
     basis.SolveDense(work, work, 'T');
     for (Int j = 0; j < n+m; j++) {
         if (colscale[j]) {
-            assert(basis.StatusOf(j) == Basis::NONBASIC);
+            assert(basis.StatusOf(j) == Basis::kNonbasic);
             double sum = DotColumn(AI, j, work);
             colweights[j] = sum * colscale[j];
         }
@@ -255,7 +255,7 @@ Int Maxvolume::Driver(Basis& basis, Slice& slice) {
         const double weight = colweights[jn];
         if (weight == 0.0)
             break;
-        assert(basis.StatusOf(jn) == Basis::NONBASIC);
+        assert(basis.StatusOf(jn) == Basis::kNonbasic);
         assert(colscale[jn] > 0.0);
 
         if ((errflag = control_.InterruptCheck()) != 0)
