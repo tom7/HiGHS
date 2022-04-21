@@ -78,15 +78,12 @@ void Basis::SetToSlackBasis() {
     assert(err == 0);
 
     if (control_.basicluOrHfactor() > 0) {
-      // Construct logical basic_index_
-      basic_index_.clear();
-      for (HighsInt iRow=0; iRow < m; iRow++)
-	basic_index_.push_back(n+iRow);
+      basicIndexSetup();
       hf_factor_.setup(n, m,
-			  model_.AI().colptr(),
-			  model_.AI().rowidx(),
-			  model_.AI().values(),
-			  &basic_index_[0]);
+		       model_.AI().colptr(),
+		       model_.AI().rowidx(),
+		       model_.AI().values(),
+		       &basic_index_[0]);
       
       HighsInt rank_deficiency = hf_factor_.build();
       assert(rank_deficiency == 0);
@@ -392,6 +389,16 @@ Int Basis::ExchangeIfStable(Int jb, Int jn, double tableau_entry, int sys,
     num_updates_++;
     factorization_is_fresh_ = false;
     *exchanged = true;
+
+    if (has_hf_factor_invert_) {
+      Int ib = basicIndexPositionOf(jb);
+      assert(basic_index_[ib] == jb);
+      basic_index_[ib] = jn;
+      map2basic_index_[jn] = ib;        // status now BASIC
+      map2basic_index_[jb] = -1;        // status now NONBASIC
+      assert(1==0);
+      //      checkInverts();
+    }
 
     if (lu_->NeedFreshFactorization())
         return Factorize();
@@ -1007,6 +1014,17 @@ Vector CopyBasic(const Vector& x, const Basis& basis) {
     return xbasic;
 }
 
+void Basis::basicIndexSetup() {
+  const Int m = model_.rows();
+  const Int n = model_.cols();
+  basic_index_.clear();
+  for (HighsInt iRow=0; iRow < m; iRow++)
+    basic_index_.push_back(basis_[iRow]);
+  map2basic_index_.clear();
+  for (HighsInt iVar=0; iVar < n+m; iVar++)
+    map2basic_index_.push_back(map2basis_[iVar]);
+}
+
 void Basis::reportBasisData() const {
   printf("\nBasis data\n");
   printf("    Num factorizations = %d\n", (int)this->factorizations());
@@ -1020,10 +1038,6 @@ void Basis::reportBasisData() const {
   printf("    Mean fill-in %11.4g\n", mean_fill());
   printf("    Max  fill-in %11.4g\n", max_fill());
 
-}
-
-std::vector<HighsInt> Basis::copyBasis() {
-    
 }
 
 void Basis::convertRhs(HVector& rhs, char trans) {// JhRemoveConst const {

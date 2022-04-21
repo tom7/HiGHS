@@ -217,16 +217,12 @@ Int Maxvolume::Driver(Basis& basis, Slice& slice) {
 
     if (kReportMaxvolumeMethodCall) printf("\nMaxvolume::Driver\n");
     if (control_.basicluOrHfactor() > 0 && !basis.has_hf_factor_invert_) {
-      // Construct basic_index_
-      basis.basic_index_.clear();
-      for (HighsInt iRow=0; iRow < m; iRow++) {
-	basis.basic_index_.push_back(basis[iRow]);
-      }
+      basis.basicIndexSetup();
       basis.hf_factor_.setup(n, m,
-			  model.AI().colptr(),
-			  model.AI().rowidx(),
-			  model.AI().values(),
-			  &basis.basic_index_[0]);
+			     model.AI().colptr(),
+			     model.AI().rowidx(),
+			     model.AI().values(),
+			     &basis.basic_index_[0]);
       HighsInt rank_deficiency = basis.hf_factor_.build();
       assert(rank_deficiency == 0);
       basis.has_hf_factor_invert_ = true;

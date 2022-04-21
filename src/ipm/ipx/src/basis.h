@@ -42,6 +42,7 @@ public:
     // If variable j is basic, then returns its position in the basis.
     // Otherwise returns -1.
     Int PositionOf(Int j) const;
+    Int basicIndexPositionOf(Int j) const;
 
     // Returns true if variable j is in the basis.
     bool IsBasic(Int j) const;
@@ -227,11 +228,12 @@ public:
   
     const bool kReportBasisMethodCall = true;
     std::vector<HighsInt> basic_index_;
+    std::vector<HighsInt> map2basic_index_;
     std::vector<HighsInt> hf_basis_;
     bool has_hf_factor_invert_{false};
     HFactor hf_factor_;
     HVector hf_vector_;
-    std::vector<HighsInt> copyBasis();
+    void basicIndexSetup();
     bool checkHfBasis() const;
     bool checkBasicIndex() const;
     void checkInverts();
@@ -362,6 +364,13 @@ inline Basis::BasicStatus Basis::StatusOf(Int j) const {
 inline Int Basis::PositionOf(Int j) const {
     const Int m = model_.rows();
     const Int p = map2basis_[j];
+    assert(p >= -2 && p < 2*m);
+    return p < 0 ? -1 : p < m ? p : p-m;
+}
+
+inline Int Basis::basicIndexPositionOf(Int j) const {
+    const Int m = model_.rows();
+    const Int p = map2basic_index_[j];
     assert(p >= -2 && p < 2*m);
     return p < 0 ? -1 : p < m ? p : p-m;
 }
