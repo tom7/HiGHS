@@ -188,13 +188,9 @@ void Basis::GetLuFactors(SparseMatrix *L, SparseMatrix *U, Int *rowperm,
 
 void Basis::SolveDense(const Vector& rhs, Vector& lhs, char trans) {// JhRemoveConst const {
   // Cannot assume that rhs and lhs are different memory locations
+  if (has_hf_factor_invert_) assert(checkBasicIndex());
   if (kReportBasisMethodCall) printf("Basis::SolveDense(%c)", trans);
   if (has_hf_factor_invert_) {
-    const bool basic_index_ok = checkBasicIndex();
-    if (!basic_index_ok) {
-      printf(" basic_index_ error\n"); fflush(stdout);
-      assert(basic_index_ok);
-    }
     std::vector<double> hf_sol;
     convertRhs(rhs, hf_sol, trans);
     if (trans == 't' || trans == 'T') {
@@ -213,6 +209,7 @@ void Basis::SolveDense(const Vector& rhs, Vector& lhs, char trans) {// JhRemoveC
 }
 
 void Basis::SolveForUpdate(Int j, IndexedVector& lhs) {
+  if (has_hf_factor_invert_) assert(checkBasicIndex());
   if (kReportBasisMethodCall) printf("Basis::SolveForUpdate(%d, lhs)", (int)j);
     const Int p = PositionOf(j);
     Timer timer;
@@ -258,8 +255,8 @@ void Basis::SolveForUpdate(Int j, IndexedVector& lhs) {
 	//	updateValueDistribution(density, btran_density);
 	if (has_hf_factor_invert_) {
 	  hf_vector_.clear();
-	  hf_vector_.index[0] = j;
-	  hf_vector_.array[j] = 1.0;
+	  hf_vector_.index[0] = p;
+	  hf_vector_.array[p] = 1.0;
 	  hf_vector_.count = 1;
 	  convertRhs(hf_vector_, 'T');
 	  hf_factor_.btranCall(hf_vector_, 1.0);
@@ -1154,7 +1151,6 @@ double Basis::solError(const Vector& sol0, const std::vector<double>& sol1) cons
 
 double Basis::solError(const IndexedVector& sol0, const HVector& sol1) const {
   HighsInt num_row = model_.rows();
-  double max_error = 0;
   const Int sol0_num_nz = sol0.nnz();
   const Int* sol0_index = sol0.pattern();
   const double* sol0_array = sol0.elements();
@@ -1162,28 +1158,30 @@ double Basis::solError(const IndexedVector& sol0, const HVector& sol1) const {
   const std::vector<Int>& sol1_index = sol1.index;
   const std::vector<double>& sol1_array = sol1.array;
   assert(sol0_num_nz>=0);
-  for (HighsInt k = 0; k < sol0_num_nz; k++) {
-    const Int iRow = sol0_index[k];
-    max_error = std::max(std::fabs(sol0_array[iRow] - sol1_array[iRow]), max_error);
-  }
-  for (HighsInt k = 0; k < sol1_num_nz; k++) {
-    const Int iRow = sol1_index[k];
-    max_error = std::max(std::fabs(sol0_array[iRow] - sol1_array[iRow]), max_error);
-  }
-  if (max_error < 1e-5) return max_error;
-  printf("\nBasis::solError (sparse) error = %g\n", max_error);
-  max_error = 0;
-  for (HighsInt k = 0; k < sol0_num_nz; k++) {
-    const Int iRow = sol0_index[k];
-    const double error = std::fabs(sol0_array[iRow] - sol1_array[iRow]);
-    printf("solError: Ix %2d: %11.4g; %11.4g; error = %g\n", (int)iRow, sol0_array[iRow], sol1_array[iRow], error);
-    max_error = std::max(std::fabs(sol0_array[iRow] - sol1_array[iRow]), max_error);
-  }
-  for (HighsInt k = 0; k < sol1_num_nz; k++) {
-    const Int iRow = sol1_index[k];
-    const double error = std::fabs(sol0_array[iRow] - sol1_array[iRow]);
-    printf("solError: Ix %2d: %11.4g; %11.4g; error = %g\n", (int)iRow, sol0_array[iRow], sol1_array[iRow], error);
-    max_error = std::max(std::fabs(sol0_array[iRow] - sol1_array[iRow]), max_error);
+  double max_error = 0;
+  bool report_error = false;
+  for (HighsInt pass=0; pass<2; pass++) {
+    max_error = 0;
+    for (HighsInt k = 0; k < sol0_num_nz; k++) {
+      const Int iRow = sol0_index[k];
+      const double error = std::fabs(sol0_array[iRow] - sol1_array[iRow]);
+      if (report_error)
+	printf("solError: sol0: Ix %2d: %11.4g; %11.4g; error = %g\n", (int)iRow, sol0_array[iRow], sol1_array[iRow], error);
+      max_error = std::max(std::fabs(sol0_array[iRow] - sol1_array[iRow]), max_error);
+    }
+    for (HighsInt k = 0; k < sol1_num_nz; k++) {
+      const Int iRow = sol1_index[k];
+      const double error = std::fabs(sol0_array[iRow] - sol1_array[iRow]);
+      if (report_error)
+	printf("solError: sol1: Ix %2d: %11.4g; %11.4g; error = %g\n", (int)iRow, sol0_array[iRow], sol1_array[iRow], error);
+      max_error = std::max(std::fabs(sol0_array[iRow] - sol1_array[iRow]), max_error);
+    }
+    if (max_error < 1e-5) {
+      return max_error;
+    } else {
+      printf("\nBasis::solError (sparse) error = %g\n", max_error);
+      report_error = true;
+    }    
   }
   fflush(stdout);
   assert(max_error < 1e-5);
@@ -1191,6 +1189,7 @@ double Basis::solError(const IndexedVector& sol0, const HVector& sol1) const {
 }
 
 bool Basis::checkBasicIndex() const {
+  if (kReportBasisMethodCall) printf("Basis::checkBasicIndex\n");
   HighsInt num_row = model_.rows();
   HighsInt num_col = model_.cols();
   const HighsInt kIllegalIndex = -1;
