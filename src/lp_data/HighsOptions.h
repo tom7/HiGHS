@@ -921,7 +921,7 @@ class HighsOptions : public HighsOptionsStruct {
     record_int = new OptionRecordInt(
         "ipx_basiclu_or_hfactor",
         "Use basiclu, HFactor or both in IPX", advanced,
-        &ipx_basiclu_or_hfactor, 0, 2, 2);
+        &ipx_basiclu_or_hfactor, 0, 0, 2);
     records.push_back(record_int);
 
     record_double = new OptionRecordDouble(
