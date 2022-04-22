@@ -52,9 +52,9 @@ public:
 
     // Each variable has a status from one of the following:
     //
-    //  NONBASIC_FIXED: variable is not in the basis (and will never enter)
-    //  NONBASIC:       variable is not in the basis (but may enter)
-    //  BASIC:          variable is in the basis (but may leave)
+    //  kNonbasicFixed: variable is not in the basis (and will never enter)
+    //  kNonbasic:       variable is not in the basis (but may enter)
+    //  kBasic:          variable is in the basis (but may leave)
     //  kBasicFree:     variable is in the basis (and will never leave)
     //
     // The notes in () are not enforced or required by the implementation.
@@ -67,7 +67,7 @@ public:
     // Returns status of variable j.
     BasicStatus StatusOf(Int j) const;
 
-    // Switches status of variable j to NONBASIC_FIXED. The variable must not be
+    // Switches status of variable j to kNonbasicFixed. The variable must not be
     // in the basis.
     void FixNonbasicVariable(Int j);
 
@@ -75,10 +75,10 @@ public:
     // basis.
     void FreeBasicVariable(Int j);
 
-    // Switches status from NONBASIC_FIXED to NONBASIC for all variables.
+    // Switches status from kNonbasicFixed to kNonbasic for all variables.
     void UnfixVariables();
 
-    // Switches status from kBasicFree to BASIC for all variables.
+    // Switches status from kBasicFree to kBasic for all variables.
     void UnfreeVariables();
 
     // Sets the basis to the slack basis.
@@ -141,7 +141,7 @@ public:
     // @btran: BTRAN solution
     // @row:   returns the tableau row. Basic variables have value zero.
     // @ignore_fixed: If true, then the tableau row entry of variables with
-    //                status NONBASIC_FIXED is set to zero.
+    //                status kNonbasicFixed is set to zero.
     // The method chooses between a sparse-vector*sparse-matrix and a
     // dense-vector*sparse-matrix operation. Accordingly the pattern of row is
     // or is not set up.
@@ -168,8 +168,8 @@ public:
     // At least one of the forward or transposed system must have been solved
     // before in preparation for the update.
     //
-    // @jb: Basic variable that leaves the basis. Status of jb becomes NONBASIC.
-    // @jn: Nonbasic variable that enters the basis. Status of jn becomes BASIC.
+    // @jb: Basic variable that leaves the basis. Status of jb becomes kNonbasic.
+    // @jn: Nonbasic variable that enters the basis. Status of jn becomes kBasic.
     // @tableau_entry: entry in pivot col and pivot row of the tableau matrix.
     // @sys: > 0 if forward system needs to be solved in preparation for update.
     //       < 0 if transposed sys needs to be solved in preparation for update.
@@ -270,7 +270,7 @@ private:
 
     // Repairs singularities in the basis matrix by replacing basic columns by
     // slack columns. The status of slack variables that enter the basis becomes
-    // BASIC and the status of variables that leave the basis becomes NONBASIC.
+    // kBasic and the status of variables that leave the basis becomes kNonbasic.
     // On return info->basis_repairs >= 0 if repaired successfully, < 0 if
     // failed.
     void Repair(Info* info);
@@ -309,9 +309,9 @@ private:
     std::vector<Int> basis_;    // m column indices of AI
 
     // For 0 <= j < n+m, map2basis_[j] is one of the following:
-    //  -2:            variable is NONBASIC_FIXED
-    //  -1:            variable is NONBASIC
-    //   0 <= p < m:   variable is BASIC and at position p in the basis
+    //  -2:            variable is kNonbasicFixed
+    //  -1:            variable is kNonbasic
+    //   0 <= p < m:   variable is kBasic and at position p in the basis
     //   m <= p < 2*m: variable is kBasicFree and at position p-m in the basis
     std::vector<Int> map2basis_;
 

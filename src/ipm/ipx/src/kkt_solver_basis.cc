@@ -86,7 +86,7 @@ void KKTSolverBasis::_Solve(const Vector& a, const Vector& b, double tol,
     work = 0.0;
     for (Int p = 0; p < m; p++) {
         Int j = basis_[p];
-        if (basis_.StatusOf(j) == Basis::BASIC_FREE) {
+        if (basis_.StatusOf(j) == Basis::kBasicFree) {
             work[p] = a[j];
             num_free++;
         }
@@ -98,7 +98,7 @@ void KKTSolverBasis::_Solve(const Vector& a, const Vector& b, double tol,
     rhs = 0.0;
     if (num_free > 0) {
         for (Int j = 0; j < n+m; j++) {
-            if (basis_.StatusOf(j) == Basis::NONBASIC) {
+            if (basis_.StatusOf(j) == Basis::kNonbasic) {
                 double d2 = colscale_[j] * colscale_[j];
                 double alpha = a[j] - DotColumn(AI, j, work);
                 alpha *= d2;
@@ -108,7 +108,7 @@ void KKTSolverBasis::_Solve(const Vector& a, const Vector& b, double tol,
         }
     } else {
         for (Int j = 0; j < n+m; j++) {
-            if (basis_.StatusOf(j) == Basis::NONBASIC) {
+            if (basis_.StatusOf(j) == Basis::kNonbasic) {
                 double d2 = colscale_[j] * colscale_[j];
                 double alpha = d2 * a[j];
                 assert(std::isfinite(alpha));
@@ -125,12 +125,12 @@ void KKTSolverBasis::_Solve(const Vector& a, const Vector& b, double tol,
     // is not a free variable, and rhs[p] = 0 otherwise.
     for (Int p = 0; p < m; p++) {
         Int j = basis_[p];
-        if (basis_.StatusOf(j) == Basis::BASIC) {
+        if (basis_.StatusOf(j) == Basis::kBasic) {
             double d = colscale_[j];
             rhs[p] = (rhs[p]-work[p]) / d + a[j] * d;
             assert(std::isfinite(rhs[p]));
         } else {
-            assert(basis_.StatusOf(j) == Basis::BASIC_FREE);
+            assert(basis_.StatusOf(j) == Basis::kBasicFree);
             rhs[p] = 0.0;
         }
     }
@@ -161,11 +161,11 @@ void KKTSolverBasis::_Solve(const Vector& a, const Vector& b, double tol,
     // Recover dual solution to KKT system.
     for (Int p = 0; p < m; p++) {
         Int j = basis_[p];
-        if (basis_.StatusOf(j) == Basis::BASIC) {
+        if (basis_.StatusOf(j) == Basis::kBasic) {
             y[p] /= colscale_[j];
             assert(std::isfinite(y[p]));
         } else {
-            assert(basis_.StatusOf(j) == Basis::BASIC_FREE);
+            assert(basis_.StatusOf(j) == Basis::kBasicFree);
             assert(y[p] == 0.0);
             y[p] = a[j];        // slot in solution to free basic variable
         }
@@ -176,7 +176,7 @@ void KKTSolverBasis::_Solve(const Vector& a, const Vector& b, double tol,
     work = b;
     for (Int j = 0; j < n+m; j++) {
         double xj = 0.0;
-        if (basis_.StatusOf(j) == Basis::NONBASIC) {
+        if (basis_.StatusOf(j) == Basis::kNonbasic) {
             xj = a[j] - DotColumn(AI, j, y);
             xj *= colscale_[j] * colscale_[j];
             assert(std::isfinite(xj));
@@ -206,7 +206,7 @@ void KKTSolverBasis::DropPrimal(Iterate* iterate, Info* info) {
     std::vector<Int> candidates;
     for (Int p = 0; p < m; p++) {
         Int jb = basis_[p];
-        if (basis_.StatusOf(jb) != Basis::BASIC) // ignore free variables
+        if (basis_.StatusOf(jb) != Basis::kBasic) // ignore free variables
             continue;
         assert(std::isfinite(xl[jb]) || std::isfinite(xu[jb]));
         assert(xl[jb] > 0.0);
@@ -262,7 +262,7 @@ void KKTSolverBasis::DropPrimal(Iterate* iterate, Info* info) {
                 control_.Debug(3)
                     << " |pivot| = " << sci2(std::abs(pivot))
                     << " (primal basic variable close to bound)\n";
-            assert(basis_.StatusOf(jmax) == Basis::NONBASIC);
+            assert(basis_.StatusOf(jmax) == Basis::kNonbasic);
             bool exchanged;
             info->errflag = basis_.ExchangeIfStable(jb, jmax, pivot, 1,
                                                     &exchanged);
@@ -304,7 +304,7 @@ void KKTSolverBasis::DropDual(Iterate* iterate, Info* info) {
 
     std::vector<Int> candidates;
     for (Int jn = 0; jn < n+m; jn++) {
-        if (basis_.StatusOf(jn) != Basis::NONBASIC)
+        if (basis_.StatusOf(jn) != Basis::kNonbasic)
             continue;
         assert(std::isfinite(xl[jn]) || std::isfinite(xu[jn]));
         assert(xl[jn] > 0.0);
@@ -360,7 +360,7 @@ void KKTSolverBasis::DropDual(Iterate* iterate, Info* info) {
                     << " (dual nonbasic variable close to zero)\n";
             Int jb = basis_[pmax];
             // Pivot jn into the basis.
-            assert(basis_.StatusOf(jb) == Basis::BASIC);
+            assert(basis_.StatusOf(jb) == Basis::kBasic);
             bool exchanged;
             info->errflag = basis_.ExchangeIfStable(jb, jn, pivot, -1,
                                                     &exchanged);

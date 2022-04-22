@@ -27,7 +27,7 @@ Int Maxvolume::RunSequential(const double* colscale, Basis& basis) {
     Vector invscale_basic(m);
     for (Int p = 0; p < m; p++) {
         Int j = basis[p];
-        if (basis.StatusOf(j) == Basis::BASIC)
+        if (basis.StatusOf(j) == Basis::kBasic)
             invscale_basic[p] = colscale ? 1.0/colscale[j] : 1.0;
     }
 
@@ -70,7 +70,7 @@ Int Maxvolume::RunSequential(const double* colscale, Basis& basis) {
             }
 
             const Int jb = basis[pmax];
-            assert(basis.StatusOf(jb) == Basis::BASIC);
+            assert(basis.StatusOf(jb) == Basis::kBasic);
             bool exchanged;
             errflag = basis.ExchangeIfStable(jb, j, ftran[pmax], -1, &exchanged);
             if (errflag)
@@ -118,7 +118,7 @@ Int Maxvolume::RunHeuristic(const double* colscale, Basis& basis) {
     // Maintain a copy of the inverse scaling factors of basic variables.
     for (Int p = 0; p < m; p++) {
         Int j = basis[p];
-        if (basis.StatusOf(j) == Basis::BASIC) {
+        if (basis.StatusOf(j) == Basis::kBasic) {
             slice.invscale_basic[p] = colscale ? 1.0/colscale[j] : 1.0;
             assert(std::isfinite(slice.invscale_basic[p]));
         }

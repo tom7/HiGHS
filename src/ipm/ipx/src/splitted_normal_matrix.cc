@@ -29,7 +29,7 @@ void SplittedNormalMatrix::Prepare(const Basis& basis, const double* colscale) {
         Int p = colperm_[k];
         Int j = basis[p];
         // Nothing to do for BASIC_FREE variables.
-        if (basis.StatusOf(j) == Basis::BASIC) {
+        if (basis.StatusOf(j) == Basis::kBasic) {
             double d = colscale[j];
             assert(std::isfinite(d) && d > 0.0);
             ScaleColumn(U_, k, d);
@@ -39,7 +39,7 @@ void SplittedNormalMatrix::Prepare(const Basis& basis, const double* colscale) {
     // Build N with permuted row indices.
     std::vector<Int> nonbasic_vars;
     for (Int j = 0; j < n+m; j++)
-        if (basis.StatusOf(j) == Basis::NONBASIC)
+        if (basis.StatusOf(j) == Basis::kNonbasic)
             nonbasic_vars.push_back(j);
     N_ = CopyColumns(AI, nonbasic_vars);
     PermuteRows(N_, rowperm_inv_);
@@ -57,7 +57,7 @@ void SplittedNormalMatrix::Prepare(const Basis& basis, const double* colscale) {
     for (Int k = 0; k < m; k++) {
         Int p = colperm_[k];
         Int j = basis[p];
-        if (basis.StatusOf(j) == Basis::BASIC_FREE)
+        if (basis.StatusOf(j) == Basis::kBasicFree)
             free_positions_.push_back(k);
     }
     prepared_ = true;

@@ -19,11 +19,11 @@ static void AssertConsistency(const Iterate& iterate, const Basis& basis) {
         if (lb[j] == ub[j]) {
             switch (iterate.StateOf(j)) {
             case Iterate::State::fixed:
-                assert(basis.StatusOf(j) == Basis::NONBASIC_FIXED);
+                assert(basis.StatusOf(j) == Basis::kNonbasicFixed);
                 break;
             case Iterate::State::free:
                 assert(j >= n); // must be slack variable
-                assert(basis.StatusOf(j) == Basis::BASIC_FREE);
+                assert(basis.StatusOf(j) == Basis::kBasicFree);
                 break;
             default:
                 assert(0);
@@ -31,18 +31,18 @@ static void AssertConsistency(const Iterate& iterate, const Basis& basis) {
         } else if (std::isinf(lb[j]) && std::isinf(ub[j])) {
             switch (iterate.StateOf(j)) {
             case Iterate::State::fixed:
-                assert(basis.StatusOf(j) == Basis::NONBASIC_FIXED);
+                assert(basis.StatusOf(j) == Basis::kNonbasicFixed);
                 break;
             case Iterate::State::free:
-                assert(basis.StatusOf(j) == Basis::BASIC_FREE);
+                assert(basis.StatusOf(j) == Basis::kBasicFree);
                 break;
             default:
                 assert(0);
             }
         } else {
             assert(iterate.StateOf(j) == Iterate::State::barrier);
-            assert(basis.StatusOf(j) == Basis::NONBASIC ||
-                   basis.StatusOf(j) == Basis::BASIC);
+            assert(basis.StatusOf(j) == Basis::kNonbasic ||
+                   basis.StatusOf(j) == Basis::kBasic);
         }
     }
 }
@@ -72,7 +72,7 @@ static void PostprocessDependencies(Iterate* iterate, Basis* p_basis,
         for (Int j = 0; j < n; j++) {
             if (std::isinf(lb[j]) && std::isinf(ub[j]) && basis.IsNonbasic(j)) {
                 assert(iterate->StateOf(j) == Iterate::State::free);
-                assert(basis.StatusOf(j) == Basis::NONBASIC_FIXED);
+                assert(basis.StatusOf(j) == Basis::kNonbasicFixed);
                 dx[j] = -x[j];
                 ScatterColumn(AI, j, x[j], dxbasic);
                 dependent_cols.push_back(j);
@@ -96,7 +96,7 @@ static void PostprocessDependencies(Iterate* iterate, Basis* p_basis,
             if (lb[j] == ub[j])
                 assert(j >= n);
             if (j >= n && lb[j] == ub[j]) {
-                assert(basis.StatusOf(j) == Basis::BASIC_FREE);
+                assert(basis.StatusOf(j) == Basis::kBasicFree);
                 assert(iterate->has_barrier_lb(j));
                 assert(iterate->has_barrier_ub(j));
                 dy[p] = -y[j-n];
@@ -151,8 +151,8 @@ void StartingBasis(Iterate* iterate, Basis* p_basis, Info* info) {
     if (info->errflag)
         return;
 
-    // Change status of free variables either to BASIC_FREE or NONBASIC_FIXED.
-    // Change status of fixed variables either to NONBASIC_FIXED or BASIC_FREE.
+    // Change status of free variables either to kbasicFree or kNonbasicFixed(REALLY??).
+    // Change status of fixed variables either to kNonbasicFixed or kbasicFree(REALLY??).
     for (Int j = 0; j < n+m; j++) {
         if (colscale[j] == 0.0 || std::isinf(colscale[j])) {
             if (basis.IsBasic(j))
@@ -163,12 +163,12 @@ void StartingBasis(Iterate* iterate, Basis* p_basis, Info* info) {
     }
 
     // Variables with equal lower and upper bounds can be removed from the
-    // interior point solve if their basic status is NONBASIC_FIXED. Setting
+    // interior point solve if their basic status is kNonbasicFixed. Setting
     // x[j] to its bound alters the residual in AI*x=b; this can be ignored
     // because the iterate has not been primal feasible if x[j] was
     // significantly away from its bound.
     for (Int j = 0; j < n+m; j++) {
-        if (lb[j] == ub[j] && basis.StatusOf(j) == Basis::NONBASIC_FIXED)
+        if (lb[j] == ub[j] && basis.StatusOf(j) == Basis::kNonbasicFixed)
             iterate->make_fixed(j, lb[j]);
     }
 
