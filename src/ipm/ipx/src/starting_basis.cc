@@ -138,6 +138,14 @@ void StartingBasis(Iterate* iterate, Basis* p_basis, Info* info) {
     // Construct starting basis. The column weights for the crash procedure are
     // the interior point scaling factors from the current iterate, except that
     // fixed variables get weight zero.
+    //
+    // Result:
+    //
+    // * Free variables or constraints have infinite weights 
+    //
+    // * Fixed variables or constraints have zero weights 
+    //
+    // * Bounded variables or constraints have inherited weights
     for (Int j = 0; j < n+m; j++) {
         colscale[j] = iterate->ScalingFactor(j);
         if (std::isinf(lb[j]) && std::isinf(ub[j]))
@@ -151,8 +159,8 @@ void StartingBasis(Iterate* iterate, Basis* p_basis, Info* info) {
     if (info->errflag)
         return;
 
-    // Change status of free variables either to kbasicFree or kNonbasicFixed(REALLY??).
-    // Change status of fixed variables either to kNonbasicFixed or kbasicFree(REALLY??).
+    // Change status of free variables either to kBasicFree or kNonbasicFixed(REALLY??).
+    // Change status of fixed variables either to kNonbasicFixed or kBasicFree(REALLY??).
     for (Int j = 0; j < n+m; j++) {
         if (colscale[j] == 0.0 || std::isinf(colscale[j])) {
             if (basis.IsBasic(j))

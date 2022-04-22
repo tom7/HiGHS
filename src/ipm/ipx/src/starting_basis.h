@@ -9,11 +9,11 @@ namespace ipx {
 // Constructs a basis with the following properties:
 //
 // If lb[j]=-inf and ub[j]=inf, then the variable becomes either
-// - basic with status kbasicFree, or
+// - basic with status kBasicFree, or
 // - nonbasic with status kNonbasicFixed.                         (1)
 //
 // If lb[j]==ub[j] and j is a slack variable, then it becomes either
-// - basic with status kbasicFree, or                             (2)
+// - basic with status kBasicFree, or                             (2)
 // - nonbasic with status kNonbasicFixed.
 //
 // If lb[j]==ub[j] and j is not a slack variable, then it becomes
@@ -28,7 +28,7 @@ namespace ipx {
 // TODO: we need to check for primal/dual infeasibility here.
 //
 // The method calls ConstructBasisFromWeights() using the interior point
-// scaling factors as column weights. If a variable gets status kbasicFree or
+// scaling factors as column weights. If a variable gets status kBasicFree or
 // kNonbasicFixed, then its state in @iterate is changed accordingly to free or
 // fixed. On return info->errflag is nonzero if an error occured.
 //

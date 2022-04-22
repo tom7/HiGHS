@@ -18,7 +18,7 @@ namespace ipx {
 // The columns of B and N are scaled by the interior point scaling factors
 // provided in the call to Prepare().
 //
-// When a variable has status kbasicFree, the row and column of C become a unit
+// When a variable has status kBasicFree, the row and column of C become a unit
 // vector. When a variable has status kNonbasicFixed, it is dropped from N.
 
 class SplittedNormalMatrix : public LinearOperator {

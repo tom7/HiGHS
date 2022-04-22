@@ -441,6 +441,7 @@ void Basis::ConstructBasisFromWeights(const double* colscale, Info* info) {
     info->dependent_rows = 0;
     info->dependent_cols = 0;
 
+    // Crash basis is constructed by default
     if (control_.crash_basis()) {
         CrashBasis(colscale);
         double sigma = MinSingularValue();
