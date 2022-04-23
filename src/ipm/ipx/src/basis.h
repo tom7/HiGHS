@@ -8,7 +8,7 @@
 #include "lu_update.h"
 #include "model.h"
 #include "sparse_matrix.h"
-#include "util/HFactor.h"
+#include "../../../util/HFactor.h"
 
 namespace ipx {
 
