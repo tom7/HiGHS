@@ -185,6 +185,12 @@ static void ProcessRemaining(const Control& control, const Model& model,
         } else {
             num_failed++;
         }
+	const bool abandon = num_failed >= 10*(m-basis->size());
+	printf("ProcessRemaining: %3d [%11.4g, %11.4g] Wt = %11.4g;"
+	       " Matched = %3d; Failed = %3d; |B| = %3d/%3d: Abandon = %1d\n",
+	       (int)j, model.lb(j), model.ub(j), weights[j],
+	       num_matched, num_failed, (int)basis->size(), m, abandon);
+	
         if (num_failed >= 10*(m-basis->size()))
             break;
     }
