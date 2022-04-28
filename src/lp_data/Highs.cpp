@@ -3230,7 +3230,6 @@ void Highs::underDevelopmentLogMessage(const std::string method_name) {
 HighsStatus Highs::crossover(const HighsSolution& user_solution) {
   HighsStatus return_status = HighsStatus::kOk;
   HighsLogOptions& log_options = options_.log_options;
-#ifdef IPX_ON
   HighsLp& lp = model_.lp_;
   if (lp.isMip()) {
     highsLogUser(log_options, HighsLogType::kError,
@@ -3252,12 +3251,6 @@ HighsStatus Highs::crossover(const HighsSolution& user_solution) {
         model_.lp_.objectiveValue(solution_.col_value);
     getLpKktFailures(options_, model_.lp_, solution_, basis_, info_);
   }
-#else
-  // No IPX available so end here at approximate solve.
-  highsLogUser(log_options, HighsLogType::kError,
-               "No IPX code available for crossover\n");
-  return_status = HighsStatus::kError;
-#endif
   return returnFromHighs(return_status);
 }
 
