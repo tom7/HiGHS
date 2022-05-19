@@ -56,6 +56,7 @@ class HighsLp {
   bool equalButForNames(const HighsLp& lp) const;
   bool isMip() const;
   bool hasSemiVariables() const;
+  bool isEqualityProblem() const;
   double objectiveValue(const std::vector<double>& solution) const;
   void setMatrixDimensions();
   void setFormat(const MatrixFormat format);

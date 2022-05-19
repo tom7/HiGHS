@@ -41,6 +41,12 @@ bool HighsLp::hasSemiVariables() const {
   return false;
 }
 
+bool HighsLp::isEqualityProblem() const {
+  for (int iRow = 0; iRow < this->num_row_; iRow++)
+    if (this->row_lower_[iRow] != this->row_upper_[iRow]) return false;
+  return true;
+}
+
 bool HighsLp::operator==(const HighsLp& lp) {
   bool equal = equalButForNames(lp);
   equal = this->row_names_ == lp.row_names_ && equal;

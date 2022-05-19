@@ -457,6 +457,7 @@ void analyseVectorValues(const HighsLogOptions* log_options,
     highsReportDevInfo(
         log_options, highsFormatToString("\n            Value        Count\n"));
     for (HighsInt ix = 0; ix < VLsZ; ix++) {
+      if (!VLsK[ix]) continue;
       HighsInt pct = ((100.0 * VLsK[ix]) / vecDim) + 0.5;
       highsReportDevInfo(log_options,
                          highsFormatToString("     %12g %12" HIGHSINT_FORMAT

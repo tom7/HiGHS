@@ -93,7 +93,7 @@ Quadratic parseOptions(const HighsLp& lp, const ICrashOptions options) {
   HighsLp local_lp;
   // HighsStatus status;
   convertToMinimization(ilp);
-  if (isEqualityProblem(ilp)) {
+  if (ilp.isEqualityProblem()) {
     if (options.dualize) {
       // status = dualizeEqualityProblem(ilp, local_lp);
       // if (status == HighsStatus::kOk) {
@@ -471,4 +471,35 @@ HighsStatus callICrash(const HighsLp& lp, const ICrashOptions& options,
                result.total_time);
 
   return HighsStatus::kOk;
+}
+
+void fixColumnBounds(const HighsLogOptions& log_options,
+		     HighsLp& lp,
+		     const std::vector<double> col_value) {
+  const double fix_column_residual_tolerance = 1e-1;
+  std::vector<double> residuals;
+  for (HighsInt iCol=0; iCol < lp.num_col_; iCol++) {
+    const double lower = lp.col_lower_[iCol];
+    const double upper = lp.col_upper_[iCol];
+    const double value = col_value[iCol];
+    double residual = std::fabs(std::max(lower - value, value - upper));
+    assert(residual>=0);
+    residuals.push_back(residual);
+  }
+  analyseVectorValues(&log_options,
+		      "Column residuals after iCrash and crossover",
+		      lp.num_col_, residuals, true);
+  for (HighsInt iCol=0; iCol < lp.num_col_; iCol++) {
+    const double lower = lp.col_lower_[iCol];
+    const double upper = lp.col_upper_[iCol];
+    const double value = col_value[iCol];
+    if (value > upper - fix_column_residual_tolerance) {
+      lp.col_lower_[iCol] = value;
+      lp.col_upper_[iCol] = value;
+    }
+    if (value < lower + fix_column_residual_tolerance) {
+      lp.col_lower_[iCol] = value;
+      lp.col_upper_[iCol] = value;
+    }
+  }
 }

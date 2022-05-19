@@ -30,12 +30,14 @@ void convertToMinimization(HighsLp& lp) {
   }
 }
 
+/*
 bool isEqualityProblem(const HighsLp& lp) {
   for (int row = 0; row < lp.num_row_; row++)
     if (lp.row_lower_[row] != lp.row_upper_[row]) return false;
 
   return true;
 }
+*/
 
 double vectorProduct(const std::vector<double>& v1,
                      const std::vector<double>& v2) {
@@ -242,7 +244,7 @@ void updateResidual(bool piecewise, const HighsLp& lp, const HighsSolution& sol,
   residual.assign(lp.num_row_, 0);
 
   if (!piecewise) {
-    assert(isEqualityProblem(lp));
+    assert(lp.isEqualityProblem());
     for (int row = 0; row < lp.num_row_; row++)
       residual[row] = std::fabs(lp.row_upper_[row] - sol.row_value[row]);
   } else {
@@ -261,7 +263,7 @@ void updateResidual(bool piecewise, const HighsLp& lp, const HighsSolution& sol,
 
 void updateResidualFast(const HighsLp& lp, const HighsSolution& sol,
                         std::vector<double>& residual) {
-  assert(isEqualityProblem(lp));
+  assert(lp.isEqualityProblem());
   for (int row = 0; row < lp.num_row_; row++) {
     residual[row] = std::fabs(lp.row_upper_[row] - sol.row_value[row]);
   }
@@ -270,7 +272,7 @@ void updateResidualFast(const HighsLp& lp, const HighsSolution& sol,
 // Allows negative residuals
 void updateResidualIca(const HighsLp& lp, const HighsSolution& sol,
                        std::vector<double>& residual) {
-  assert(isEqualityProblem(lp));
+  assert(lp.isEqualityProblem());
   for (int row = 0; row < lp.num_row_; row++)
     residual[row] = lp.row_upper_[row] - sol.row_value[row];
 }
