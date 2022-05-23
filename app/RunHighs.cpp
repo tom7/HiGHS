@@ -57,18 +57,28 @@ int main(int argc, char** argv) {
   if (run_status == HighsStatus::kError) return (int)run_status;
 
   // Possibly compute the ranging information
-  if (options.ranging == kHighsOnString) highs.getRanging();
+  if (options.ranging == kHighsOnString) {
+    highsLogUser(options.log_options, HighsLogType::kInfo,
+                 "Computing the ranging information\n");
+    highs.getRanging();
+  }
 
   // Possibly write the solution to a file
-  if (options.write_solution_to_file)
+  if (options.write_solution_to_file) {
+    highsLogUser(options.log_options, HighsLogType::kInfo,
+                 "Writing the solution to a file\n");
     highs.writeSolution(options.solution_file, options.write_solution_style);
+  }
 
   // Possibly write the model to a file
   if (options.write_model_to_file) {
+    highsLogUser(options.log_options, HighsLogType::kInfo,
+                 "Writing the model to a file\n");
     HighsStatus write_model_status = highs.writeModel(options.write_model_file);
     if (write_model_status == HighsStatus::kError)
       return (int)write_model_status;  // todo: change to write model error
   }
+  highsLogUser(options.log_options, HighsLogType::kInfo, "HiGHS run ended\n");
   return (int)run_status;
 }
 

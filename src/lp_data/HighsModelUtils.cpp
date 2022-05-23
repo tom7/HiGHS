@@ -444,6 +444,9 @@ void writeGlpsolSolution(FILE* file, const HighsOptions& options,
     if (lp.col_cost_[iCol]) num_nz++;
   const bool empty_cost_row = num_nz == lp.a_matrix_.numNz();
   const bool has_objective = !empty_cost_row || model.hessian_.dim_;
+  highsLogUser(options.log_options, HighsLogType::kInfo,
+               "Writing Glpsol solution file for model \"%s\"\n",
+               lp.model_name_.c_str());
   // When writing out the row information (and hence the number of
   // rows and nonzeros), the case of the cost row is tricky
   // (particularly if it's empty) if HiGHS is to be able to reproduce
@@ -673,8 +676,14 @@ void writeGlpsolSolution(FILE* file, const HighsOptions& options,
   }
 
   HighsInt row_id = 0;
+  HighsInt report_progress = 1;
   for (HighsInt iRow = 0; iRow < lp.num_row_; iRow++) {
     row_id++;
+    if (row_id == report_progress) {
+      highsLogUser(options.log_options, HighsLogType::kInfo,
+                   "Written Glpsol solution line for row %d\n", (int)row_id);
+      report_progress *= 2;
+    }
     if (row_id == cost_row_location) {
       writeGlpsolCostRow(file, raw, is_mip, row_id, objective_name,
                          info.objective_function_value);
@@ -794,8 +803,15 @@ void writeGlpsolSolution(FILE* file, const HighsOptions& options,
     fprintf(file, "\n");
   }
 
+  report_progress = 1;
   if (raw) line_prefix = "j ";
   for (HighsInt iCol = 0; iCol < lp.num_col_; iCol++) {
+    if (iCol + 1 == report_progress) {
+      highsLogUser(options.log_options, HighsLogType::kInfo,
+                   "Written Glpsol solution line for col %d\n",
+                   (int)(iCol + 1));
+      report_progress *= 2;
+    }
     if (raw) {
       fprintf(file, "%s%d ", line_prefix.c_str(), (int)(iCol + 1));
       if (is_mip) {
@@ -892,6 +908,9 @@ void writeGlpsolSolution(FILE* file, const HighsOptions& options,
   }
   if (raw) {
     fprintf(file, "e o f\n");
+    highsLogUser(options.log_options, HighsLogType::kInfo,
+                 "Written Glpsol solution file for model \"%s\"\n",
+                 lp.model_name_.c_str());
     return;
   }
   HighsPrimalDualErrors errors;
@@ -1011,6 +1030,10 @@ void writeGlpsolSolution(FILE* file, const HighsOptions& options,
     fprintf(file, "\n");
   }
   fprintf(file, "End of output\n");
+  highsLogUser(options.log_options, HighsLogType::kInfo,
+               "Written Glpsol solution file for model \"%s\"\n",
+               lp.model_name_.c_str());
+  return;
 }
 
 void writeOldRawSolution(FILE* file, const HighsLp& lp, const HighsBasis& basis,
