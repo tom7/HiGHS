@@ -117,7 +117,6 @@ bool callCrossover(const HighsLp& lp, const HighsOptions& options,
                    const std::vector<double>& x_values, HighsSolution& solution,
                    HighsBasis& basis);
 
-void fixColumnBounds(const HighsLogOptions& log_options,
-		     HighsLp& lp,
-		     const std::vector<double> col_value);
+void fixColumnBounds(const HighsLogOptions& log_options, HighsLp& lp,
+                     const std::vector<double> col_value);
 #endif

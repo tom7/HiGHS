@@ -24,7 +24,7 @@ struct HighsSolution;
 
 void convertToMinimization(HighsLp& lp);
 
-//bool isEqualityProblem(const HighsLp& lp);
+// bool isEqualityProblem(const HighsLp& lp);
 
 double vectorProduct(const std::vector<double>& v1,
                      const std::vector<double>& v2);
