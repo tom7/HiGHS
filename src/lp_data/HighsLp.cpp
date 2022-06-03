@@ -49,6 +49,7 @@ bool HighsLp::isEqualityProblem() const {
 
 bool HighsLp::operator==(const HighsLp& lp) {
   bool equal = equalButForNames(lp);
+  equal = this->objective_name_ == lp.objective_name_ && equal;
   equal = this->row_names_ == lp.row_names_ && equal;
   equal = this->col_names_ == lp.col_names_ && equal;
   return equal;
@@ -133,6 +134,7 @@ void HighsLp::clear() {
   this->offset_ = 0;
 
   this->model_name_ = "";
+  this->objective_name_ = "";
 
   this->col_names_.clear();
   this->row_names_.clear();
@@ -142,7 +144,7 @@ void HighsLp::clear() {
   this->clearScale();
   this->is_scaled_ = false;
   this->is_moved_ = false;
-
+  this->cost_row_location_ = -1;
   this->mods_.clear();
 }
 
