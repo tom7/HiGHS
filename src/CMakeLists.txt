@@ -103,6 +103,7 @@ set(sources
     mip/HighsLpRelaxation.cpp
     mip/HighsSeparation.cpp
     mip/HighsSeparator.cpp
+    mip/HighsSolutionPool.cpp
     mip/HighsTableauSeparator.cpp
     mip/HighsModkSeparator.cpp
     mip/HighsPathSeparator.cpp
@@ -227,6 +228,7 @@ set(headers
     mip/HighsSearch.h
     mip/HighsSeparation.h
     mip/HighsSeparator.h
+    mip/HighsSolutionPool.h
     mip/HighsTableauSeparator.h
     mip/HighsTransformedLp.h
     model/HighsHessian.h
@@ -493,6 +495,7 @@ target_sources(libhighs PRIVATE
     mip/HighsLpRelaxation.cpp
     mip/HighsSeparation.cpp
     mip/HighsSeparator.cpp
+    mip/HighsSolutionPool.cpp
     mip/HighsTableauSeparator.cpp
     mip/HighsModkSeparator.cpp
     mip/HighsPathSeparator.cpp
@@ -665,6 +668,7 @@ set(headers_fast_build_
     mip/HighsSearch.h
     mip/HighsSeparation.h
     mip/HighsSeparator.h
+    mip/HighsSolutionPool.h
     mip/HighsTableauSeparator.h
     mip/HighsTransformedLp.h
     model/HighsHessian.h

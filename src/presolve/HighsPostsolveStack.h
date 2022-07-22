@@ -546,10 +546,11 @@ class HighsPostsolveStack {
     }
 
     solution.row_value.resize(origNumRow);
-    for (HighsInt i = origRowIndex.size() - 1; i >= 0; --i) {
-      assert(origRowIndex[i] >= i);
-      solution.row_value[origRowIndex[i]] = solution.row_value[i];
-    }
+    // todo: I think the row values are not needed for postsolve
+    // for (HighsInt i = origRowIndex.size() - 1; i >= 0; --i) {
+    //   assert(origRowIndex[i] >= i);
+    //   solution.row_value[origRowIndex[i]] = solution.row_value[i];
+    // }
 
     if (perform_dual_postsolve) {
       // if dual solution is given, expand dual solution and basis to original

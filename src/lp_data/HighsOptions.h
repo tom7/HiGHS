@@ -356,6 +356,7 @@ struct HighsOptionsStruct {
 
   // Options for MIP solver
   bool mip_detect_symmetry;
+  HighsInt mip_num_solutions;
   HighsInt mip_max_nodes;
   HighsInt mip_max_stall_nodes;
   HighsInt mip_max_leaves;
@@ -709,6 +710,11 @@ class HighsOptions : public HighsOptionsStruct {
                                        "Whether symmetry should be detected",
                                        advanced, &mip_detect_symmetry, true);
     records.push_back(record_bool);
+
+    record_int = new OptionRecordInt("mip_num_solutions",
+                                     "number of solutions stored and returned by the MIP solver", advanced,
+                                     &mip_num_solutions, 1, 10, kHighsIInf);
+    records.push_back(record_int);
 
     record_int = new OptionRecordInt("mip_max_nodes",
                                      "MIP solver max number of nodes", advanced,

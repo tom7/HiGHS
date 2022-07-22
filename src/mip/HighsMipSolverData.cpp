@@ -651,7 +651,6 @@ double HighsMipSolverData::transformNewIncumbent(
     const std::vector<double>& sol) {
   HighsSolution solution;
   solution.col_value = sol;
-  calculateRowValuesQuad(*mipsolver.orig_model_, solution);
   solution.value_valid = true;
 
   postSolveStack.undoPrimal(*mipsolver.options_mip_, solution);
