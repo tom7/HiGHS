@@ -53,6 +53,7 @@ set(TEST_SOURCES
     TestRays.cpp
     TestRanging.cpp
     TestSemiVariables.cpp
+    TestSifting.cpp
     TestThrow.cpp
     Avgas.cpp)
 

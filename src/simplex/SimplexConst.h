@@ -100,6 +100,14 @@ enum SimplexPivotalRowRefinementStrategy {
       kSimplexInfeasibilityProofRefinementAlsoScaledLp
 };
 
+enum SimplexSiftingStrategy {
+  kSiftingStrategyMin = -1,
+  kSiftingStrategyChoose = kSiftingStrategyMin,
+  kSiftingStrategyOff,    // 0
+  kSiftingStrategyOn,    // 1
+  kSiftingStrategyMax = kSiftingStrategyOn
+};
+
 enum SimplexPrimalCorrectionStrategy {
   kSimplexPrimalCorrectionStrategyNone = 0,
   kSimplexPrimalCorrectionStrategyInRebuild,

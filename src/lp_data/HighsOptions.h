@@ -324,6 +324,7 @@ struct HighsOptionsStruct {
   HighsInt max_dual_simplex_phase1_cleanup_level;
   HighsInt simplex_price_strategy;
   HighsInt simplex_unscaled_solution_strategy;
+  HighsInt sifting_strategy;
   HighsInt presolve_substitution_maxfillin;
   HighsInt presolve_rule_off;
   bool presolve_rule_logging;
@@ -906,6 +907,15 @@ class HighsOptions : public HighsOptionsStruct {
                             kSimplexUnscaledSolutionStrategyMin,
                             kSimplexUnscaledSolutionStrategyRefine,
                             kSimplexUnscaledSolutionStrategyMax);
+    records.push_back(record_int);
+
+    record_int =
+        new OptionRecordInt("sifting_strategy",
+                            "Strategy for using sifting within simplexfor LP",
+                            advanced, &sifting_strategy,
+                            kSiftingStrategyMin,
+                            kSiftingStrategyChoose,
+                            kSiftingStrategyMax);
     records.push_back(record_int);
 
     record_bool =
