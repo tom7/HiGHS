@@ -147,6 +147,7 @@ set(sources
     simplex/HEkkDualRow.cpp
     simplex/HEkkDualMulti.cpp
     simplex/HEkkInterface.cpp
+    simplex/HEkkSifting.cpp
     simplex/HighsSimplexAnalysis.cpp
     simplex/HSimplex.cpp
     simplex/HSimplexDebug.cpp
@@ -515,6 +516,8 @@ target_sources(libhighs PRIVATE
     model/HighsHessianUtils.cpp
     model/HighsModel.cpp
     parallel/HighsTaskExecutor.cpp
+    presolve/ICrash.cpp
+    presolve/ICrashUtil.cpp
     presolve/ICrashX.cpp
     presolve/HighsPostsolveStack.cpp
     presolve/HighsSymmetry.cpp
@@ -535,6 +538,7 @@ target_sources(libhighs PRIVATE
     simplex/HEkkDualRow.cpp
     simplex/HEkkDualMulti.cpp
     simplex/HEkkInterface.cpp
+    simplex/HEkkSifting.cpp
     simplex/HighsSimplexAnalysis.cpp
     simplex/HSimplex.cpp
     simplex/HSimplexDebug.cpp
@@ -543,8 +547,8 @@ target_sources(libhighs PRIVATE
     simplex/HSimplexNlaFreeze.cpp
     simplex/HSimplexNlaProductForm.cpp
     simplex/HSimplexReport.cpp
-    test/KktCh2.cpp
     test/DevKkt.cpp
+    test/KktCh2.cpp
     util/HFactor.cpp
     util/HFactorDebug.cpp
     util/HFactorExtend.cpp

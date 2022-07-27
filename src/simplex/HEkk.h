@@ -118,6 +118,8 @@ class HEkk {
                            const vector<double>& rowUpper);
 
   // Make this private later
+  HighsStatus sifting();
+
   void chooseSimplexStrategyThreads(const HighsOptions& options,
                                     HighsSimplexInfo& info);
   // Debug methods
