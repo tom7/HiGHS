@@ -914,7 +914,7 @@ class HighsOptions : public HighsOptionsStruct {
                             "Strategy for using sifting within simplexfor LP",
                             advanced, &sifting_strategy,
                             kSiftingStrategyMin,
-                            kSiftingStrategyChoose,
+                            kSiftingStrategyOff,
                             kSiftingStrategyMax);
     records.push_back(record_int);
 

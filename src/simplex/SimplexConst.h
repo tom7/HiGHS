@@ -108,6 +108,8 @@ enum SimplexSiftingStrategy {
   kSiftingStrategyMax = kSiftingStrategyOn
 };
 
+const HighsInt kSiftingProfileFactor = 10;
+
 enum SimplexPrimalCorrectionStrategy {
   kSimplexPrimalCorrectionStrategyNone = 0,
   kSimplexPrimalCorrectionStrategyInRebuild,

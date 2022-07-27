@@ -151,6 +151,8 @@ struct HighsSimplexInfo {
   HighsInt primal_edge_weight_strategy;
   HighsInt price_strategy;
 
+  bool use_sifting;
+
   double dual_simplex_cost_perturbation_multiplier;
   double primal_simplex_phase1_cost_perturbation_multiplier = 1;
   double primal_simplex_bound_perturbation_multiplier;

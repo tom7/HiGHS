@@ -1077,9 +1077,11 @@ HighsStatus HEkk::solve(const bool force_phase2) {
 
   chooseSimplexStrategyThreads(*options_, info_);
   HighsInt& simplex_strategy = info_.simplex_strategy;
-
-  // Initial solve according to strategy
-  if (simplex_strategy == kSimplexStrategyPrimal) {
+  bool& use_sifting = info_.use_sifting;
+  // Solve according to strategy
+  if (use_sifting) {
+    assert(!use_sifting);    
+  } else if (simplex_strategy == kSimplexStrategyPrimal) {
     algorithm_name = "primal";
     reportSimplexPhaseIterations(options_->log_options, iteration_count_, info_,
                                  true);
@@ -1726,14 +1728,31 @@ void HEkk::chooseSimplexStrategyThreads(const HighsOptions& options,
   // Set the internal simplex strategy and number of threads for dual
   // simplex
   HighsInt& simplex_strategy = info.simplex_strategy;
+  bool& use_sifting = info_.use_sifting;
+  const bool near_optimal = info.num_dual_infeasibilities == 0 &&
+    info.num_primal_infeasibilities < 1000 &&
+				      info.max_primal_infeasibility < 1e-3;
   // By default, use the HighsOptions strategy. If this is
   // kSimplexStrategyChoose, then the strategy used will depend on
   // whether the current basis is primal feasible.
   simplex_strategy = options.simplex_strategy;
+  use_sifting = false;
   if (simplex_strategy == kSimplexStrategyChoose) {
     // HiGHS is left to choose the simplex strategy
     if (info.num_primal_infeasibilities > 0) {
       // Not primal feasible, so use dual simplex
+      //
+      // Consider using sifting
+      //
+      use_sifting = !near_optimal &&
+	(options.sifting_strategy == kSiftingStrategyOn ||
+	 (options.sifting_strategy == kSiftingStrategyChoose &&
+	  lp_.num_col_ >= kSiftingProfileFactor * lp_.num_row_));
+      printf("LP has %d cols and %d rows and near_optimal = %d so use_sifting = %d\n",
+	     (int)lp_.num_col_,
+	     (int)lp_.num_row_,
+	     near_optimal,
+	     use_sifting);
       simplex_strategy = kSimplexStrategyDual;
     } else {
       // Primal feasible. so use primal simplex
