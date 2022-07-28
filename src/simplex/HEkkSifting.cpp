@@ -19,7 +19,7 @@
 #include "util/HighsSort.h"
 #include "util/HighsRandom.h"
 //#include "lp_data/HighsInfo.h"
-
+#include "io/HMPSIO.h"
 HighsStatus HEkk::sifting() {
   HighsStatus return_status = HighsStatus::kOk;
   std::vector<HighsInt> sifted_list;
@@ -37,7 +37,10 @@ HighsStatus HEkk::sifting() {
   HighsLpSolverObject sifted_solver_object(sifted_lp, sifted_basis, sifted_solution,
     					   sifted_highs_info, sifted_ekk_instance,
     					   sifted_options, *timer_);
-  
+  // Prevent recursive sifting!
+  sifted_options.sifting_strategy = kSiftingStrategyOff;
+  sifted_options.log_dev_level = 3;
+  //  sifted_options.highs_analysis_level = 4;
   if (info_.num_primal_infeasibilities > 0) {
     // Construct an LP containing any basic columns and a random
     // collection of nonbasic columns
@@ -58,6 +61,11 @@ HighsStatus HEkk::sifting() {
     }
     
     getSiftedSolverObject(sifted_solver_object, in_sifted_list);
+
+
+    HighsModel model;
+    model.lp_ = sifted_solver_object.lp_;
+    writeModelAsMps(*options_, "sifted.mps", model);
     sifted_ekk_instance.moveLp(sifted_solver_object);
 
      return_status = sifted_ekk_instance.solve();
@@ -123,8 +131,10 @@ void HEkk::getSiftedSolverObject(HighsLpSolverObject& sifted_solver_object,
   std::vector<double> unsifted_row_activity;
   unsifted_row_activity.assign(lp_.num_row_, 0);
   sifted_lp.a_matrix_.start_.clear();
+  HighsInt sifted_lp_num_col = 0;
   for (HighsInt iCol = 0; iCol < lp_.num_col_; iCol++) {
     if (in_sifted_list[iCol]) {
+      sifted_lp_num_col++;
       sifted_lp.a_matrix_.start_.push_back(sifted_lp.a_matrix_.index_.size());
       sifted_lp.col_cost_.push_back(info_.workCost_[iCol]);
       sifted_lp.col_lower_.push_back(info_.workLower_[iCol]);
@@ -144,10 +154,16 @@ void HEkk::getSiftedSolverObject(HighsLpSolverObject& sifted_solver_object,
   }
   sifted_lp.a_matrix_.start_.push_back(sifted_lp.a_matrix_.index_.size());
   for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++) {
-    sifted_lp.row_lower_.push_back(-info_.workUpper_[iRow]-unsifted_row_activity[iRow]);
-    sifted_lp.row_upper_.push_back(-info_.workLower_[iRow]-unsifted_row_activity[iRow]);
+    HighsInt iVar = lp_.num_col_ + iRow;
+    sifted_lp.row_lower_.push_back(-info_.workUpper_[iVar]-unsifted_row_activity[iRow]);
+    sifted_lp.row_upper_.push_back(-info_.workLower_[iVar]-unsifted_row_activity[iRow]);
     printf("Row %3d has bounds [%11.4g, %11.4g] from  [%11.4g, %11.4g] and shift %11.4g\n",
 	   (int)iRow, sifted_lp.row_lower_[iRow], sifted_lp.row_upper_[iRow],
-	   info_.workLower_[iRow], info_.workUpper_[iRow], unsifted_row_activity[iRow]);
+	   info_.workLower_[iVar], info_.workUpper_[iVar], unsifted_row_activity[iRow]);
   }
+  sifted_lp.num_col_ = sifted_lp.col_lower_.size();
+  sifted_lp.num_row_ = sifted_lp.row_lower_.size();
+  assert(sifted_lp.num_col_ == sifted_lp_num_col);
+  assert(sifted_lp.num_row_ == lp_.num_row_);
+  sifted_lp.setMatrixDimensions();
 }
