@@ -41,59 +41,74 @@ HighsStatus HEkk::sifting() {
   sifted_options.sifting_strategy = kSiftingStrategyOff;
   sifted_options.log_dev_level = 3;
   //  sifted_options.highs_analysis_level = 4;
-  if (info_.num_primal_infeasibilities > 0) {
-    // Construct an LP containing any basic columns and a random
-    // collection of nonbasic columns
-    for (HighsInt iCol = 0; iCol < lp_.num_col_; iCol++) {
-      if (in_sifted_list[iCol]) continue;
-      if (basis_.nonbasicFlag_[iCol] == 0) {
-	sifted_list.push_back(iCol);
-	in_sifted_list[iCol] = true;
-      }
-    }
-    HighsRandom random;
-    for (;;) {
-      if (sifted_list.size() == sifted_list_max_count) break;
-      HighsInt iCol = random.integer(lp_.num_col_);
-      if (in_sifted_list[iCol]) continue;
-      sifted_list.push_back(iCol);
-      in_sifted_list[iCol] = true;
-    }
-    
-    getSiftedSolverObject(sifted_solver_object, in_sifted_list);
 
-
+  addToSiftedList(lp_.num_row_, sifted_solver_object, 
+		  sifted_list, in_sifted_list);
+  assert(okSiftedList(sifted_list, in_sifted_list));
+  const bool write_lp = false;
+  if (write_lp) {
     HighsModel model;
     model.lp_ = sifted_solver_object.lp_;
     writeModelAsMps(*options_, "sifted.mps", model);
-    sifted_ekk_instance.moveLp(sifted_solver_object);
-
-     return_status = sifted_ekk_instance.solve();
- 
   }
-
+  sifted_ekk_instance.moveLp(sifted_solver_object);
+  return_status = sifted_ekk_instance.solve();
+ 
   assert(1 == 0);
-  getNewSiftedList(sifted_list_max_count, sifted_list, in_sifted_list);
   return return_status;
 }
 
-void HEkk::getNewSiftedList(const HighsInt new_sifted_list_max_count,
-			    std::vector<HighsInt>& new_sifted_list,
-			    const std::vector<bool>& in_sifted_list) {
-  assert(new_sifted_list.size() == 0);
-  HighsInt new_sifted_list_count = 0;
+void HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
+			   HighsLpSolverObject& sifted_solver_object, 
+			   std::vector<HighsInt>& sifted_list,
+			   std::vector<bool>& in_sifted_list) {
+  HighsLp& sifted_lp = sifted_solver_object.lp_;
+  HighsBasis& sifted_basis = sifted_solver_object.basis_;
+  const bool first_sifted_list = sifted_list.size() == 0;
+  const bool not_primal_feasible =
+    info_.num_primal_infeasibilities > 0;
+  if (not_primal_feasible) assert(first_sifted_list);
+  if (first_sifted_list) {
+    assert(sifted_lp.col_cost_.size() == 0);
+    assert(sifted_lp.col_lower_.size() == 0);
+    assert(sifted_lp.col_upper_.size() == 0);
+    assert(sifted_lp.row_lower_.size() == 0);
+    assert(sifted_lp.row_upper_.size() == 0);
+  }
+  HighsInt num_add_to_sifted_list = 0;
   std::vector<HighsInt> heap_index;
   std::vector<double> heap_value;
   heap_index.push_back(0);
-  heap_value.push_back(0);
+  heap_value.push_back(0);  
   for (HighsInt iCol = 0; iCol < lp_.num_col_; iCol++) {
     if (in_sifted_list[iCol]) continue;
     if (basis_.nonbasicFlag_[iCol] == 0) {
       // Basic, so in sifted list
-      new_sifted_list.push_back(iCol);
+      assert(first_sifted_list);
+      num_add_to_sifted_list++;
+      sifted_list.push_back(iCol);
+      in_sifted_list[iCol] = true;
+      sifted_lp.col_cost_.push_back(info_.workCost_[iCol]);
+      sifted_lp.col_lower_.push_back(info_.workLower_[iCol]);
+      sifted_lp.col_upper_.push_back(info_.workUpper_[iCol]);
+      for (HighsInt iEl = lp_.a_matrix_.start_[iCol]; iEl < lp_.a_matrix_.start_[iCol+1]; iEl++) {
+	sifted_lp.a_matrix_.index_.push_back(lp_.a_matrix_.index_[iEl]);
+	sifted_lp.a_matrix_.value_.push_back(lp_.a_matrix_.value_[iEl]);
+      }
+      sifted_lp.a_matrix_.start_.push_back(sifted_lp.a_matrix_.index_.size());
       continue;
     }
-    const double dual = info_.workDual_[iCol];
+    if (not_primal_feasible) continue;
+    // Nonbasic, and not in sifted list, so possible new entry
+    const double check_dual = info_.workDual_[iCol];
+    // Compute the dual for this column
+    double dual = info_.workCost_[iCol];
+    for (HighsInt iEl = lp_.a_matrix_.start_[iCol]; iEl < lp_.a_matrix_.start_[iCol+1]; iEl++) {
+      HighsInt iRow = lp_.a_matrix_.index_[iEl];
+      dual -= lp_.a_matrix_.value_[iEl] * info_.workDual_[lp_.num_col_ + iRow];
+    }
+    if (first_sifted_list) assert(std::fabs(dual-check_dual) < 1e-4);
+    // Determine the dual infeasibility for this column
     const double lower = info_.workLower_[iCol];
     const double upper = info_.workUpper_[iCol];
     double dual_infeasibility = 0;
@@ -110,32 +125,16 @@ void HEkk::getNewSiftedList(const HighsInt new_sifted_list_max_count,
       heap_value.push_back(dual_infeasibility);
     }
   }
-  new_sifted_list_count = new_sifted_list.size();
-  HighsInt heap_num_en = heap_index.size() - 1;
-  assert(heap_num_en >= 0);
-  if (heap_num_en > 0) {
-    // There are dual infeasibilities
-    maxheapsort(&heap_value[0], &heap_index[0], heap_num_en);
-    for (HighsInt iEl = 1; iEl <= heap_num_en; iEl++) {
-      if (new_sifted_list_count == new_sifted_list_max_count) break;
-      HighsInt iCol = heap_index[iEl];
-      new_sifted_list.push_back(iCol);
-    }
-  }
-}
-
-void HEkk::getSiftedSolverObject(HighsLpSolverObject& sifted_solver_object, 
-				 const std::vector<bool>& in_sifted_list) {
-  HighsLp& sifted_lp = sifted_solver_object.lp_;
-  HighsBasis& sifted_basis = sifted_solver_object.basis_;
-  std::vector<double> unsifted_row_activity;
-  unsifted_row_activity.assign(lp_.num_row_, 0);
-  sifted_lp.a_matrix_.start_.clear();
-  HighsInt sifted_lp_num_col = 0;
-  for (HighsInt iCol = 0; iCol < lp_.num_col_; iCol++) {
-    if (in_sifted_list[iCol]) {
-      sifted_lp_num_col++;
-      sifted_lp.a_matrix_.start_.push_back(sifted_lp.a_matrix_.index_.size());
+  if (not_primal_feasible) {
+    // Construct an LP containing any basic columns and a random
+    // collection of nonbasic columns
+    HighsRandom random;
+    for (;;) {
+      HighsInt iCol = random.integer(lp_.num_col_);
+      if (in_sifted_list[iCol]) continue;
+      num_add_to_sifted_list++;
+      sifted_list.push_back(iCol);
+      in_sifted_list[iCol] = true;
       sifted_lp.col_cost_.push_back(info_.workCost_[iCol]);
       sifted_lp.col_lower_.push_back(info_.workLower_[iCol]);
       sifted_lp.col_upper_.push_back(info_.workUpper_[iCol]);
@@ -143,27 +142,81 @@ void HEkk::getSiftedSolverObject(HighsLpSolverObject& sifted_solver_object,
 	sifted_lp.a_matrix_.index_.push_back(lp_.a_matrix_.index_[iEl]);
 	sifted_lp.a_matrix_.value_.push_back(lp_.a_matrix_.value_[iEl]);
       }
-    } else {
-      assert(basis_.nonbasicFlag_[iCol]);
-      double value = info_.workValue_[iCol];
+      sifted_lp.a_matrix_.start_.push_back(sifted_lp.a_matrix_.index_.size());
+      if (num_add_to_sifted_list == max_add_to_sifted_list) break;
+    }
+  } else {
+    HighsInt heap_num_en = heap_index.size() - 1;
+    assert(heap_num_en >= 0);
+    HighsInt sifted_list_count = sifted_list.size();
+    if (heap_num_en == 0) {
+      // Optimal!
+      assert(111==999);
+    }
+    // There are dual infeasibilities
+    maxheapsort(&heap_value[0], &heap_index[0], heap_num_en);
+    for (HighsInt iEl = 1; iEl <= heap_num_en; iEl++) {
+      HighsInt iCol = heap_index[iEl];
+      num_add_to_sifted_list++;
+      sifted_list.push_back(iCol);
+      in_sifted_list[iCol] = true;
+      sifted_lp.col_cost_.push_back(info_.workCost_[iCol]);
+      sifted_lp.col_lower_.push_back(info_.workLower_[iCol]);
+      sifted_lp.col_upper_.push_back(info_.workUpper_[iCol]);
       for (HighsInt iEl = lp_.a_matrix_.start_[iCol]; iEl < lp_.a_matrix_.start_[iCol+1]; iEl++) {
-	HighsInt iRow = lp_.a_matrix_.index_[iEl];
-	unsifted_row_activity[iRow] += value * lp_.a_matrix_.value_[iEl];
+	sifted_lp.a_matrix_.index_.push_back(lp_.a_matrix_.index_[iEl]);
+	sifted_lp.a_matrix_.value_.push_back(lp_.a_matrix_.value_[iEl]);
       }
+      sifted_lp.a_matrix_.start_.push_back(sifted_lp.a_matrix_.index_.size());
+      if (num_add_to_sifted_list == max_add_to_sifted_list) break;
     }
   }
-  sifted_lp.a_matrix_.start_.push_back(sifted_lp.a_matrix_.index_.size());
+  std::vector<double> unsifted_row_activity;
+  unsifted_row_activity.assign(lp_.num_row_, 0);
+  for (HighsInt iCol = 0; iCol < lp_.num_col_; iCol++) {
+    if (in_sifted_list[iCol]) continue;
+    double value = info_.workValue_[iCol];
+    for (HighsInt iEl = lp_.a_matrix_.start_[iCol]; iEl < lp_.a_matrix_.start_[iCol+1]; iEl++) {
+      HighsInt iRow = lp_.a_matrix_.index_[iEl];
+      unsifted_row_activity[iRow] += value * lp_.a_matrix_.value_[iEl];
+    }
+  }
+  sifted_lp.row_lower_.resize(lp_.num_row_);
+  sifted_lp.row_upper_.resize(lp_.num_row_);
   for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++) {
     HighsInt iVar = lp_.num_col_ + iRow;
-    sifted_lp.row_lower_.push_back(-info_.workUpper_[iVar]-unsifted_row_activity[iRow]);
-    sifted_lp.row_upper_.push_back(-info_.workLower_[iVar]-unsifted_row_activity[iRow]);
+    sifted_lp.row_lower_[iRow] = -info_.workUpper_[iVar] - unsifted_row_activity[iRow];
+    sifted_lp.row_upper_[iRow] = -info_.workLower_[iVar] - unsifted_row_activity[iRow];
+    /*
     printf("Row %3d has bounds [%11.4g, %11.4g] from  [%11.4g, %11.4g] and shift %11.4g\n",
 	   (int)iRow, sifted_lp.row_lower_[iRow], sifted_lp.row_upper_[iRow],
 	   info_.workLower_[iVar], info_.workUpper_[iVar], unsifted_row_activity[iRow]);
+    */
   }
   sifted_lp.num_col_ = sifted_lp.col_lower_.size();
   sifted_lp.num_row_ = sifted_lp.row_lower_.size();
-  assert(sifted_lp.num_col_ == sifted_lp_num_col);
+  assert(sifted_lp.num_col_ == sifted_list.size());
   assert(sifted_lp.num_row_ == lp_.num_row_);
   sifted_lp.setMatrixDimensions();
+  
 }
+
+
+bool HEkk::okSiftedList(const std::vector<HighsInt>& sifted_list,
+			const std::vector<bool>& in_sifted_list) {
+  std::vector<bool> local_in_sifted_list = in_sifted_list;
+  for (HighsInt iX = 0; iX < sifted_list.size(); iX++) {
+    if (!local_in_sifted_list[sifted_list[iX]]) {
+      printf("local_in_sifted_list[sifted_list[%d]] is false\n", (int)iX);
+      return false;
+    }
+    local_in_sifted_list[sifted_list[iX]] = false;
+  }
+  for (HighsInt iCol = 0; iCol < sifted_list.size(); iCol++) {
+    if (local_in_sifted_list[iCol]) {
+      printf("local_in_sifted_list[%d] is true\n", (int)iCol);
+      return false;
+    }
+  }
+}
+

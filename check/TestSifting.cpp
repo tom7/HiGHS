@@ -11,10 +11,12 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
   highs.setOptionValue("output_flag", dev_run);
   highs.setOptionValue("presolve", kHighsOffString);
   highs.setOptionValue("sifting_strategy", kSiftingStrategyOff);
-  const double density = 0.2;
   const double profile = 10;
   const HighsInt num_row = 10;
   const HighsInt num_col = num_row * profile;
+  const HighsInt min_nz_per_col = 3;
+  const double density = std::max(0.2, (1.0 * min_nz_per_col)/num_row);
+  printf("Densiity = %g\n", density);
   const HighsInt row_count = num_col * density;
 
   HighsRandom random;
