@@ -12,9 +12,9 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
   highs.setOptionValue("presolve", kHighsOffString);
   highs.setOptionValue("sifting_strategy", kSiftingStrategyOff);
   const double profile = 10;
-  const HighsInt num_row = 10;
+  const HighsInt num_row = 1;
   const HighsInt num_col = num_row * profile;
-  const HighsInt min_nz_per_col = 3;
+  const HighsInt min_nz_per_col = std::min(3, num_row);
   const double density = std::max(0.2, (1.0 * min_nz_per_col)/num_row);
   printf("Densiity = %g\n", density);
   const HighsInt row_count = num_col * density;
@@ -22,9 +22,11 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
   HighsRandom random;
   lp.col_lower_.assign(num_col, 0);
   lp.col_upper_.assign(num_col, inf);
-  for (HighsInt iCol = 0; iCol < num_col; iCol++)
-    lp.col_cost_.push_back(1 + random.fraction());
-
+  for (HighsInt iCol = 0; iCol < num_col; iCol++) {
+    double cost = 1 + random.fraction();
+    if (num_row == 1) cost = 0.1 * (num_col-iCol);
+    lp.col_cost_.push_back(cost);
+  }
   std::vector<bool> check_index;
   check_index.assign(num_col, false);
   printf("row_count = %d\n", (int)row_count);
@@ -41,6 +43,7 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
       lp.a_matrix_.index_.push_back(iCol);
       check_index[iCol] = true;
       double value = random.fraction();
+      if (num_row == 1) value = 1.0;
       lp.a_matrix_.value_.push_back(value);
       row_sum += value;
       num_nz++;
