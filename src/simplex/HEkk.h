@@ -119,6 +119,12 @@ class HEkk {
 
   // Make this private later
   HighsStatus sifting();
+  void getNewSiftedList(const HighsInt new_sifted_list_max_count,
+			std::vector<HighsInt>& new_sifted_list,
+			const std::vector<bool>& in_sifted_list);
+  void getSiftedSolverObject(HighsLpSolverObject& sifted_solver_object, 
+			     const std::vector<bool>& in_sifted_list);
+
 
   void chooseSimplexStrategyThreads(const HighsOptions& options,
                                     HighsSimplexInfo& info);

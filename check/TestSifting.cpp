@@ -13,7 +13,7 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
   highs.setOptionValue("sifting_strategy", kSiftingStrategyOff);
   const double density = 0.2;
   const double profile = 10;
-  const HighsInt num_row = 50;
+  const HighsInt num_row = 10;
   const HighsInt num_col = num_row * profile;
   const HighsInt row_count = num_col * density;
 
@@ -79,5 +79,5 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
   highs.setOptionValue("sifting_strategy", kSiftingStrategyOn);
   highs.setBasis();
   highs.setSolution();
-  //  highs.run();
+  highs.run();
 }
