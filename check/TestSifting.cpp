@@ -18,7 +18,7 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
   const double profile = 10;
   const HighsInt num_row = 10;
   const HighsInt num_col = num_row * profile;
-  const HighsInt min_nz_per_col = std::min(3, num_row);
+  const HighsInt min_nz_per_col = std::min((HighsInt)3, num_row);
   const double density = std::max(0.2, (1.0 * min_nz_per_col) / num_row);
   printf("Density = %g\n", density);
   const HighsInt row_count = num_col * density;
