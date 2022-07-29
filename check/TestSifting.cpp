@@ -1,5 +1,9 @@
+#include <algorithm>
+
 #include "Highs.h"
 #include "catch.hpp"
+
+using std::min;
 
 const bool dev_run = true;
 const double inf = kHighsInf;
@@ -15,7 +19,7 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
   const HighsInt num_row = 10;
   const HighsInt num_col = num_row * profile;
   const HighsInt min_nz_per_col = std::min(3, num_row);
-  const double density = std::max(0.2, (1.0 * min_nz_per_col)/num_row);
+  const double density = std::max(0.2, (1.0 * min_nz_per_col) / num_row);
   printf("Density = %g\n", density);
   const HighsInt row_count = num_col * density;
 
@@ -24,7 +28,7 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
   lp.col_upper_.assign(num_col, inf);
   for (HighsInt iCol = 0; iCol < num_col; iCol++) {
     double cost = 1 + random.fraction();
-    if (num_row == 1) cost = 0.1 * (num_col-iCol);
+    if (num_row == 1) cost = 0.1 * (num_col - iCol);
     lp.col_cost_.push_back(cost);
   }
   std::vector<bool> check_index;

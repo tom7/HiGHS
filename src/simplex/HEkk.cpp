@@ -1740,8 +1740,11 @@ void HEkk::chooseSimplexStrategyThreads(const HighsOptions& options,
   // whether the current basis is primal feasible.
   simplex_strategy = options.simplex_strategy;
   use_sifting = false;
-  printf(" HEkk::chooseSimplexStrategyThreads simplex_strategy = %d; sifting_strategy = %d; num_primal_infeasibilities = %d\n",
-	 (int)simplex_strategy, (int)options.sifting_strategy, (int)info.num_primal_infeasibilities);
+  printf(
+      " HEkk::chooseSimplexStrategyThreads simplex_strategy = %d; "
+      "sifting_strategy = %d; num_primal_infeasibilities = %d\n",
+      (int)simplex_strategy, (int)options.sifting_strategy,
+      (int)info.num_primal_infeasibilities);
   if (simplex_strategy == kSimplexStrategyChoose) {
     // HiGHS is left to choose the simplex strategy
     if (info.num_primal_infeasibilities > 0) {

@@ -120,17 +120,17 @@ class HEkk {
   // Make this private later
   HighsStatus sifting();
   HighsInt addToSiftedList(const HighsInt max_add_to_sifted_list,
-			   HighsLpSolverObject& sifted_solver_object, 
-			   std::vector<HighsInt>& sifted_list,
-			   std::vector<bool>& in_sifted_list);
+                           HighsLpSolverObject& sifted_solver_object,
+                           std::vector<HighsInt>& sifted_list,
+                           std::vector<bool>& in_sifted_list);
   void purgeSiftedList(const HighsInt num_purge_from_sifted_list,
-		       HighsLpSolverObject& sifted_solver_object, 
-		       std::vector<HighsInt>& sifted_list,
-		       std::vector<bool>& in_sifted_list);
-  void updateIncumbentData(const HighsLpSolverObject& sifted_solver_object, 
-			   const std::vector<HighsInt>& sifted_list);
+                       HighsLpSolverObject& sifted_solver_object,
+                       std::vector<HighsInt>& sifted_list,
+                       std::vector<bool>& in_sifted_list);
+  void updateIncumbentData(const HighsLpSolverObject& sifted_solver_object,
+                           const std::vector<HighsInt>& sifted_list);
   bool okSiftedList(const std::vector<HighsInt>& sifted_list,
-		    const std::vector<bool>& in_sifted_list);
+                    const std::vector<bool>& in_sifted_list);
 
   void chooseSimplexStrategyThreads(const HighsOptions& options,
                                     HighsSimplexInfo& info);

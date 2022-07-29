@@ -1,7 +1,9 @@
+#include <algorithm>
+
 #include "Highs.h"
 #include "SpecialLps.h"
 #include "catch.hpp"
-#include "lp_data/HConst.h"
+//#include "lp_data/HConst.h"
 
 using std::min;
 
