@@ -44,10 +44,16 @@ HighsStatus HEkk::sifting() {
 
   HighsInt sifting_iter = 0;
   for (;;) {
-    sifting_iter++;
+    HighsInt num_add_to_sifted_list =
     addToSiftedList(lp_.num_row_, sifted_solver_object, 
 		    sifted_list, in_sifted_list);
+    if (num_add_to_sifted_list == 0) {
+      printf("HEkk::sifting: Optimal after %d sifting iterations\n", (int)sifting_iter);
+      model_status_ = HighsModelStatus::kOptimal;
+      return HighsStatus::kOk;
+    }
     assert(okSiftedList(sifted_list, in_sifted_list));
+    sifting_iter++;
     const bool write_lp = false;
     if (write_lp) {
       HighsModel model;
@@ -61,17 +67,17 @@ HighsStatus HEkk::sifting() {
 
     updateIncumbentData(sifted_solver_object, sifted_list);
     sifted_ekk_instance.clear();
-    if (sifting_iter>2) break;
+    if (sifting_iter>100) break;
   }
  
   assert(1 == 0);
-  return return_status;
+  return HighsStatus::kError;
 }
 
-void HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
-			   HighsLpSolverObject& sifted_solver_object, 
-			   std::vector<HighsInt>& sifted_list,
-			   std::vector<bool>& in_sifted_list) {
+HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
+			       HighsLpSolverObject& sifted_solver_object, 
+			       std::vector<HighsInt>& sifted_list,
+			       std::vector<bool>& in_sifted_list) {
   HighsLp& sifted_lp = sifted_solver_object.lp_;
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
   const bool first_sifted_list = sifted_list.size() == 0;
@@ -173,8 +179,8 @@ void HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
     HighsInt sifted_list_count = sifted_list.size();
     if (heap_num_en == 0) {
       // Optimal!
-      printf("Optimal!\n");
-      assert(111==999);
+      assert(num_add_to_sifted_list == 0);
+      return num_add_to_sifted_list;
     }
     // There are dual infeasibilities
     maxheapsort(&heap_value[0], &heap_index[0], heap_num_en);
@@ -221,6 +227,7 @@ void HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
   assert(sifted_lp.num_col_ == sifted_list.size());
   assert(sifted_lp.num_row_ == lp_.num_row_);
   sifted_lp.setMatrixDimensions();
+  return num_add_to_sifted_list;
   
 }
 
@@ -273,4 +280,5 @@ void HEkk::updateIncumbentData(const HighsLpSolverObject& sifted_solver_object,
       sifted_ekk_instance.info_.workDual_[sifted_lp.num_col_+iRow];
   }
   info_.num_primal_infeasibilities = sifted_ekk_instance.info_.num_primal_infeasibilities;
+  iteration_count_ += sifted_ekk_instance.iteration_count_;
 }

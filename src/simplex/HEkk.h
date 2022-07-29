@@ -119,10 +119,10 @@ class HEkk {
 
   // Make this private later
   HighsStatus sifting();
-  void addToSiftedList(const HighsInt max_add_to_sifted_list,
-		       HighsLpSolverObject& sifted_solver_object, 
-		       std::vector<HighsInt>& sifted_list,
-		       std::vector<bool>& in_sifted_list);
+  HighsInt addToSiftedList(const HighsInt max_add_to_sifted_list,
+			   HighsLpSolverObject& sifted_solver_object, 
+			   std::vector<HighsInt>& sifted_list,
+			   std::vector<bool>& in_sifted_list);
   void purgeSiftedList(const HighsInt num_purge_from_sifted_list,
 		       HighsLpSolverObject& sifted_solver_object, 
 		       std::vector<HighsInt>& sifted_list,
