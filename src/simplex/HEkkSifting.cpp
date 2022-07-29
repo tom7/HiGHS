@@ -39,7 +39,7 @@ HighsStatus HEkk::sifting() {
       sifted_ekk_instance, sifted_options, *timer_);
   // Prevent recursive sifting!
   sifted_options.sifting_strategy = kSiftingStrategyOff;
-  sifted_options.log_dev_level = 3;
+  //  sifted_options.log_dev_level = 3;
   //  sifted_options.highs_analysis_level = 4;
 
   HighsInt sifting_iter = 0;
@@ -47,13 +47,18 @@ HighsStatus HEkk::sifting() {
     HighsInt num_add_to_sifted_list = addToSiftedList(
         lp_.num_row_, sifted_solver_object, sifted_list, in_sifted_list);
     if (num_add_to_sifted_list == 0) {
-      printf("HEkk::sifting: Optimal after %d sifting iterations\n",
-             (int)sifting_iter);
+      highsLogUser(options_->log_options, HighsLogType::kInfo,
+		   "Optimal after %d sifting iterations\n", (int)sifting_iter);
       model_status_ = HighsModelStatus::kOptimal;
       return HighsStatus::kOk;
     }
     assert(okSiftedList(sifted_list, in_sifted_list));
     sifting_iter++;
+    highsLogUser(options_->log_options, HighsLogType::kInfo,
+		 "Sifting iteration %3d: LP has %6d rows and %9d columns\n",
+		 (int)sifting_iter,
+		 (int)sifted_solver_object.lp_.num_row_,
+		 (int)sifted_solver_object.lp_.num_col_);
     const bool write_lp = false;
     if (write_lp) {
       HighsModel model;
@@ -262,12 +267,13 @@ void HEkk::updateIncumbentData(const HighsLpSolverObject& sifted_solver_object,
   HighsLp& sifted_lp = sifted_solver_object.lp_;
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
   HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
+  const bool report = false;
   for (HighsInt iX = 0; iX < sifted_list.size(); iX++) {
     HighsInt iCol = sifted_list[iX];
     if (sifted_ekk_instance.basis_.nonbasicFlag_[iX]) {
       info_.workValue_[iCol] = sifted_ekk_instance.info_.workValue_[iX];
       info_.workDual_[iCol] = sifted_ekk_instance.info_.workDual_[iX];
-      printf("Nonbasic: iX %2d: iCol = %3d: Value = %11.4g; Dual = %11.4g\n",
+      if (report) printf("Nonbasic: iX %2d: iCol = %3d: Value = %11.4g; Dual = %11.4g\n",
              (int)iX, (int)iCol, info_.workValue_[iCol], info_.workDual_[iCol]);
     }
   }
@@ -277,7 +283,7 @@ void HEkk::updateIncumbentData(const HighsLpSolverObject& sifted_solver_object,
     HighsInt iCol = sifted_list[iX];
     info_.workValue_[iCol] = sifted_ekk_instance.info_.baseValue_[iRow];
     info_.workDual_[iCol] = 0;
-    printf("Basic:    iX %2d: iCol = %3d: Value = %11.4g\n", (int)iX, (int)iCol,
+    if (report) printf("Basic:    iX %2d: iCol = %3d: Value = %11.4g\n", (int)iX, (int)iCol,
            info_.workValue_[iCol]);
   }
   for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++) {

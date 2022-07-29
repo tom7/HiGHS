@@ -1740,26 +1740,21 @@ void HEkk::chooseSimplexStrategyThreads(const HighsOptions& options,
   // whether the current basis is primal feasible.
   simplex_strategy = options.simplex_strategy;
   use_sifting = false;
-  printf(
-      " HEkk::chooseSimplexStrategyThreads simplex_strategy = %d; "
-      "sifting_strategy = %d; num_primal_infeasibilities = %d\n",
-      (int)simplex_strategy, (int)options.sifting_strategy,
-      (int)info.num_primal_infeasibilities);
   if (simplex_strategy == kSimplexStrategyChoose) {
     // HiGHS is left to choose the simplex strategy
-    if (info.num_primal_infeasibilities > 0) {
+    //
+    // Consider using sifting
+    //
+    use_sifting = !near_optimal &&
+      (options.sifting_strategy == kSiftingStrategyOn ||
+       (options.sifting_strategy == kSiftingStrategyChoose &&
+	lp_.num_col_ >= kSiftingProfileFactor * lp_.num_row_));
+    if (use_sifting) {
+      highsLogUser(options_->log_options, HighsLogType::kInfo,
+                   "LP has %d cols and %d rows so use_sifting\n",
+		   (int)lp_.num_col_, (int)lp_.num_row_);
+    } else if (info.num_primal_infeasibilities > 0) {
       // Not primal feasible, so use dual simplex
-      //
-      // Consider using sifting
-      //
-      use_sifting = !near_optimal &&
-                    (options.sifting_strategy == kSiftingStrategyOn ||
-                     (options.sifting_strategy == kSiftingStrategyChoose &&
-                      lp_.num_col_ >= kSiftingProfileFactor * lp_.num_row_));
-      printf(
-          "LP has %d cols and %d rows and near_optimal = %d so use_sifting = "
-          "%d\n",
-          (int)lp_.num_col_, (int)lp_.num_row_, near_optimal, use_sifting);
       simplex_strategy = kSimplexStrategyDual;
     } else {
       // Primal feasible. so use primal simplex

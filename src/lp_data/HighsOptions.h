@@ -910,7 +910,7 @@ class HighsOptions : public HighsOptionsStruct {
     records.push_back(record_int);
 
     record_int = new OptionRecordInt(
-        "sifting_strategy", "Strategy for using sifting within simplexfor LP",
+        "sifting_strategy", "Strategy for using sifting within simplex for LP",
         advanced, &sifting_strategy, kSiftingStrategyMin, kSiftingStrategyOff,
         kSiftingStrategyMax);
     records.push_back(record_int);
