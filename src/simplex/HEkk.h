@@ -127,7 +127,7 @@ class HEkk {
                        HighsLpSolverObject& sifted_solver_object,
                        std::vector<HighsInt>& sifted_list,
                        std::vector<bool>& in_sifted_list);
-  void updateIncumbentData(const HighsLpSolverObject& sifted_solver_object,
+  void updateIncumbentData(HighsLpSolverObject& sifted_solver_object,
                            const std::vector<HighsInt>& sifted_list);
   bool okSiftedList(const std::vector<HighsInt>& sifted_list,
                     const std::vector<bool>& in_sifted_list);

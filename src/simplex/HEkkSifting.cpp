@@ -18,8 +18,9 @@
 #include "simplex/HEkk.h"
 #include "util/HighsRandom.h"
 #include "util/HighsSort.h"
-//#include "lp_data/HighsInfo.h"
+
 #include "io/HMPSIO.h"
+
 HighsStatus HEkk::sifting() {
   HighsStatus return_status = HighsStatus::kOk;
   std::vector<HighsInt> sifted_list;
@@ -41,6 +42,7 @@ HighsStatus HEkk::sifting() {
   sifted_options.sifting_strategy = kSiftingStrategyOff;
   //  sifted_options.log_dev_level = 3;
   //  sifted_options.highs_analysis_level = 4;
+  SimplexAlgorithm last_algorithm = SimplexAlgorithm::kNone;
 
   HighsInt sifting_iter = 0;
   for (;;) {
@@ -50,7 +52,8 @@ HighsStatus HEkk::sifting() {
       highsLogUser(options_->log_options, HighsLogType::kInfo,
 		   "Optimal after %d sifting iterations\n", (int)sifting_iter);
       model_status_ = HighsModelStatus::kOptimal;
-      return HighsStatus::kOk;
+      exit_algorithm_ = last_algorithm;
+      return returnFromSolve(HighsStatus::kOk);
     }
     assert(okSiftedList(sifted_list, in_sifted_list));
     sifting_iter++;
@@ -69,6 +72,7 @@ HighsStatus HEkk::sifting() {
     return_status = sifted_ekk_instance.solve();
     assert(return_status == HighsStatus::kOk);
     sifted_lp.moveBackLpAndUnapplyScaling(sifted_ekk_instance.lp_);
+    last_algorithm = sifted_ekk_instance.exit_algorithm_;
 
     updateIncumbentData(sifted_solver_object, sifted_list);
     sifted_ekk_instance.clear();
@@ -262,35 +266,58 @@ bool HEkk::okSiftedList(const std::vector<HighsInt>& sifted_list,
   }
 }
 
-void HEkk::updateIncumbentData(const HighsLpSolverObject& sifted_solver_object,
+void HEkk::updateIncumbentData(HighsLpSolverObject& sifted_solver_object,
                                const std::vector<HighsInt>& sifted_list) {
   HighsLp& sifted_lp = sifted_solver_object.lp_;
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
   HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
   const bool report = false;
+  sifted_basis.col_status.resize(sifted_lp.num_col_);
+  sifted_basis.row_status.resize(lp_.num_row_);
   for (HighsInt iX = 0; iX < sifted_list.size(); iX++) {
     HighsInt iCol = sifted_list[iX];
     if (sifted_ekk_instance.basis_.nonbasicFlag_[iX]) {
       info_.workValue_[iCol] = sifted_ekk_instance.info_.workValue_[iX];
       info_.workDual_[iCol] = sifted_ekk_instance.info_.workDual_[iX];
+      if (sifted_ekk_instance.basis_.nonbasicMove_[iX] > 0) {
+	sifted_basis.col_status[iX] = HighsBasisStatus::kLower;
+      }	else if (sifted_ekk_instance.basis_.nonbasicMove_[iX] < 0) {
+	sifted_basis.col_status[iX] = HighsBasisStatus::kUpper;
+      }	else if (sifted_ekk_instance.info_.workLower_[iX] == sifted_ekk_instance.info_.workUpper_[iX]) {
+	sifted_basis.col_status[iX] = HighsBasisStatus::kLower;
+      } else {
+	sifted_basis.col_status[iX] = HighsBasisStatus::kZero;
+      }
       if (report) printf("Nonbasic: iX %2d: iCol = %3d: Value = %11.4g; Dual = %11.4g\n",
              (int)iX, (int)iCol, info_.workValue_[iCol], info_.workDual_[iCol]);
     }
   }
   for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++) {
     HighsInt iX = sifted_ekk_instance.basis_.basicIndex_[iRow];
-    if (iX >= sifted_lp.num_col_) continue;
-    HighsInt iCol = sifted_list[iX];
-    info_.workValue_[iCol] = sifted_ekk_instance.info_.baseValue_[iRow];
-    info_.workDual_[iCol] = 0;
-    if (report) printf("Basic:    iX %2d: iCol = %3d: Value = %11.4g\n", (int)iX, (int)iCol,
-           info_.workValue_[iCol]);
+    if (iX < sifted_lp.num_col_) {
+      HighsInt iCol = sifted_list[iX];
+      info_.workValue_[iCol] = sifted_ekk_instance.info_.baseValue_[iRow];
+      info_.workDual_[iCol] = 0;
+      if (report) printf("Basic:    iX %2d: iCol = %3d: Value = %11.4g\n", (int)iX, (int)iCol,
+			 info_.workValue_[iCol]);
+    } //else {
+    //      HighsInt iVar = lp_.num_col_ + iRow;
+    //      info_.workValue_[iVar] = sifted_ekk_instance.info_.baseValue_[iRow];
+    //      info_.workDual_[iVar] = 0;
+    //    }
   }
   for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++) {
-    info_.workValue_[lp_.num_col_ + iRow] =
-        sifted_ekk_instance.info_.workValue_[sifted_lp.num_col_ + iRow];
-    info_.workDual_[lp_.num_col_ + iRow] =
-        sifted_ekk_instance.info_.workDual_[sifted_lp.num_col_ + iRow];
+    HighsInt iX = sifted_lp.num_col_ + iRow;
+    if (sifted_ekk_instance.basis_.nonbasicFlag_[iX]) {
+      info_.workValue_[lp_.num_col_ + iRow] =
+        sifted_ekk_instance.info_.workValue_[iX];
+      info_.workDual_[lp_.num_col_ + iRow] =
+        sifted_ekk_instance.info_.workDual_[iX];
+    } else {
+      info_.workValue_[lp_.num_col_ + iRow] = 
+        sifted_ekk_instance.info_.workValue_[iX];
+      info_.workDual_[lp_.num_col_ + iRow] = 0;
+    }
   }
   info_.num_primal_infeasibilities =
       sifted_ekk_instance.info_.num_primal_infeasibilities;
