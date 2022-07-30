@@ -44,25 +44,7 @@ HighsStatus HEkk::sifting() {
   //  sifted_options.highs_analysis_level = 4;
   SimplexAlgorithm last_algorithm = SimplexAlgorithm::kNone;
   
-  // Set up the initial basis status for rows
-  assert(status_.has_basis);
-  sifted_basis.row_status.resize(lp_.num_row_);
-  for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++) {
-    HighsInt iVar = lp_.num_col_ + iRow;
-    if (basis_.nonbasicFlag_[iVar]) {
-      if (basis_.nonbasicMove_[iVar] > 0) {
-	sifted_basis.row_status[iRow] = HighsBasisStatus::kUpper;
-      } else if (basis_.nonbasicMove_[iVar] < 0) {
-	sifted_basis.row_status[iRow] = HighsBasisStatus::kLower;
-      } else if (info_.workLower_[iVar] == info_.workUpper_[iVar]) {
-	sifted_basis.row_status[iRow] = HighsBasisStatus::kUpper;
-      } else {
-	sifted_basis.row_status[iRow] = HighsBasisStatus::kZero;
-      }
-    } else {
-      sifted_basis.row_status[iRow] = HighsBasisStatus::kBasic;
-    }
-  }
+  getInitialRowStatus(sifted_solver_object);
 
   HighsInt sifting_iter = 0;
   for (;;) {
@@ -108,6 +90,27 @@ HighsStatus HEkk::sifting() {
 }
 
 void HEkk::getInitialRowStatus(HighsLpSolverObject& sifted_solver_object) {
+  // Set up the initial basis status for rows
+  assert(status_.has_basis);
+  HighsBasis& sifted_basis = sifted_solver_object.basis_;
+  sifted_basis.row_status.resize(lp_.num_row_);
+  for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++) {
+    HighsInt iVar = lp_.num_col_ + iRow;
+    if (basis_.nonbasicFlag_[iVar]) {
+      if (basis_.nonbasicMove_[iVar] > 0) {
+	sifted_basis.row_status[iRow] = HighsBasisStatus::kUpper;
+      } else if (basis_.nonbasicMove_[iVar] < 0) {
+	sifted_basis.row_status[iRow] = HighsBasisStatus::kLower;
+      } else if (info_.workLower_[iVar] == info_.workUpper_[iVar]) {
+	sifted_basis.row_status[iRow] = HighsBasisStatus::kUpper;
+      } else {
+	sifted_basis.row_status[iRow] = HighsBasisStatus::kZero;
+      }
+    } else {
+      sifted_basis.row_status[iRow] = HighsBasisStatus::kBasic;
+    }
+  }
+
 }
 
 void HEkk::putFinalBasisStatus(HighsLpSolverObject& sifted_solver_object) {
