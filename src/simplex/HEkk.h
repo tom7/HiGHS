@@ -120,7 +120,8 @@ class HEkk {
   // Make this private later
   HighsStatus sifting();
   void getInitialRowStatus(HighsLpSolverObject& sifted_solver_object);
-  void putFinalBasisStatus(HighsLpSolverObject& sifted_solver_object);
+  void putFinalBasisStatus(HighsLpSolverObject& sifted_solver_object,
+			   const std::vector<HighsInt>& sifted_list);
   HighsInt addToSiftedList(const HighsInt max_add_to_sifted_list,
                            HighsLpSolverObject& sifted_solver_object,
                            std::vector<HighsInt>& sifted_list,

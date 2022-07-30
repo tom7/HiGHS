@@ -113,7 +113,17 @@ void HEkk::getInitialRowStatus(HighsLpSolverObject& sifted_solver_object) {
 
 }
 
-void HEkk::putFinalBasisStatus(HighsLpSolverObject& sifted_solver_object) {
+void HEkk::putFinalBasisStatus(HighsLpSolverObject& sifted_solver_object,
+                               const std::vector<HighsInt>& sifted_list) {
+  /*
+  HighsBasis& sifted_basis = sifted_solver_object.basis_;
+  for (HighsInt iX = 0; iX < sifted_list.size(); iX++) {
+    HighsInt iCol = sifted_list[iX];
+    if (sifted_basis.col_status[iCol] == HighsBasisStatus::kBasic) {
+      basis_.
+    }
+  }
+  */
 }
 
 HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
@@ -378,4 +388,11 @@ void HEkk::updateIncumbentData(HighsLpSolverObject& sifted_solver_object,
   info_.num_primal_infeasibilities =
       sifted_ekk_instance.info_.num_primal_infeasibilities;
   iteration_count_ += sifted_ekk_instance.iteration_count_;
+  info_.dual_phase1_iteration_count += sifted_ekk_instance.info_.dual_phase1_iteration_count;
+  info_.dual_phase2_iteration_count += sifted_ekk_instance.info_.dual_phase2_iteration_count;
+  info_.primal_phase1_iteration_count += sifted_ekk_instance.info_.primal_phase1_iteration_count;
+  info_.primal_phase2_iteration_count += sifted_ekk_instance.info_.primal_phase2_iteration_count;
+  info_.primal_bound_swap += sifted_ekk_instance.info_.primal_bound_swap;
+  analysis_.simplex_iteration_count = iteration_count_;
+  analysis_.objective_value = sifted_ekk_instance.info_.updated_primal_objective_value;
 }
