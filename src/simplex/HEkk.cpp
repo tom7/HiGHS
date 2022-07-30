@@ -1746,13 +1746,13 @@ void HEkk::chooseSimplexStrategyThreads(const HighsOptions& options,
     // Consider using sifting
     //
     use_sifting = !near_optimal &&
-      (options.sifting_strategy == kSiftingStrategyOn ||
-       (options.sifting_strategy == kSiftingStrategyChoose &&
-	lp_.num_col_ >= kSiftingProfileFactor * lp_.num_row_));
+                  (options.sifting_strategy == kSiftingStrategyOn ||
+                   (options.sifting_strategy == kSiftingStrategyChoose &&
+                    lp_.num_col_ >= kSiftingProfileFactor * lp_.num_row_));
     if (use_sifting) {
       highsLogUser(options_->log_options, HighsLogType::kInfo,
                    "LP has %d cols and %d rows so use_sifting\n",
-		   (int)lp_.num_col_, (int)lp_.num_row_);
+                   (int)lp_.num_col_, (int)lp_.num_row_);
     } else if (info.num_primal_infeasibilities > 0) {
       // Not primal feasible, so use dual simplex
       simplex_strategy = kSimplexStrategyDual;
