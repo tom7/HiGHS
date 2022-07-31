@@ -18,9 +18,7 @@
 #include <numeric>
 
 HighsDynamicRowMatrix::HighsDynamicRowMatrix(HighsInt ncols) {
-  AheadPos_.resize(ncols, -1);
-  AheadNeg_.resize(ncols, -1);
-  Asize_.resize(ncols);
+  colLists.resize(2 * ncols);
 }
 /// adds a row to the matrix with the given values and returns its index
 HighsInt HighsDynamicRowMatrix::addRow(HighsInt* Rindex, double* Rvalue,
@@ -39,11 +37,6 @@ HighsInt HighsDynamicRowMatrix::addRow(HighsInt* Rindex, double* Rvalue,
 
     ARindex_.resize(end);
     ARvalue_.resize(end);
-    ARrowindex_.resize(end);
-    AprevPos_.resize(end, -1);
-    AnextPos_.resize(end, -1);
-    AprevNeg_.resize(end, -1);
-    AnextNeg_.resize(end, -1);
   } else {
     std::pair<HighsInt, HighsInt> freeslot = *it;
     freespaces_.erase(it);
@@ -74,7 +67,6 @@ HighsInt HighsDynamicRowMatrix::addRow(HighsInt* Rindex, double* Rvalue,
   for (HighsInt i = start; i != end; ++i) {
     ARindex_[i] = Rindex[i - start];
     ARvalue_[i] = Rvalue[i - start];
-    ARrowindex_[i] = rowindex;
   }
 
   // link the row values to the columns
@@ -82,23 +74,9 @@ HighsInt HighsDynamicRowMatrix::addRow(HighsInt* Rindex, double* Rvalue,
 
   for (HighsInt i = start; i != end; ++i) {
     HighsInt col = ARindex_[i];
-    ++Asize_[col];
 
-    if (ARvalue_[i] > 0) {
-      AprevPos_[i] = -1;
-      HighsInt head = AheadPos_[col];
-      AheadPos_[col] = i;
-      AnextPos_[i] = head;
-
-      if (head != -1) AprevPos_[head] = i;
-    } else {
-      AprevNeg_[i] = -1;
-      HighsInt head = AheadNeg_[col];
-      AheadNeg_[col] = i;
-      AnextNeg_[i] = head;
-
-      if (head != -1) AprevNeg_[head] = i;
-    }
+    HighsInt listIndex = 2 * col + (ARvalue_[i] < 0);
+    colLists[listIndex].insert(rowindex, ARvalue_[i]);
   }
 
   return rowindex;
@@ -112,41 +90,9 @@ void HighsDynamicRowMatrix::unlinkColumns(HighsInt rowindex) {
   HighsInt end = ARrange_[rowindex].second;
   for (HighsInt i = start; i != end; ++i) {
     HighsInt col = ARindex_[i];
-    --Asize_[col];
 
-    if (ARvalue_[i] > 0) {
-      HighsInt prev = AprevPos_[i];
-      HighsInt next = AnextPos_[i];
-
-      if (next != -1) {
-        assert(AprevPos_[next] == i);
-        AprevPos_[next] = prev;
-      }
-
-      if (prev != -1) {
-        assert(AnextPos_[prev] == i);
-        AnextPos_[prev] = next;
-      } else {
-        assert(AheadPos_[col] == i);
-        AheadPos_[col] = next;
-      }
-    } else {
-      HighsInt prev = AprevNeg_[i];
-      HighsInt next = AnextNeg_[i];
-
-      if (next != -1) {
-        assert(AprevNeg_[next] == i);
-        AprevNeg_[next] = prev;
-      }
-
-      if (prev != -1) {
-        assert(AnextNeg_[prev] == i);
-        AnextNeg_[prev] = next;
-      } else {
-        assert(AheadNeg_[col] == i);
-        AheadNeg_[col] = next;
-      }
-    }
+    HighsInt listIndex = 2 * col + (ARvalue_[i] < 0);
+    colLists[listIndex].erase(rowindex);
   }
 }
 
@@ -159,41 +105,9 @@ void HighsDynamicRowMatrix::removeRow(HighsInt rowindex) {
   if (colsLinked[rowindex]) {
     for (HighsInt i = start; i != end; ++i) {
       HighsInt col = ARindex_[i];
-      --Asize_[col];
 
-      if (ARvalue_[i] > 0) {
-        HighsInt prev = AprevPos_[i];
-        HighsInt next = AnextPos_[i];
-
-        if (next != -1) {
-          assert(AprevPos_[next] == i);
-          AprevPos_[next] = prev;
-        }
-
-        if (prev != -1) {
-          assert(AnextPos_[prev] == i);
-          AnextPos_[prev] = next;
-        } else {
-          assert(AheadPos_[col] == i);
-          AheadPos_[col] = next;
-        }
-      } else {
-        HighsInt prev = AprevNeg_[i];
-        HighsInt next = AnextNeg_[i];
-
-        if (next != -1) {
-          assert(AprevNeg_[next] == i);
-          AprevNeg_[next] = prev;
-        }
-
-        if (prev != -1) {
-          assert(AnextNeg_[prev] == i);
-          AnextNeg_[prev] = next;
-        } else {
-          assert(AheadNeg_[col] == i);
-          AheadNeg_[col] = next;
-        }
-      }
+      HighsInt listIndex = 2 * col + (ARvalue_[i] < 0);
+      colLists[listIndex].erase(rowindex);
     }
   }
 

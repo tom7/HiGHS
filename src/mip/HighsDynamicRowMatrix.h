@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "util/HighsHashTree.h"
 #include "util/HighsInt.h"
 
 class HighsDynamicRowMatrix {
@@ -29,22 +30,11 @@ class HighsDynamicRowMatrix {
   /// values for each nonzero in AR
   std::vector<double> ARvalue_;
 
-  std::vector<HighsInt> ARrowindex_;
-  std::vector<HighsInt> AnextPos_;
-  std::vector<HighsInt> AprevPos_;
-  std::vector<HighsInt> AnextNeg_;
-  std::vector<HighsInt> AprevNeg_;
-
-  /// vector of pointers to the head/tail of the nonzero block list for each
-  /// column
-  std::vector<HighsInt> AheadPos_;
-  std::vector<HighsInt> AheadNeg_;
+  std::vector<HighsHashTree<HighsInt, double>> colLists;
 
   std::vector<uint8_t> colsLinked;
 
-  /// vector of column sizes
-
-  /// keep an ordered set ofof free spaces in the row arrays so that they can be
+  /// keep an ordered set of free spaces in the row arrays so that they can be
   /// reused efficiently
   std::set<std::pair<HighsInt, HighsInt>> freespaces_;
 
@@ -52,7 +42,6 @@ class HighsDynamicRowMatrix {
   std::vector<HighsInt> deletedrows_;
 
  public:
-  std::vector<HighsInt> Asize_;
   HighsDynamicRowMatrix(HighsInt ncols);
 
   bool columnsLinked(HighsInt rowindex) const { return colsLinked[rowindex]; }
@@ -67,8 +56,6 @@ class HighsDynamicRowMatrix {
   /// can be reused for new rows
   void removeRow(HighsInt rowindex);
 
-  HighsInt numCols() const { return Asize_.size(); }
-
   std::size_t nonzeroCapacity() const { return ARvalue_.size(); }
 
   /// calls the given function object for each entry in the given column.
@@ -76,22 +63,18 @@ class HighsDynamicRowMatrix {
   /// the nonzero value of the column in that row as the second argument.
   template <typename Func>
   void forEachPositiveColumnEntry(HighsInt col, Func&& f) const {
-    HighsInt iter = AheadPos_[col];
-
-    while (iter != -1) {
-      if (!f(ARrowindex_[iter], ARvalue_[iter])) break;
-      iter = AnextPos_[iter];
-    }
+    colLists[2 * col].for_each(
+        [&](const HighsHashTableEntry<HighsInt, double>& entry) {
+          return !f(entry.key(), entry.value());
+        });
   }
 
   template <typename Func>
   void forEachNegativeColumnEntry(HighsInt col, Func&& f) const {
-    HighsInt iter = AheadNeg_[col];
-
-    while (iter != -1) {
-      if (!f(ARrowindex_[iter], ARvalue_[iter])) break;
-      iter = AnextNeg_[iter];
-    }
+    colLists[2 * col + 1].for_each(
+        [&](const HighsHashTableEntry<HighsInt, double>& entry) {
+          return !f(entry.key(), entry.value());
+        });
   }
 
   HighsInt getNumRows() const { return ARrange_.size(); }
