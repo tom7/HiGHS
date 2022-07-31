@@ -22,12 +22,16 @@
 
 HighsStatus HEkk::sifting() {
   HighsStatus return_status = HighsStatus::kOk;
+  // Need to start from a primal feasible solution
+  assert(info_.num_primal_infeasibilities >= 0);
+
+
+
+  HighsInt sifted_list_max_count = lp_.num_row_;
+
   std::vector<HighsInt> sifted_list;
   std::vector<bool> in_sifted_list;
   in_sifted_list.assign(lp_.num_col_, false);
-  // Need to start from a primal feasible solution
-  assert(info_.num_primal_infeasibilities >= 0);
-  HighsInt sifted_list_max_count = lp_.num_row_;
   HEkk sifted_ekk_instance;
   HighsLp sifted_lp;
   HighsBasis sifted_basis;
@@ -37,18 +41,41 @@ HighsStatus HEkk::sifting() {
   HighsLpSolverObject sifted_solver_object(
       sifted_lp, sifted_basis, sifted_solution, sifted_highs_info,
       sifted_ekk_instance, sifted_options, *timer_);
+
+  std::vector<HighsInt> new_sifted_list;
+  std::vector<bool> new_in_sifted_list;
+  new_in_sifted_list.assign(lp_.num_col_, false);
+  HEkk new_sifted_ekk_instance;
+  HighsLp new_sifted_lp;
+  HighsBasis new_sifted_basis;
+  HighsSolution new_sifted_solution;
+  HighsInfo new_sifted_highs_info;
+  HighsOptions new_sifted_options = *options_;
+  HighsLpSolverObject new_sifted_solver_object(
+      new_sifted_lp, new_sifted_basis, new_sifted_solution, new_sifted_highs_info,
+      new_sifted_ekk_instance, new_sifted_options, *timer_);
+
   // Prevent recursive sifting!
   sifted_options.sifting_strategy = kSiftingStrategyOff;
+  new_sifted_options.sifting_strategy = kSiftingStrategyOff;
   //  sifted_options.log_dev_level = 3;
   //  sifted_options.highs_analysis_level = 4;
   SimplexAlgorithm last_algorithm = SimplexAlgorithm::kNone;
 
   getInitialRowStatus(sifted_solver_object);
+  getInitialRowStatus(new_sifted_solver_object);
 
   HighsInt sifting_iter = 0;
+  bool first_sifted_lp = true;
+  const bool new_approach = true;  
   for (;;) {
-    HighsInt num_add_to_sifted_list = addToSiftedList(
-        lp_.num_row_, sifted_solver_object, sifted_list, in_sifted_list);
+    HighsInt num_add_to_sifted_list =
+      addToSiftedList(lp_.num_row_, sifted_solver_object, sifted_list, in_sifted_list, !new_approach,
+		      first_sifted_lp);
+    HighsInt new_num_add_to_sifted_list =
+      addToSiftedList(lp_.num_row_, new_sifted_solver_object, new_sifted_list, new_in_sifted_list, new_approach,
+		      first_sifted_lp);
+    assert(num_add_to_sifted_list == new_num_add_to_sifted_list);
     if (num_add_to_sifted_list == 0) {
       highsLogUser(options_->log_options, HighsLogType::kInfo,
                    "Optimal after %d sifting iterations\n", (int)sifting_iter);
@@ -57,6 +84,8 @@ HighsStatus HEkk::sifting() {
       return returnFromSolve(HighsStatus::kOk);
     }
     assert(okSiftedList(sifted_list, in_sifted_list));
+    assert(okSiftedList(new_sifted_list, new_in_sifted_list));
+    first_sifted_lp = false;
     sifting_iter++;
     highsLogUser(options_->log_options, HighsLogType::kInfo,
                  "Sifting iteration %3d: LP has %6d rows and %9d columns\n",
@@ -69,17 +98,26 @@ HighsStatus HEkk::sifting() {
       writeModelAsMps(*options_, "sifted.mps", model);
     }
     sifted_ekk_instance.moveLp(sifted_solver_object);
-    if (sifting_iter > 1) {
+    new_sifted_ekk_instance.moveLp(new_sifted_solver_object);
+    if (!first_sifted_lp) {
       return_status = sifted_ekk_instance.setBasis(sifted_solver_object.basis_);
+      assert(return_status == HighsStatus::kOk);
+      return_status = new_sifted_ekk_instance.setBasis(new_sifted_solver_object.basis_);
       assert(return_status == HighsStatus::kOk);
     }
     return_status = sifted_ekk_instance.solve();
     assert(return_status == HighsStatus::kOk);
+    return_status = new_sifted_ekk_instance.solve();
+    assert(return_status == HighsStatus::kOk);
     sifted_lp.moveBackLpAndUnapplyScaling(sifted_ekk_instance.lp_);
+    new_sifted_lp.moveBackLpAndUnapplyScaling(new_sifted_ekk_instance.lp_);
     last_algorithm = sifted_ekk_instance.exit_algorithm_;
 
     updateIncumbentData(sifted_solver_object, sifted_list);
+    updateIncumbentData(new_sifted_solver_object, sifted_list);
+
     sifted_ekk_instance.clear();
+    new_sifted_ekk_instance.clear();
     if (sifting_iter > 100) break;
   }
 
@@ -126,13 +164,14 @@ void HEkk::putFinalBasisStatus(HighsLpSolverObject& sifted_solver_object,
 HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
                                HighsLpSolverObject& sifted_solver_object,
                                std::vector<HighsInt>& sifted_list,
-                               std::vector<bool>& in_sifted_list) {
+                               std::vector<bool>& in_sifted_list,
+			       const bool new_style,
+			       const bool first_sifted_lp) {
   HighsLp& sifted_lp = sifted_solver_object.lp_;
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
-  const bool first_sifted_list = sifted_list.size() == 0;
   const bool primal_feasible = info_.num_primal_infeasibilities == 0;
-  if (!primal_feasible) assert(first_sifted_list);
-  if (first_sifted_list) {
+  if (!primal_feasible) assert(first_sifted_lp);
+  if (first_sifted_lp) {
     assert(sifted_basis.col_status.size() == 0);
     assert(sifted_lp.col_cost_.size() == 0);
     assert(sifted_lp.col_lower_.size() == 0);
@@ -164,7 +203,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
     if (basis_.nonbasicFlag_[iCol] == 0) {
       // Basic, so in sifted list
       assert(1 == 0);
-      assert(first_sifted_list);
+      assert(first_sifted_lp);
       num_add_to_sifted_list++;
       sifted_list.push_back(iCol);
       in_sifted_list[iCol] = true;
@@ -190,7 +229,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       HighsInt iRow = lp_.a_matrix_.index_[iEl];
       dual += lp_.a_matrix_.value_[iEl] * info_.workDual_[lp_.num_col_ + iRow];
     }
-    if (first_sifted_list) assert(std::fabs(dual - check_dual) < 1e-4);
+    if (first_sifted_lp) assert(std::fabs(dual - check_dual) < 1e-4);
     // Determine the dual infeasibility for this column
     const double lower = info_.workLower_[iCol];
     const double upper = info_.workUpper_[iCol];
