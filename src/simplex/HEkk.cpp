@@ -1336,6 +1336,10 @@ void HEkk::addColsToLp(const HighsInt num_new_col,
   this->status_.has_ar_matrix = false;
   
   if (this->status_.has_nla) this->simplex_nla_.addCols(&this->lp_);
+
+  // Update the LP and matrix column dimension
+  this->lp_.num_col_ += num_new_col;
+  this->lp_.a_matrix_.num_col_ = this->lp_.num_col_;
   
 }
 
