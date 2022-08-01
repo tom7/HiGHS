@@ -177,7 +177,7 @@ HighsStatus Highs::addColsInterface(
   invalidateModelStatusSolutionAndInfo();
 
   // Determine any implications for simplex data
-  ekk_instance_.addCols(lp, local_a_matrix);
+  ekk_instance_.addColsToNla(lp, local_a_matrix);
   return return_status;
 }
 

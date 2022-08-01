@@ -78,9 +78,16 @@ class HEkk {
   void putIterate();
   HighsStatus getIterate();
 
-  void addCols(const HighsLp& lp, const HighsSparseMatrix& scaled_a_matrix);
+  void addColsToLp(const HighsInt num_new_col,
+		   const std::vector<double>& new_col_cost,
+		   const std::vector<double>& new_col_lower,
+		   const std::vector<double>& new_col_upper,
+		   const HighsSparseMatrix& new_a_matrix,
+		   const std::vector<HighsBasisStatus>& new_col_status);
+  void addColsToNla(const HighsLp& lp, const HighsSparseMatrix& scaled_a_matrix);
   void addRows(const HighsLp& lp, const HighsSparseMatrix& scaled_ar_matrix);
   void deleteCols(const HighsIndexCollection& index_collection);
+  void deleteNonbasicColsFromLp(const HighsIndexCollection& index_collection);
   void deleteRows(const HighsIndexCollection& index_collection);
   void unscaleSimplex(const HighsLp& incumbent_lp);
   double factorSolveError();

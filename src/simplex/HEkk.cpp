@@ -431,10 +431,13 @@ void HEkk::ftran(HVector& rhs, const double expected_density) {
 }
 
 void HEkk::moveLp(HighsLpSolverObject& solver_object) {
-  // Move the incumbent LP to EKK
+  // Move the incumbent LP to Ekk: need solver_object for LP, options
+  // and timer
   HighsLp& incumbent_lp = solver_object.lp_;
   this->lp_ = std::move(incumbent_lp);
   incumbent_lp.is_moved_ = true;
+  // Just received an LP, so check that this LP isn't moved
+  assert(!this->lp_.is_moved_);  
   //
   // Invalidate the row-wise matrix
   this->status_.has_ar_matrix = false;
@@ -1281,8 +1284,63 @@ HighsStatus HEkk::setBasis(const HighsBasis& highs_basis) {
   return HighsStatus::kOk;
 }
 
-void HEkk::addCols(const HighsLp& lp,
-                   const HighsSparseMatrix& scaled_a_matrix) {
+void HEkk::addColsToLp(const HighsInt num_new_col,
+		       const std::vector<double>& new_col_cost,
+		       const std::vector<double>& new_col_lower,
+		       const std::vector<double>& new_col_upper,
+		       const HighsSparseMatrix& new_a_matrix,
+		       const std::vector<HighsBasisStatus>& new_col_status) {
+  assert(num_new_col>=0);
+  if (num_new_col == 0) return;
+  // Adds columns to the incumbent LP, assuming that no scaling needs
+  // to be done
+  //
+  // Make sure that the LP hasn't been moved
+  assert(!this->lp_.is_moved_);
+  const HighsInt new_num_tot = this->lp_.num_col_ + num_new_col + this->lp_.num_row_;
+  this->basis_.nonbasicFlag_.resize(new_num_tot);
+  this->basis_.nonbasicMove_.resize(new_num_tot);
+  // Shift the row indices in the basis and work info
+  for (HighsInt iRow = this->lp_.num_row_-1; iRow >= 0; iRow--) {
+    HighsInt iVar = this->basis_.basicIndex_[iRow];
+    if (iVar > this->lp_.num_col_)
+      this->basis_.basicIndex_[iRow] += num_new_col;
+    iVar = this->lp_.num_col_ + iRow;
+    this->basis_.nonbasicFlag_[iVar+num_new_col] =
+      this->basis_.nonbasicFlag_[iVar];
+    this->basis_.nonbasicMove_[iVar+num_new_col] =
+      this->basis_.nonbasicMove_[iVar];
+    //    this->lp_.info_.workCost[iVar+num_new_col] = this->lp_.info_.workCost[iVar];
+    //    this->lp_.info_.workDual[iVar+num_new_col] = this->lp_.info_.workDual[iVar];
+    //    this->lp_.info_.work@[iVar+num_new_col] = this->lp_.info_.work@[iVar];
+    //    this->lp_.info_.workLower[iVar+num_new_col] = this->lp_.info_.workLower[iVar];
+    //    this->lp_.info_.workUpper[iVar+num_new_col] = this->lp_.info_.workUpper[iVar];
+    //    this->lp_.info_.work@[iVar+num_new_col] = this->lp_.info_.work@[iVar];
+  }
+  
+  assert(new_a_matrix.format_ == MatrixFormat::kColwise);
+  assert(this->lp_.a_matrix_.format_ = MatrixFormat::kColwise);
+  for (HighsInt iCol = 0; iCol < num_new_col; iCol++) {
+    this->lp_.col_cost_.push_back(new_col_cost[iCol]);
+    this->lp_.col_lower_.push_back(new_col_lower[iCol]);
+    this->lp_.col_upper_.push_back(new_col_upper[iCol]);
+    for (HighsInt iEl = new_a_matrix.start_[iCol];
+	 iEl < new_a_matrix.start_[iCol + 1]; iEl++) {
+      this->lp_.a_matrix_.index_.push_back(new_a_matrix.index_[iEl]);
+      this->lp_.a_matrix_.value_.push_back(new_a_matrix.value_[iEl]);
+    }
+    this->lp_.a_matrix_.start_.push_back(this->lp_.a_matrix_.index_.size());
+    
+  }
+  // Invalidate the row-wise matrix
+  this->status_.has_ar_matrix = false;
+  
+  if (this->status_.has_nla) this->simplex_nla_.addCols(&this->lp_);
+  
+}
+
+void HEkk::addColsToNla(const HighsLp& lp,
+			const HighsSparseMatrix& scaled_a_matrix) {
   // Should be extendSimplexLpRandomVectors
   //  if (valid_simplex_basis)
   //    appendBasicRowsToBasis(simplex_lp, simplex_basis, XnumNewRow);
@@ -1319,6 +1377,10 @@ void HEkk::addRows(const HighsLp& lp,
   // consistent with simplex basis information
   this->lp_.num_row_ = lp.num_row_;
   this->updateStatus(LpAction::kNewRows);
+}
+
+void HEkk::deleteNonbasicColsFromLp(const HighsIndexCollection& index_collection) {
+
 }
 
 void HEkk::deleteCols(const HighsIndexCollection& index_collection) {
