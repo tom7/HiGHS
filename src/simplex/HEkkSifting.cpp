@@ -25,8 +25,6 @@ HighsStatus HEkk::sifting() {
   // Need to start from a primal feasible solution
   assert(info_.num_primal_infeasibilities >= 0);
 
-
-
   HighsInt sifted_list_max_count = lp_.num_row_;
 
   std::vector<HighsInt> sifted_list;
@@ -52,8 +50,9 @@ HighsStatus HEkk::sifting() {
   HighsInfo new_sifted_highs_info;
   HighsOptions new_sifted_options = *options_;
   HighsLpSolverObject new_sifted_solver_object(
-      new_sifted_lp, new_sifted_basis, new_sifted_solution, new_sifted_highs_info,
-      new_sifted_ekk_instance, new_sifted_options, *timer_);
+      new_sifted_lp, new_sifted_basis, new_sifted_solution,
+      new_sifted_highs_info, new_sifted_ekk_instance, new_sifted_options,
+      *timer_);
 
   // Prevent recursive sifting!
   sifted_options.sifting_strategy = kSiftingStrategyOff;
@@ -67,14 +66,14 @@ HighsStatus HEkk::sifting() {
 
   HighsInt sifting_iter = 0;
   bool first_sifted_lp = true;
-  const bool new_approach = true;  
+  const bool new_approach = true;
   for (;;) {
     HighsInt num_add_to_sifted_list =
-      addToSiftedList(lp_.num_row_, sifted_solver_object, sifted_list, in_sifted_list, !new_approach,
-		      first_sifted_lp);
+        addToSiftedList(lp_.num_row_, sifted_solver_object, sifted_list,
+                        in_sifted_list, !new_approach, first_sifted_lp);
     HighsInt new_num_add_to_sifted_list =
-      addToSiftedList(lp_.num_row_, new_sifted_solver_object, new_sifted_list, new_in_sifted_list, new_approach,
-		      first_sifted_lp);
+        addToSiftedList(lp_.num_row_, new_sifted_solver_object, new_sifted_list,
+                        new_in_sifted_list, new_approach, first_sifted_lp);
     assert(num_add_to_sifted_list == new_num_add_to_sifted_list);
     if (num_add_to_sifted_list == 0) {
       highsLogUser(options_->log_options, HighsLogType::kInfo,
@@ -98,7 +97,8 @@ HighsStatus HEkk::sifting() {
     if (!first_sifted_lp) {
       return_status = sifted_ekk_instance.setBasis(sifted_solver_object.basis_);
       assert(return_status == HighsStatus::kOk);
-      return_status = new_sifted_ekk_instance.setBasis(new_sifted_solver_object.basis_);
+      return_status =
+          new_sifted_ekk_instance.setBasis(new_sifted_solver_object.basis_);
       assert(return_status == HighsStatus::kOk);
     }
     return_status = sifted_ekk_instance.solve();
@@ -115,15 +115,20 @@ HighsStatus HEkk::sifting() {
 
     highsLogUser(options_->log_options, HighsLogType::kInfo,
                  "Sifting iter %3d: LP has %6d rows and %9d columns. "
-		 "After %6d simplex iters: %6d primal and %6d dual infeas; obj = %15.8g\n",
+                 "After %6d simplex iters: %6d primal and %6d dual infeas; obj "
+                 "= %15.8g\n",
                  (int)sifting_iter, (int)sifted_solver_object.lp_.num_row_,
-                 (int)sifted_solver_object.lp_.num_col_,
-		 (int)iteration_count_, sifted_ekk_instance.info_.updated_primal_objective_value,
-		 (int)info_.num_primal_infeasibilities,
-		 (int)info_.num_dual_infeasibilities);
-    assert(std::fabs(sifted_ekk_instance.info_.updated_primal_objective_value-
-		     new_sifted_ekk_instance.info_.updated_primal_objective_value) /
-	   std::max(std::fabs(sifted_ekk_instance.info_.updated_primal_objective_value), 1.0) < 1e-8);
+                 (int)sifted_solver_object.lp_.num_col_, (int)iteration_count_,
+                 sifted_ekk_instance.info_.updated_primal_objective_value,
+                 (int)info_.num_primal_infeasibilities,
+                 (int)info_.num_dual_infeasibilities);
+    assert(std::fabs(
+               sifted_ekk_instance.info_.updated_primal_objective_value -
+               new_sifted_ekk_instance.info_.updated_primal_objective_value) /
+               std::max(std::fabs(sifted_ekk_instance.info_
+                                      .updated_primal_objective_value),
+                        1.0) <
+           1e-8);
 
     sifted_ekk_instance.clear();
     new_sifted_ekk_instance.clear();
@@ -174,8 +179,8 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
                                HighsLpSolverObject& sifted_solver_object,
                                std::vector<HighsInt>& sifted_list,
                                std::vector<bool>& in_sifted_list,
-			       const bool new_style,
-			       const bool first_sifted_lp) {
+                               const bool new_style,
+                               const bool first_sifted_lp) {
   HighsLp& sifted_lp = sifted_solver_object.lp_;
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
   const bool primal_feasible = info_.num_primal_infeasibilities == 0;
@@ -255,12 +260,13 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       // Compute the dual for this column
       dual = info_.workCost_[iCol];
       for (HighsInt iEl = lp_.a_matrix_.start_[iCol];
-	   iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
-	HighsInt iRow = lp_.a_matrix_.index_[iEl];
-	dual += lp_.a_matrix_.value_[iEl] * info_.workDual_[lp_.num_col_ + iRow];
+           iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
+        HighsInt iRow = lp_.a_matrix_.index_[iEl];
+        dual +=
+            lp_.a_matrix_.value_[iEl] * info_.workDual_[lp_.num_col_ + iRow];
       }
       if (first_sifted_lp)
-	assert(std::fabs(dual - info_.workDual_[iCol]) < 1e-4);
+        assert(std::fabs(dual - info_.workDual_[iCol]) < 1e-4);
     }
     // Determine the dual infeasibility for this column
     const double lower = info_.workLower_[iCol];
@@ -287,7 +293,8 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
     // columns to the sifted list, unless the sifted list is approaching
     // the number of columns in the LP
     HighsRandom random;
-    const bool use_random = sifted_list.size() + 2*max_add_to_sifted_list < lp_.num_col_;
+    const bool use_random =
+        sifted_list.size() + 2 * max_add_to_sifted_list < lp_.num_col_;
     assert(use_random);
     HighsInt iCol = -1;
     for (;;) {
@@ -321,10 +328,11 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       // has reached max_add_to_sifted_list, or if the sifted list
       // contains all columns
       if (num_add_to_sifted_list == max_add_to_sifted_list ||
-	  sifted_list.size() >= lp_.num_col_) break;
+          sifted_list.size() >= lp_.num_col_)
+        break;
     }
   } else {
-    // Sort any candidates for the sifted list 
+    // Sort any candidates for the sifted list
     HighsInt heap_num_en = heap_index.size() - 1;
     assert(heap_num_en >= 0);
     HighsInt sifted_list_count = sifted_list.size();

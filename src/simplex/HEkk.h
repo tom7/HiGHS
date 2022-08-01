@@ -126,8 +126,7 @@ class HEkk {
                            HighsLpSolverObject& sifted_solver_object,
                            std::vector<HighsInt>& sifted_list,
                            std::vector<bool>& in_sifted_list,
-			   const bool new_style,
-			   const bool first_sifted_lp);
+                           const bool new_style, const bool first_sifted_lp);
   void purgeSiftedList(const HighsInt num_purge_from_sifted_list,
                        HighsLpSolverObject& sifted_solver_object,
                        std::vector<HighsInt>& sifted_list,
