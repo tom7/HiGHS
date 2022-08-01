@@ -179,7 +179,10 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
     assert(sifted_lp.row_lower_.size() == 0);
     assert(sifted_lp.row_upper_.size() == 0);
   }
-  if (primal_feasible) {
+  const bool check_duals = true;
+  if (check_duals && primal_feasible) {
+    // Check the computation of column duals by re-computing the duals
+    // for sifted columns
     for (HighsInt iX = 0; iX < sifted_list.size(); iX++) {
       HighsInt iCol = sifted_list[iX];
       double dual = info_.workCost_[iCol];
@@ -200,8 +203,21 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
   heap_value.push_back(0);
   for (HighsInt iCol = 0; iCol < lp_.num_col_; iCol++) {
     if (in_sifted_list[iCol]) continue;
+    // Not in the sifted list, so consider adding this column
+    //
+    // A basic column must be added - but this should only happen when
+    // setting up the first sifted LP
+    //
+    // For a nonbasic column
+    //
+    // ... if the basis is primal feasible and the column is dual
+    // infeasible, add the index and dual merit to the heap
+    //
+    // ... if the basis is not primal feasible, the sifted list is a
+    // random selection of columns constructed in a later loop
     if (basis_.nonbasicFlag_[iCol] == 0) {
-      // Basic, so in sifted list
+      // Basic, so this must be the first LP and column must be added
+      // to the sifted list.
       assert(1 == 0);
       assert(first_sifted_lp);
       num_add_to_sifted_list++;
@@ -219,17 +235,24 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       sifted_basis.col_status.push_back(HighsBasisStatus::kBasic);
       continue;
     }
+    // If not primal feasible, the sifted list is a random selection
+    // of columns constructed in a later loop
     if (!primal_feasible) continue;
     // Nonbasic, and not in sifted list, so possible new entry
-    const double check_dual = info_.workDual_[iCol];
-    // Compute the dual for this column
-    double dual = info_.workCost_[iCol];
-    for (HighsInt iEl = lp_.a_matrix_.start_[iCol];
-         iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
-      HighsInt iRow = lp_.a_matrix_.index_[iEl];
-      dual += lp_.a_matrix_.value_[iEl] * info_.workDual_[lp_.num_col_ + iRow];
+    //
+    // Dual is known for first sifted LP
+    double dual = info_.workDual_[iCol];
+    if (check_duals || !first_sifted_lp) {
+      // Compute the dual for this column
+      dual = info_.workCost_[iCol];
+      for (HighsInt iEl = lp_.a_matrix_.start_[iCol];
+	   iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
+	HighsInt iRow = lp_.a_matrix_.index_[iEl];
+	dual += lp_.a_matrix_.value_[iEl] * info_.workDual_[lp_.num_col_ + iRow];
+      }
+      if (first_sifted_lp)
+	assert(std::fabs(dual - info_.workDual_[iCol]) < 1e-4);
     }
-    if (first_sifted_lp) assert(std::fabs(dual - check_dual) < 1e-4);
     // Determine the dual infeasibility for this column
     const double lower = info_.workLower_[iCol];
     const double upper = info_.workUpper_[iCol];
@@ -243,20 +266,29 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       dual_infeasibility = -basis_.nonbasicMove_[iCol] * dual;
     }
     if (dual_infeasibility > options_->dual_feasibility_tolerance) {
+      // Dual infeasible, so store the index and dual merit
       heap_index.push_back(iCol);
       heap_value.push_back(dual_infeasibility);
     }
   }
+  // sifted list contains basic columns and, if primal feasible, a
+  // selection of candidates for the sifted list is ready for sorting
   if (!primal_feasible) {
-    // Construct an LP containing any basic columns and a random
-    // collection of nonbasic columns
+    // Add a random collection of max_add_to_sifted_list nonbasic
+    // columns to the sifted list, unless the sifted list is approaching
+    // the number of columns in the LP
     HighsRandom random;
+    const bool use_random = sifted_list.size() + 2*max_add_to_sifted_list < lp_.num_col_;
+    assert(use_random);
+    HighsInt iCol = -1;
     for (;;) {
-      HighsInt iCol = random.integer(lp_.num_col_);
+      iCol = use_random ? random.integer(lp_.num_col_) : iCol++;
       if (in_sifted_list[iCol]) continue;
+      // Add to sifted list
       num_add_to_sifted_list++;
       sifted_list.push_back(iCol);
       in_sifted_list[iCol] = true;
+      // ToDo Different for new_style
       sifted_lp.col_cost_.push_back(info_.workCost_[iCol]);
       sifted_lp.col_lower_.push_back(info_.workLower_[iCol]);
       sifted_lp.col_upper_.push_back(info_.workUpper_[iCol]);
@@ -276,24 +308,35 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       } else {
         sifted_basis.col_status.push_back(HighsBasisStatus::kZero);
       }
-      if (num_add_to_sifted_list == max_add_to_sifted_list) break;
+      // Break out if the number of columns added to the sifted list
+      // has reached max_add_to_sifted_list, or if the sifted list
+      // contains all columns
+      if (num_add_to_sifted_list == max_add_to_sifted_list ||
+	  sifted_list.size() >= lp_.num_col_) break;
     }
   } else {
+    // Sort any candidates for the sifted list 
     HighsInt heap_num_en = heap_index.size() - 1;
     assert(heap_num_en >= 0);
     HighsInt sifted_list_count = sifted_list.size();
     if (heap_num_en == 0) {
-      // Optimal!
+      // No dual infeasibilities, so should be optimal!
+      assert(primal_feasible);
       assert(num_add_to_sifted_list == 0);
       return num_add_to_sifted_list;
     }
-    // There are dual infeasibilities
+    // There are dual infeasibilities, so sort by increasing dual
+    // merit - since decreasing sort isn't available.
     maxheapsort(&heap_value[0], &heap_index[0], heap_num_en);
+    // Take from the end of the heap until number of columns added to
+    // the sifted list has reached max_add_to_sifted_list, or all heap
+    // entries have been added
     for (HighsInt iEl = heap_num_en; iEl > 0; iEl--) {
       HighsInt iCol = heap_index[iEl];
       num_add_to_sifted_list++;
       sifted_list.push_back(iCol);
       in_sifted_list[iCol] = true;
+      // ToDo Different for new_style
       sifted_lp.col_cost_.push_back(info_.workCost_[iCol]);
       sifted_lp.col_lower_.push_back(info_.workLower_[iCol]);
       sifted_lp.col_upper_.push_back(info_.workUpper_[iCol]);
@@ -316,6 +359,8 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       if (num_add_to_sifted_list == max_add_to_sifted_list) break;
     }
   }
+  // Determine the row activity corresponding to columns not in the
+  // sifted list so that the row bounds can be modified appropriately
   std::vector<double> unsifted_row_activity;
   unsifted_row_activity.assign(lp_.num_row_, 0);
   for (HighsInt iCol = 0; iCol < lp_.num_col_; iCol++) {
@@ -327,6 +372,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       unsifted_row_activity[iRow] += value * lp_.a_matrix_.value_[iEl];
     }
   }
+  // ToDo Different for new_style
   sifted_lp.row_lower_.resize(lp_.num_row_);
   sifted_lp.row_upper_.resize(lp_.num_row_);
   for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++) {
@@ -336,6 +382,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
     sifted_lp.row_upper_[iRow] =
         -info_.workLower_[iVar] - unsifted_row_activity[iRow];
   }
+  // Set the dimensions of the sifted LP
   sifted_lp.num_col_ = sifted_lp.col_lower_.size();
   sifted_lp.num_row_ = sifted_lp.row_lower_.size();
   assert(sifted_lp.num_col_ == sifted_list.size());
