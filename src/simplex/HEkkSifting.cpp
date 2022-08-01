@@ -87,10 +87,6 @@ HighsStatus HEkk::sifting() {
     assert(okSiftedList(new_sifted_list, new_in_sifted_list));
     first_sifted_lp = false;
     sifting_iter++;
-    highsLogUser(options_->log_options, HighsLogType::kInfo,
-                 "Sifting iteration %3d: LP has %6d rows and %9d columns\n",
-                 (int)sifting_iter, (int)sifted_solver_object.lp_.num_row_,
-                 (int)sifted_solver_object.lp_.num_col_);
     const bool write_lp = false;
     if (write_lp) {
       HighsModel model;
@@ -109,12 +105,25 @@ HighsStatus HEkk::sifting() {
     assert(return_status == HighsStatus::kOk);
     return_status = new_sifted_ekk_instance.solve();
     assert(return_status == HighsStatus::kOk);
+
     sifted_lp.moveBackLpAndUnapplyScaling(sifted_ekk_instance.lp_);
     new_sifted_lp.moveBackLpAndUnapplyScaling(new_sifted_ekk_instance.lp_);
     last_algorithm = sifted_ekk_instance.exit_algorithm_;
 
     updateIncumbentData(sifted_solver_object, sifted_list);
     updateIncumbentData(new_sifted_solver_object, sifted_list);
+
+    highsLogUser(options_->log_options, HighsLogType::kInfo,
+                 "Sifting iter %3d: LP has %6d rows and %9d columns. "
+		 "After %6d simplex iters: %6d primal and %6d dual infeas; obj = %15.8g\n",
+                 (int)sifting_iter, (int)sifted_solver_object.lp_.num_row_,
+                 (int)sifted_solver_object.lp_.num_col_,
+		 (int)iteration_count_, sifted_ekk_instance.info_.updated_primal_objective_value,
+		 (int)info_.num_primal_infeasibilities,
+		 (int)info_.num_dual_infeasibilities);
+    assert(std::fabs(sifted_ekk_instance.info_.updated_primal_objective_value-
+		     new_sifted_ekk_instance.info_.updated_primal_objective_value) /
+	   std::max(std::fabs(sifted_ekk_instance.info_.updated_primal_objective_value), 1.0) < 1e-8);
 
     sifted_ekk_instance.clear();
     new_sifted_ekk_instance.clear();
@@ -469,6 +478,8 @@ void HEkk::updateIncumbentData(HighsLpSolverObject& sifted_solver_object,
   }
   info_.num_primal_infeasibilities =
       sifted_ekk_instance.info_.num_primal_infeasibilities;
+  info_.num_dual_infeasibilities =
+      sifted_ekk_instance.info_.num_dual_infeasibilities;
   iteration_count_ += sifted_ekk_instance.iteration_count_;
   info_.dual_phase1_iteration_count +=
       sifted_ekk_instance.info_.dual_phase1_iteration_count;
