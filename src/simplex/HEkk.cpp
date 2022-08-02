@@ -1078,11 +1078,11 @@ HighsStatus HEkk::solve(const bool force_phase2) {
   info_.allow_cost_perturbation = true;
   info_.allow_bound_perturbation = true;
 
-  chooseSimplexStrategyThreads(*options_, info_);
+  chooseSimplexStrategyThreads(*options_, info_, force_phase2);
   HighsInt& simplex_strategy = info_.simplex_strategy;
-  bool use_sifting = info_.use_sifting && !force_phase2;
+  if (force_phase2) assert(!info_.use_sifting);
   // Solve according to strategy
-  if (use_sifting) {
+  if (info_.use_sifting) {
     call_status = sifting();
     assert(called_return_from_solve_);
     return_status = interpretCallStatus(options_->log_options, call_status,
@@ -1790,7 +1790,8 @@ void HEkk::initialiseSimplexLpRandomVectors() {
 }
 
 void HEkk::chooseSimplexStrategyThreads(const HighsOptions& options,
-                                        HighsSimplexInfo& info) {
+                                        HighsSimplexInfo& info,
+					const bool force_phase2) {
   // Ensure that this is not called with an optimal basis
   assert(info.num_dual_infeasibilities > 0 ||
          info.num_primal_infeasibilities > 0);
@@ -1815,6 +1816,8 @@ void HEkk::chooseSimplexStrategyThreads(const HighsOptions& options,
                   (options.sifting_strategy == kSiftingStrategyOn ||
                    (options.sifting_strategy == kSiftingStrategyChoose &&
                     lp_.num_col_ >= kSiftingProfileFactor * lp_.num_row_));
+    // Prevent sifting if force_phase2 is true
+    if (force_phase2) use_sifting = false;
     if (use_sifting) {
       highsLogUser(options_->log_options, HighsLogType::kInfo,
                    "LP has %d cols and %d rows so use_sifting\n",
@@ -2415,6 +2418,15 @@ bool HEkk::lpFactorRowCompatible(HighsInt expectedNumRow) {
                 (int)this->simplex_nla_.factor_.num_row);
   }
   return consistent_num_row;
+}
+
+void HEkk::zeroIterationCounts() {
+  iteration_count_ = 0;
+  info_.dual_phase1_iteration_count = 0;
+  info_.dual_phase2_iteration_count = 0;
+  info_.primal_phase1_iteration_count = 0;
+  info_.primal_phase2_iteration_count = 0;
+  info_.primal_bound_swap = 0;
 }
 
 void HEkk::setNonbasicMove() {

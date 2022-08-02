@@ -18,7 +18,7 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
     highs.setOptionValue("presolve", kHighsOffString);
     highs.setOptionValue("sifting_strategy", kSiftingStrategyOff);
     const double profile = 10;
-    const HighsInt num_row = 1;
+    const HighsInt num_row = 10;
     const HighsInt num_col = num_row * profile;
     const HighsInt min_nz_per_col = std::min((HighsInt)3, num_row);
     const double density = std::max(0.2, (1.0 * min_nz_per_col) / num_row);

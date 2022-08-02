@@ -1356,6 +1356,7 @@ void Highs::zeroIterationCounts() {
   info_.ipm_iteration_count = 0;
   info_.crossover_iteration_count = 0;
   info_.qp_iteration_count = 0;
+  ekk_instance_.zeroIterationCounts();
 }
 
 HighsStatus Highs::getDualRayInterface(bool& has_dual_ray,

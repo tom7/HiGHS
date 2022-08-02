@@ -114,6 +114,7 @@ class HEkk {
   void initialisePartitionedRowwiseMatrix();
   bool lpFactorRowCompatible();
   bool lpFactorRowCompatible(HighsInt expectedNumRow);
+  void zeroIterationCounts();
 
   // Interface methods
   void appendColsToVectors(const HighsInt num_new_col,
@@ -145,7 +146,8 @@ class HEkk {
                     const std::vector<bool>& in_sifted_list);
 
   void chooseSimplexStrategyThreads(const HighsOptions& options,
-                                    HighsSimplexInfo& info);
+                                    HighsSimplexInfo& info,
+				    const bool force_phase2);
   // Debug methods
   void debugInitialise();
   void debugReportInitialBasis();
@@ -325,6 +327,7 @@ class HEkk {
 
   double computeBasisCondition();
   void initialiseAnalysis();
+  
   std::string rebuildReason(const HighsInt rebuild_reason);
 
   void clearBadBasisChange(

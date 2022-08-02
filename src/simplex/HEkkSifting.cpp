@@ -25,7 +25,7 @@ HighsStatus HEkk::sifting() {
   // Need to start from a primal feasible solution
   assert(info_.num_primal_infeasibilities >= 0);
 
-  const bool test_new_style = true;
+  const bool test_new_style = false;
 
   HighsInt sifted_list_max_count = lp_.num_row_;
 
@@ -123,15 +123,15 @@ HighsStatus HEkk::sifting() {
                  "= %15.8g\n",
                  (int)sifting_iter, (int)sifted_solver_object.lp_.num_row_,
                  (int)sifted_solver_object.lp_.num_col_, (int)iteration_count_,
-                 sifted_ekk_instance.info_.updated_primal_objective_value,
+                 sifted_ekk_instance.info_.primal_objective_value,
                  (int)info_.num_primal_infeasibilities,
                  (int)info_.num_dual_infeasibilities);
     if (test_new_style) {
       assert(std::fabs(
-		       sifted_ekk_instance.info_.updated_primal_objective_value -
-		       new_sifted_ekk_instance.info_.updated_primal_objective_value) /
+		       sifted_ekk_instance.info_.primal_objective_value -
+		       new_sifted_ekk_instance.info_.primal_objective_value) /
 	     std::max(std::fabs(sifted_ekk_instance.info_
-				.updated_primal_objective_value),
+				.primal_objective_value),
 		      1.0) <
 	     1e-8);
     }
@@ -571,5 +571,5 @@ void HEkk::updateIncumbentData(HighsLpSolverObject& sifted_solver_object,
   }
   analysis_.simplex_iteration_count = iteration_count_;
   analysis_.objective_value =
-      sifted_ekk_instance.info_.updated_primal_objective_value;
+      sifted_ekk_instance.info_.primal_objective_value;
 }
