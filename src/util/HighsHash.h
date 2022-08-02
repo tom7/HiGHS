@@ -165,13 +165,11 @@ struct HighsHashHelpers {
   static int popcnt(uint64_t x) {
     constexpr uint64_t m1 = 0x5555555555555555ull;
     constexpr uint64_t m2 = 0x3333333333333333ull;
-    constexpr uint64_t m4 =
-        0x0f0f0f0f0f0f0f0full;
+    constexpr uint64_t m4 = 0x0f0f0f0f0f0f0f0full;
     constexpr uint64_t h01 = 0x0101010101010101ull;
 
     x -= (x >> 1) & m1;
-    x = (x & m2) +
-        ((x >> 2) & m2);
+    x = (x & m2) + ((x >> 2) & m2);
     x = (x + (x >> 4)) & m4;
 
     return (x * h01) >> 56;
@@ -797,6 +795,23 @@ struct HighsHashTableEntry {
   const K& key() const { return key_; }
   const V& value() const { return value_; }
   V& value() { return value_; }
+
+  template <typename Func>
+  auto forward(Func&& f) -> decltype(f(key_, value_)) {
+    const K& keyRef = key_;
+    return f(keyRef, value_);
+  }
+
+  template <typename Func>
+  auto forward(Func&& f) const -> decltype(f(key_)) {
+    const K& keyRef = key_;
+    return f(keyRef);
+  }
+
+  template <typename Func>
+  auto forward(Func&& f) const -> decltype(f(key_, value_)) {
+    return f(key_, value_);
+  }
 };
 
 template <typename T>
@@ -810,6 +825,16 @@ struct HighsHashTableEntry<T, void> {
 
   const T& key() const { return value_; }
   const T& value() const { return value_; }
+
+  template <typename Func>
+  auto forward(Func&& f) -> decltype(f(value_)) {
+    return f(value_);
+  }
+
+  template <typename Func>
+  auto forward(Func&& f) const -> decltype(f(value_)) {
+    return f(value_);
+  }
 };
 
 template <typename K, typename V = void>
@@ -833,8 +858,8 @@ class HighsHashTable {
 
   using Entry = HighsHashTableEntry<K, V>;
   using KeyType = K;
-  using ValueType = typename std::remove_reference<decltype(
-      reinterpret_cast<Entry*>(0x1)->value())>::type;
+  using ValueType =
+      typename std::remove_reference<decltype(Entry().value())>::type;
 
   std::unique_ptr<Entry, OpNewDeleter> entries;
   std::unique_ptr<u8[]> metadata;

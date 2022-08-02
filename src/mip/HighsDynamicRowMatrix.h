@@ -64,17 +64,13 @@ class HighsDynamicRowMatrix {
   template <typename Func>
   void forEachPositiveColumnEntry(HighsInt col, Func&& f) const {
     colLists[2 * col].for_each(
-        [&](const HighsHashTableEntry<HighsInt, double>& entry) {
-          return !f(entry.key(), entry.value());
-        });
+        [&](HighsInt row, double val) { return !f(row, val); });
   }
 
   template <typename Func>
   void forEachNegativeColumnEntry(HighsInt col, Func&& f) const {
     colLists[2 * col + 1].for_each(
-        [&](const HighsHashTableEntry<HighsInt, double>& entry) {
-          return !f(entry.key(), entry.value());
-        });
+        [&](HighsInt row, double val) { return !f(row, val); });
   }
 
   HighsInt getNumRows() const { return ARrange_.size(); }
