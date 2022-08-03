@@ -20,6 +20,8 @@
 #include "util/HighsRandom.h"
 #include "util/HighsSort.h"
 
+const bool check_duals = true;
+
 HighsStatus HEkk::sifting() {
   HighsStatus return_status = HighsStatus::kOk;
   // Need to start from a primal feasible solution
@@ -63,8 +65,8 @@ HighsStatus HEkk::sifting() {
   //  sifted_options.highs_analysis_level = 4;
   SimplexAlgorithm last_algorithm = SimplexAlgorithm::kNone;
 
-  getInitialRowStatus(sifted_solver_object);
-  getInitialRowStatus(new_sifted_solver_object);
+  getInitialRowStatusAndDual(sifted_solver_object);
+  getInitialRowStatusAndDual(new_sifted_solver_object);
 
   HighsInt sifting_iter = 0;
   bool first_sifted_lp = true;
@@ -85,6 +87,8 @@ HighsStatus HEkk::sifting() {
                    "Optimal after %d sifting iterations\n", (int)sifting_iter);
       model_status_ = HighsModelStatus::kOptimal;
       exit_algorithm_ = last_algorithm;
+      getSiftedBasisSolution(new_sifted_solver_object,
+			     new_sifted_list);
       return returnFromSolve(HighsStatus::kOk);
     }
     assert(okSiftedList(sifted_list, in_sifted_list));
@@ -144,11 +148,14 @@ HighsStatus HEkk::sifting() {
   return HighsStatus::kError;
 }
 
-void HEkk::getInitialRowStatus(HighsLpSolverObject& sifted_solver_object) {
+void HEkk::getInitialRowStatusAndDual(HighsLpSolverObject& sifted_solver_object) {
   // Set up the initial basis status for rows
   assert(status_.has_basis);
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
   sifted_basis.row_status.resize(lp_.num_row_);
+  std::vector<double>& workDual = sifted_solver_object.ekk_instance_.info_.workDual_;
+  workDual.resize(lp_.num_row_);
+  
   for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++) {
     HighsInt iVar = lp_.num_col_ + iRow;
     if (basis_.nonbasicFlag_[iVar]) {
@@ -164,11 +171,12 @@ void HEkk::getInitialRowStatus(HighsLpSolverObject& sifted_solver_object) {
     } else {
       sifted_basis.row_status[iRow] = HighsBasisStatus::kBasic;
     }
+    workDual[iRow] = info_.workDual_[iVar];
   }
 }
 
-void HEkk::putFinalBasisStatus(HighsLpSolverObject& sifted_solver_object,
-                               const std::vector<HighsInt>& sifted_list) {
+void HEkk::getSiftedBasisSolution(HighsLpSolverObject& sifted_solver_object,
+				  const std::vector<HighsInt>& sifted_list) {
   /*
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
   for (HighsInt iX = 0; iX < sifted_list.size(); iX++) {
@@ -188,7 +196,9 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
                                const bool first_sifted_lp) {
   HighsLp& sifted_lp = sifted_solver_object.lp_;
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
+  HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
   const bool primal_feasible = info_.num_primal_infeasibilities == 0;
+  std::vector<double>& workDual = sifted_ekk_instance.info_.workDual_;
   if (!primal_feasible) assert(first_sifted_lp);
   if (first_sifted_lp) {
     assert(sifted_basis.col_status.size() == 0);
@@ -198,7 +208,6 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
     assert(sifted_lp.row_lower_.size() == 0);
     assert(sifted_lp.row_upper_.size() == 0);
   }
-  const bool check_duals = true;
   if (check_duals && primal_feasible) {
     // Check the computation of column duals by re-computing the duals
     // for sifted columns
@@ -209,9 +218,12 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
            iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
         HighsInt iRow = lp_.a_matrix_.index_[iEl];
         dual +=
-            lp_.a_matrix_.value_[iEl] * info_.workDual_[lp_.num_col_ + iRow];
+	  //            lp_.a_matrix_.value_[iEl] * info_.workDual_[lp_.num_col_ + iRow];
+	  lp_.a_matrix_.value_[iEl] * workDual[sifted_lp.num_col_ + iRow];
+	//	assert(workDual[sifted_lp.num_col_ + iRow] == info_.workDual_[lp_.num_col_ + iRow]);
       }
-      assert(std::fabs(dual - info_.workDual_[iCol]) < 1e-4);
+      //      assert(std::fabs(dual - info_.workDual_[iCol]) < 1e-4);
+      assert(std::fabs(dual - workDual[iX]) < 1e-4);
     }
   }
 
@@ -268,7 +280,9 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
            iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
         HighsInt iRow = lp_.a_matrix_.index_[iEl];
         dual +=
-            lp_.a_matrix_.value_[iEl] * info_.workDual_[lp_.num_col_ + iRow];
+	  //            lp_.a_matrix_.value_[iEl] * info_.workDual_[lp_.num_col_ + iRow];
+            lp_.a_matrix_.value_[iEl] * workDual[sifted_lp.num_col_ + iRow];
+	//	assert(workDual[sifted_lp.num_col_ + iRow] == info_.workDual_[lp_.num_col_ + iRow]);
       }
       if (first_sifted_lp)
         assert(std::fabs(dual - info_.workDual_[iCol]) < 1e-4);
@@ -493,55 +507,55 @@ void HEkk::updateIncumbentData(HighsLpSolverObject& sifted_solver_object,
   HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
   const HighsInt sifted_lp_num_col = sifted_list.size();
   const HighsInt sifted_lp_num_row = lp_.num_row_;
-  sifted_basis.col_status.resize(sifted_lp_num_col);
-  sifted_basis.row_status.resize(sifted_lp_num_row);
-  for (HighsInt iX = 0; iX < sifted_lp_num_col; iX++) {
-    const HighsInt iVar = sifted_list[iX];
-    if (sifted_ekk_instance.basis_.nonbasicFlag_[iX]) {
-      info_.workValue_[iVar] = sifted_ekk_instance.info_.workValue_[iX];
-      info_.workDual_[iVar] = sifted_ekk_instance.info_.workDual_[iX];
-      //      if (sifted_ekk_instance.basis_.nonbasicMove_[iX] > 0) {
-      //        sifted_basis.col_status[iX] = HighsBasisStatus::kLower;
-      //      } else if (sifted_ekk_instance.basis_.nonbasicMove_[iX] < 0) {
-      //        sifted_basis.col_status[iX] = HighsBasisStatus::kUpper;
-      //      } else if (sifted_ekk_instance.info_.workLower_[iX] ==
-      //                 sifted_ekk_instance.info_.workUpper_[iX]) {
-      //        sifted_basis.col_status[iX] = HighsBasisStatus::kLower;
-      //      } else {
-      //        sifted_basis.col_status[iX] = HighsBasisStatus::kZero;
-      //      }
-    } else {
-      //      sifted_basis.col_status[iX] = HighsBasisStatus::kBasic;
+  if (!new_style) {
+    sifted_basis.col_status.resize(sifted_lp_num_col);
+    sifted_basis.row_status.resize(sifted_lp_num_row);
+    for (HighsInt iX = 0; iX < sifted_lp_num_col; iX++) {
+      const HighsInt iVar = sifted_list[iX];
+      HighsBasisStatus status = HighsBasisStatus::kBasic;
+      if (sifted_ekk_instance.basis_.nonbasicFlag_[iX]) {
+	if (sifted_ekk_instance.basis_.nonbasicMove_[iX] > 0) {
+	  sifted_basis.col_status[iX] = HighsBasisStatus::kLower;
+	} else if (sifted_ekk_instance.basis_.nonbasicMove_[iX] < 0) {
+	  sifted_basis.col_status[iX] = HighsBasisStatus::kUpper;
+	} else if (sifted_ekk_instance.info_.workLower_[iX] ==
+		   sifted_ekk_instance.info_.workUpper_[iX]) {
+	  sifted_basis.col_status[iX] = HighsBasisStatus::kLower;
+	} else {
+	  sifted_basis.col_status[iX] = HighsBasisStatus::kZero;
+	}
+      } else {
+	sifted_basis.col_status[iX] = HighsBasisStatus::kBasic;
+      }
     }
-  }
-  for (HighsInt iRow = 0; iRow < sifted_lp_num_row; iRow++) {
-    const HighsInt iX = sifted_lp_num_col + iRow;
-    const HighsInt iVar = lp_.num_col_ + iRow;
-    if (sifted_ekk_instance.basis_.nonbasicFlag_[iX]) {
-      info_.workValue_[iVar] = sifted_ekk_instance.info_.workValue_[iX];
-      info_.workDual_[iVar] = sifted_ekk_instance.info_.workDual_[iX];
-      //      if (sifted_ekk_instance.basis_.nonbasicMove_[iX] > 0) {
-      //        sifted_basis.row_status[iRow] = HighsBasisStatus::kUpper;
-      //      } else if (sifted_ekk_instance.basis_.nonbasicMove_[iX] < 0) {
-      //        sifted_basis.row_status[iRow] = HighsBasisStatus::kLower;
-      //      } else if (sifted_ekk_instance.info_.workLower_[iX] ==
-      //                 sifted_ekk_instance.info_.workUpper_[iX]) {
-      //        sifted_basis.row_status[iRow] = HighsBasisStatus::kUpper;
-      //      } else {
-      //        sifted_basis.row_status[iRow] = HighsBasisStatus::kZero;
-      //      }
-    } else {
-      //      sifted_basis.row_status[iRow] = HighsBasisStatus::kBasic;
+    for (HighsInt iRow = 0; iRow < sifted_lp_num_row; iRow++) {
+      const HighsInt iX = sifted_lp_num_col + iRow;
+      const HighsInt iVar = lp_.num_col_ + iRow;
+      HighsBasisStatus status = HighsBasisStatus::kBasic;
+      if (sifted_ekk_instance.basis_.nonbasicFlag_[iX]) {
+	if (sifted_ekk_instance.basis_.nonbasicMove_[iX] > 0) {
+	  sifted_basis.row_status[iRow] = HighsBasisStatus::kUpper;
+	} else if (sifted_ekk_instance.basis_.nonbasicMove_[iX] < 0) {
+	  sifted_basis.row_status[iRow] = HighsBasisStatus::kLower;
+	} else if (sifted_ekk_instance.info_.workLower_[iX] ==
+		   sifted_ekk_instance.info_.workUpper_[iX]) {
+	  sifted_basis.row_status[iRow] = HighsBasisStatus::kUpper;
+	} else {
+	  sifted_basis.row_status[iRow] = HighsBasisStatus::kZero;
+	}
+      } else {
+	sifted_basis.row_status[iRow] = HighsBasisStatus::kBasic;
+      }
     }
   }
   // Set the values and duals for basic variables
-  info_.baseValue_ = sifted_ekk_instance.info_.baseValue_;
+  //  info_.baseValue_ = sifted_ekk_instance.info_.baseValue_;
   for (HighsInt iRow = 0; iRow < sifted_lp_num_row; iRow++) {
     const HighsInt iX = sifted_ekk_instance.basis_.basicIndex_[iRow];
     const HighsInt iVar = iX < sifted_lp_num_col
                               ? sifted_list[iX]
                               : lp_.num_col_ + (iX - sifted_lp_num_col);
-    info_.workDual_[iVar] = 0;
+    if (check_duals) info_.workDual_[iVar] = 0;
   }
   info_.num_primal_infeasibilities =
       sifted_ekk_instance.info_.num_primal_infeasibilities;
