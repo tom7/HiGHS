@@ -1083,10 +1083,12 @@ HighsStatus HEkk::solve(const bool force_phase2) {
   if (force_phase2) assert(!info_.use_sifting);
   // Solve according to strategy
   if (info_.use_sifting) {
+    highsLogUser(options_->log_options, HighsLogType::kInfo,
+                 "Using EKK sifting simplex solver\n");
     call_status = sifting();
     assert(called_return_from_solve_);
     return_status = interpretCallStatus(options_->log_options, call_status,
-                                        return_status, "HEkkDual::sifting");
+                                        return_status, "HEkk::sifting");
   } else if (simplex_strategy == kSimplexStrategyPrimal) {
     algorithm_name = "primal";
     reportSimplexPhaseIterations(options_->log_options, iteration_count_, info_,
