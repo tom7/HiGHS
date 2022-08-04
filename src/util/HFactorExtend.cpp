@@ -20,11 +20,12 @@
 
 using std::fabs;
 
-/*
-void HFactor::addCols(const HighsInt num_new_col) {
+void HFactor::addCols(const HighsInt new_num_col) {
   invalidAMatrixAction();
-  num_col += num_new_col;
+  num_col = new_num_col;
 }
+
+/*
 void HFactor::deleteNonbasicCols(const HighsInt num_deleted_col) {
   invalidAMatrixAction();
   num_col -= num_deleted_col;

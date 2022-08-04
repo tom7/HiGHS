@@ -1370,7 +1370,6 @@ void HEkk::addColsToLp(const HighsInt num_new_col,
   this->lp_.a_matrix_.num_col_ = this->lp_.num_col_;
 
   // Call to HSimplexNla::addCols
-  HighsSparseMatrix scaled_a_matrix;
   if (this->status_.has_nla) this->simplex_nla_.addCols(&this->lp_);
 }
 

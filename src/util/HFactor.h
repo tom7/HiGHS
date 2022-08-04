@@ -223,7 +223,7 @@ class HFactor {
    * @brief Updates instance with respect to new columns in the
    * constraint matrix (assuming columns are nonbasic)
    */
-  //  void addCols(const HighsInt num_new_col);
+  void addCols(const HighsInt new_num_col);
 
   /**
    * @brief Updates instance with respect to nonbasic columns in the

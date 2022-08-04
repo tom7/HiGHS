@@ -372,6 +372,7 @@ void HSimplexNla::addCols(const HighsLp* updated_lp) {
   // resized. The HFactor matrix isn't needed until reinversion has to
   // be performed
   setLpAndScalePointers(updated_lp);
+  factor_.addCols(updated_lp->num_col_);
 }
 
 void HSimplexNla::addRows(const HighsLp* updated_lp, HighsInt* basic_index,
@@ -381,8 +382,9 @@ void HSimplexNla::addRows(const HighsLp* updated_lp, HighsInt* basic_index,
   // Set the pointers for the LP, scaling and basic variables. The
   // HFactor matrix isn't needed until reinversion has to be performed
   setLpAndScalePointers(updated_lp);
-  basic_index_ = basic_index;
-  factor_.basic_index = basic_index;
+  setBasicIndexPointers(basic_index);
+  //  basic_index_ = basic_index;
+  //  factor_.basic_index = basic_index;
   factor_.addRows(scaled_ar_matrix);
 }
 
