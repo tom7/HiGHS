@@ -249,7 +249,10 @@ HighsDebugStatus HEkk::debugSimplex(const std::string message,
   std::string value_adjective;
   HighsLogType report_level;
 
-  // Check the nonbasic flags are all kNonbasicFlagTrue or kNonbasicFlagFalse
+  // Check the nonbasic flags are all kNonbasicFlagTrue or
+  // kNonbasicFlagFalse, and that there are the correct numbers of
+  // basic and nonbasic variables
+  HighsInt num_nonbasic = 0;
   for (HighsInt iVar = 0; iVar < num_tot; iVar++) {
     HighsInt flag = basis.nonbasicFlag_[iVar];
     bool flag_error = flag != kNonbasicFlagTrue && flag != kNonbasicFlagFalse;
@@ -263,6 +266,16 @@ HighsDebugStatus HEkk::debugSimplex(const std::string message,
       assert(!flag_error);
       return HighsDebugStatus::kLogicalError;
     }
+    if (flag == kNonbasicFlagTrue) num_nonbasic++;
+  }
+  if (num_nonbasic != num_col) {
+    highsLogDev(options.log_options, HighsLogType::kError,
+		"HEkk::debugSimplex - %s: Iteration %" HIGHSINT_FORMAT
+		" Number of nonbasic variables is %" HIGHSINT_FORMAT
+		", not  %" HIGHSINT_FORMAT "\n",
+		message.c_str(), iteration_count, num_nonbasic, num_col);
+    assert(num_nonbasic == num_col);
+    return HighsDebugStatus::kLogicalError;
   }
   const double primal_feasibility_tolerance =
       options.primal_feasibility_tolerance;

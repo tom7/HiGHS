@@ -27,7 +27,7 @@ HighsStatus HEkk::sifting() {
   // Need to start from a primal feasible solution
   assert(info_.num_primal_infeasibilities >= 0);
 
-  const bool test_new_style = false;
+  const bool test_new_style = true;
 
   HighsInt sifted_list_max_count = lp_.num_row_;
 
@@ -89,6 +89,9 @@ HighsStatus HEkk::sifting() {
       exit_algorithm_ = last_algorithm;
       getSiftedBasisSolution(new_sifted_solver_object,
 			     new_sifted_list);
+      this->updateStatus(LpAction::kNewBasis);
+      this->copyInvert(new_sifted_solver_object.ekk_instance_);
+      this->copyDualSteepestEdgeWeights(new_sifted_solver_object.ekk_instance_);
       return returnFromSolve(HighsStatus::kOk);
     }
     assert(okSiftedList(sifted_list, in_sifted_list));
@@ -177,15 +180,25 @@ void HEkk::getInitialRowStatusAndDual(HighsLpSolverObject& sifted_solver_object)
 
 void HEkk::getSiftedBasisSolution(HighsLpSolverObject& sifted_solver_object,
 				  const std::vector<HighsInt>& sifted_list) {
-  /*
-  HighsBasis& sifted_basis = sifted_solver_object.basis_;
-  for (HighsInt iX = 0; iX < sifted_list.size(); iX++) {
+  SimplexBasis& sifted_basis = sifted_solver_object.ekk_instance_.basis_;
+  const HighsInt sifted_lp_num_col = sifted_list.size();
+  const HighsInt sifted_lp_num_row = lp_.num_row_;
+  for (HighsInt iX = 0; iX < sifted_lp_num_col; iX++) {
     HighsInt iCol = sifted_list[iX];
-    if (sifted_basis.col_status[iCol] == HighsBasisStatus::kBasic) {
-      basis_.
+    basis_.nonbasicFlag_[iCol] = sifted_basis.nonbasicFlag_[iX];
+    basis_.nonbasicMove_[iCol] = sifted_basis.nonbasicMove_[iX];
+  }
+  const HighsInt var_offset = lp_.num_col_ - sifted_lp_num_col;
+  for (HighsInt iRow = 0; iRow < sifted_lp_num_row; iRow++) {
+    basis_.nonbasicFlag_[lp_.num_col_ + iRow] = sifted_basis.nonbasicFlag_[sifted_lp_num_col + iRow];
+    basis_.nonbasicMove_[lp_.num_col_ + iRow] = sifted_basis.nonbasicMove_[sifted_lp_num_col + iRow];
+    HighsInt iX = sifted_basis.basicIndex_[iRow];
+    if (iX < sifted_lp_num_col) {
+      basis_.basicIndex_[iRow] = sifted_list[iX];
+    } else {
+      basis_.basicIndex_[iRow] = var_offset + iX;
     }
   }
-  */
 }
 
 HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
@@ -197,11 +210,15 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
   HighsLp& sifted_lp = sifted_solver_object.lp_;
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
   HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
+  const HighsInt sifted_lp_num_col = sifted_list.size();
+  const HighsInt sifted_lp_num_row = lp_.num_row_;
   const bool primal_feasible = info_.num_primal_infeasibilities == 0;
   std::vector<double>& workDual = sifted_ekk_instance.info_.workDual_;
   if (!primal_feasible) assert(first_sifted_lp);
   if (first_sifted_lp) {
     assert(sifted_basis.col_status.size() == 0);
+    assert(sifted_lp.num_col_ == 0);
+    assert(sifted_lp.num_row_ == 0);
     assert(sifted_lp.col_cost_.size() == 0);
     assert(sifted_lp.col_lower_.size() == 0);
     assert(sifted_lp.col_upper_.size() == 0);
@@ -218,11 +235,8 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
            iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
         HighsInt iRow = lp_.a_matrix_.index_[iEl];
         dual +=
-	  //            lp_.a_matrix_.value_[iEl] * info_.workDual_[lp_.num_col_ + iRow];
-	  lp_.a_matrix_.value_[iEl] * workDual[sifted_lp.num_col_ + iRow];
-	//	assert(workDual[sifted_lp.num_col_ + iRow] == info_.workDual_[lp_.num_col_ + iRow]);
+	  lp_.a_matrix_.value_[iEl] * workDual[sifted_lp_num_col + iRow];
       }
-      //      assert(std::fabs(dual - info_.workDual_[iCol]) < 1e-4);
       assert(std::fabs(dual - workDual[iX]) < 1e-4);
     }
   }
@@ -280,9 +294,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
            iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
         HighsInt iRow = lp_.a_matrix_.index_[iEl];
         dual +=
-	  //            lp_.a_matrix_.value_[iEl] * info_.workDual_[lp_.num_col_ + iRow];
-            lp_.a_matrix_.value_[iEl] * workDual[sifted_lp.num_col_ + iRow];
-	//	assert(workDual[sifted_lp.num_col_ + iRow] == info_.workDual_[lp_.num_col_ + iRow]);
+            lp_.a_matrix_.value_[iEl] * workDual[sifted_lp_num_col + iRow];
       }
       if (first_sifted_lp)
         assert(std::fabs(dual - info_.workDual_[iCol]) < 1e-4);
@@ -417,14 +429,20 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
 	new_a_matrix.start_.push_back(new_a_matrix.index_.size());
       }
       assert(basis_.nonbasicFlag_[iCol]);
+      HighsBasisStatus status = HighsBasisStatus::kBasic;
       if (basis_.nonbasicMove_[iCol] > 0) {
-        sifted_basis.col_status.push_back(HighsBasisStatus::kLower);
+        status = HighsBasisStatus::kLower;
       } else if (basis_.nonbasicMove_[iCol] < 0) {
-        sifted_basis.col_status.push_back(HighsBasisStatus::kUpper);
+        status = HighsBasisStatus::kUpper;
       } else if (info_.workLower_[iCol] == info_.workUpper_[iCol]) {
-        sifted_basis.col_status.push_back(HighsBasisStatus::kLower);
+        status = HighsBasisStatus::kLower;
       } else {
-        sifted_basis.col_status.push_back(HighsBasisStatus::kZero);
+        status = HighsBasisStatus::kZero;
+      }
+      if (!new_style || first_sifted_lp) {
+	sifted_basis.col_status.push_back(status);
+      } else {
+	new_col_status.push_back(status);
       }
       if (num_add_to_sifted_list == max_add_to_sifted_list) break;
     }
@@ -432,7 +450,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
   // Determine the row activity corresponding to columns not in the
   // sifted list so that the row bounds can be modified appropriately
   std::vector<double> unsifted_row_activity;
-  unsifted_row_activity.assign(lp_.num_row_, 0);
+  unsifted_row_activity.assign(sifted_lp_num_row, 0);
   for (HighsInt iCol = 0; iCol < lp_.num_col_; iCol++) {
     if (in_sifted_list[iCol]) continue;
     double value = info_.workValue_[iCol];
@@ -443,9 +461,9 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
     }
   }
   if (!new_style || first_sifted_lp) {
-    sifted_lp.row_lower_.resize(lp_.num_row_);
-    sifted_lp.row_upper_.resize(lp_.num_row_);
-    for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++) {
+    sifted_lp.row_lower_.resize(sifted_lp_num_row);
+    sifted_lp.row_upper_.resize(sifted_lp_num_row);
+    for (HighsInt iRow = 0; iRow < sifted_lp_num_row; iRow++) {
       HighsInt iVar = lp_.num_col_ + iRow;
       sifted_lp.row_lower_[iRow] =
         -info_.workUpper_[iVar] - unsifted_row_activity[iRow];
@@ -457,13 +475,13 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
     sifted_lp.num_row_ = sifted_lp.row_lower_.size();
     assert(sifted_lp.num_col_ == sifted_list.size());
     assert(sifted_basis.col_status.size() == sifted_lp.num_col_);
-    assert(sifted_lp.num_row_ == lp_.num_row_);
+    assert(sifted_lp.num_row_ == sifted_lp_num_row);
     sifted_lp.setMatrixDimensions();
     if (new_style) 
       sifted_solver_object.ekk_instance_.moveLp(sifted_solver_object);
     
   } else {
-    for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++) {
+    for (HighsInt iRow = 0; iRow < sifted_lp_num_row; iRow++) {
       HighsInt iVar = lp_.num_col_ + iRow;
       sifted_solver_object.ekk_instance_.info_.workLower_[iVar] =
         info_.workLower_[iVar] - unsifted_row_activity[iRow];
@@ -505,6 +523,7 @@ void HEkk::updateIncumbentData(HighsLpSolverObject& sifted_solver_object,
   HighsLp& sifted_lp = sifted_solver_object.lp_;
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
   HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
+  HighsLp& sifted_ekk_lp = sifted_ekk_instance.lp_;
   const HighsInt sifted_lp_num_col = sifted_list.size();
   const HighsInt sifted_lp_num_row = lp_.num_row_;
   if (!new_style) {
@@ -557,6 +576,7 @@ void HEkk::updateIncumbentData(HighsLpSolverObject& sifted_solver_object,
                               : lp_.num_col_ + (iX - sifted_lp_num_col);
     if (check_duals) info_.workDual_[iVar] = 0;
   }
+    if (new_style) assert(sifted_ekk_instance.debugRetainedDataOk(sifted_ekk_lp) != HighsDebugStatus::kLogicalError);
   info_.num_primal_infeasibilities =
       sifted_ekk_instance.info_.num_primal_infeasibilities;
   info_.num_dual_infeasibilities =

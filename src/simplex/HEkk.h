@@ -78,6 +78,9 @@ class HEkk {
   void putIterate();
   HighsStatus getIterate();
 
+  void copyInvert(HEkk& from_ekk_instance_);
+  void copyDualSteepestEdgeWeights(HEkk& from_ekk_instance_);
+
   void addColsToLp(const HighsInt num_new_col,
 		   const std::vector<double>& new_col_cost,
 		   const std::vector<double>& new_col_lower,

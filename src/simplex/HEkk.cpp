@@ -1082,6 +1082,16 @@ HighsStatus HEkk::solve(const bool force_phase2) {
   HighsInt& simplex_strategy = info_.simplex_strategy;
   if (force_phase2) assert(!info_.use_sifting);
   // Solve according to strategy
+
+  // Check sizes of data members
+  HighsInt num_tot = lp_.num_col_ + lp_.num_row_;
+  assert(basis_.nonbasicFlag_.size() == num_tot);
+  assert(basis_.nonbasicMove_.size() == num_tot);
+  assert(basis_.basicIndex_.size() == lp_.num_row_);
+  if (status_.has_dual_steepest_edge_weights) {
+    assert(scattered_dual_edge_weight_.size() == num_tot);
+    assert(dual_edge_weight_.size() == lp_.num_row_);
+  }
   if (info_.use_sifting) {
     highsLogUser(options_->log_options, HighsLogType::kInfo,
                  "Using EKK sifting simplex solver\n");
@@ -1319,7 +1329,26 @@ void HEkk::addColsToLp(const HighsInt num_new_col,
     //    this->lp_.info_.workUpper[iVar+num_new_col] = this->lp_.info_.workUpper[iVar];
     //    this->lp_.info_.work@[iVar+num_new_col] = this->lp_.info_.work@[iVar];
   }
-  
+  // Insert the status of the new columns
+  for (HighsInt iCol = 0; iCol < num_new_col; iCol++) {
+    assert(new_col_status[iCol] != HighsBasisStatus::kBasic);
+    HighsInt move = kIllegalMoveValue;
+    if (new_col_status[iCol] == HighsBasisStatus::kLower) {
+      if (new_col_lower[iCol] == new_col_upper[iCol]) {
+	move = kNonbasicMoveZe;
+      } else {
+	move = kNonbasicMoveUp;
+      }
+    } else if (new_col_status[iCol] == HighsBasisStatus::kUpper) {
+      move = kNonbasicMoveDn;
+    } else {
+      move = kNonbasicMoveZe;
+    }
+    assert(move != kIllegalMoveValue);
+    this->basis_.nonbasicMove_[this->lp_.num_col_ + iCol] = move;
+    this->basis_.nonbasicFlag_[this->lp_.num_col_ + iCol] = kNonbasicFlagTrue;
+  }
+ 
   assert(new_a_matrix.format_ == MatrixFormat::kColwise);
   assert(this->lp_.a_matrix_.format_ = MatrixFormat::kColwise);
   for (HighsInt iCol = 0; iCol < num_new_col; iCol++) {
@@ -1332,12 +1361,16 @@ void HEkk::addColsToLp(const HighsInt num_new_col,
       this->lp_.a_matrix_.value_.push_back(new_a_matrix.value_[iEl]);
     }
     this->lp_.a_matrix_.start_.push_back(this->lp_.a_matrix_.index_.size());
-    
   }
   // Invalidate the row-wise matrix
   this->status_.has_ar_matrix = false;
+  this->status_.has_primal_objective_value = false;
   
   if (this->status_.has_nla) this->simplex_nla_.addCols(&this->lp_);
+
+  // Resize the vector used to scatter dual_edge_weight_
+  if (this->status_.has_dual_steepest_edge_weights)
+    scattered_dual_edge_weight_.resize(new_num_tot);
 
   // Update the LP and matrix column dimension
   this->lp_.num_col_ += num_new_col;
@@ -1999,6 +2032,7 @@ bool HEkk::getBacktrackingBasis() {
   info_.costs_perturbed = info_.backtracking_basis_costs_perturbed_;
   info_.workShift_ = info_.backtracking_basis_workShift_;
   const HighsInt num_tot = lp_.num_col_ + lp_.num_row_;
+  scattered_dual_edge_weight_.assign(num_tot, 0);
   for (HighsInt iVar = 0; iVar < num_tot; iVar++)
     scattered_dual_edge_weight_[iVar] =
         info_.backtracking_basis_edge_weight_[iVar];
@@ -2024,9 +2058,11 @@ void HEkk::putBacktrackingBasis(
   info_.backtracking_basis_bounds_perturbed_ = info_.bounds_perturbed;
   info_.backtracking_basis_workShift_ = info_.workShift_;
   const HighsInt num_tot = lp_.num_col_ + lp_.num_row_;
-  for (HighsInt iVar = 0; iVar < num_tot; iVar++)
+  assert(scattered_dual_edge_weight_.size() == num_tot);
+  for (HighsInt iVar = 0; iVar < num_tot; iVar++) {
     info_.backtracking_basis_edge_weight_[iVar] =
         scattered_dual_edge_weight_[iVar];
+  }
 }
 
 void HEkk::computePrimalObjectiveValue() {
@@ -3921,6 +3957,14 @@ HighsStatus HEkk::getIterate() {
   }
   this->status_.has_invert = true;
   return HighsStatus::kOk;
+}
+
+void HEkk::copyInvert(HEkk& from_ekk_instance_) {
+
+}
+
+void HEkk::copyDualSteepestEdgeWeights(HEkk& from_ekk_instance_) {
+
 }
 
 double HEkk::factorSolveError() {
