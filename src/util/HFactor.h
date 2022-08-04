@@ -223,13 +223,13 @@ class HFactor {
    * @brief Updates instance with respect to new columns in the
    * constraint matrix (assuming columns are nonbasic)
    */
-  void addCols(const HighsInt num_new_col);
+  //  void addCols(const HighsInt num_new_col);
 
   /**
    * @brief Updates instance with respect to nonbasic columns in the
    * constraint matrix being deleted
    */
-  void deleteNonbasicCols(const HighsInt num_deleted_col);
+  //  void deleteNonbasicCols(const HighsInt num_deleted_col);
 
   /**
    * @brief Updates instance with respect to new rows in the

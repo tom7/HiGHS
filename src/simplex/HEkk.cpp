@@ -1323,16 +1323,6 @@ void HEkk::addColsToLp(const HighsInt num_new_col,
         this->basis_.nonbasicFlag_[iVar];
     this->basis_.nonbasicMove_[iVar + num_new_col] =
         this->basis_.nonbasicMove_[iVar];
-    //    this->lp_.info_.workCost[iVar+num_new_col] =
-    //    this->lp_.info_.workCost[iVar];
-    //    this->lp_.info_.workDual[iVar+num_new_col] =
-    //    this->lp_.info_.workDual[iVar];
-    //    this->lp_.info_.work@[iVar+num_new_col] = this->lp_.info_.work@[iVar];
-    //    this->lp_.info_.workLower[iVar+num_new_col] =
-    //    this->lp_.info_.workLower[iVar];
-    //    this->lp_.info_.workUpper[iVar+num_new_col] =
-    //    this->lp_.info_.workUpper[iVar];
-    //    this->lp_.info_.work@[iVar+num_new_col] = this->lp_.info_.work@[iVar];
   }
   // Insert the status of the new columns
   for (HighsInt iCol = 0; iCol < num_new_col; iCol++) {
@@ -1355,7 +1345,7 @@ void HEkk::addColsToLp(const HighsInt num_new_col,
   }
 
   assert(new_a_matrix.format_ == MatrixFormat::kColwise);
-  assert(this->lp_.a_matrix_.format_ = MatrixFormat::kColwise);
+  assert(this->lp_.a_matrix_.format_ == MatrixFormat::kColwise);
   for (HighsInt iCol = 0; iCol < num_new_col; iCol++) {
     this->lp_.col_cost_.push_back(new_col_cost[iCol]);
     this->lp_.col_lower_.push_back(new_col_lower[iCol]);
@@ -1380,27 +1370,20 @@ void HEkk::addColsToLp(const HighsInt num_new_col,
   this->lp_.a_matrix_.num_col_ = this->lp_.num_col_;
 
   // Call to HSimplexNla::addCols
+  HighsSparseMatrix scaled_a_matrix;
   if (this->status_.has_nla) this->simplex_nla_.addCols(&this->lp_);
 }
 
-void HEkk::addColsToNla(const HighsLp& lp,
-                        const HighsSparseMatrix& scaled_a_matrix) {
-  // Should be extendSimplexLpRandomVectors
-  //  if (valid_simplex_basis)
-  //    appendBasicRowsToBasis(simplex_lp, simplex_basis, XnumNewRow);
-  //  ekk_instance_.updateStatus(LpAction::kNewRows);
-  //  if (valid_simplex_lp) {
-  //    simplex_lp.num_row_ += XnumNewRow;
-  //    ekk_instance_.initialiseSimplexLpRandomVectors();
-  //  }
-  //  if (valid_simplex_lp)
-  //    assert(ekk_instance_.lp_.dimensionsOk("addCols - simplex"));
+void HEkk::addColsToNla(const HighsLp& lp) {
   // Call to HSimplexNla::addCols
   if (this->status_.has_nla) this->simplex_nla_.addCols(&lp);
 }
 
 void HEkk::addRows(const HighsLp& lp,
                    const HighsSparseMatrix& scaled_ar_matrix) {
+  // scaled_ar_matrix is a row-wise representation of the new rows
+  // that have already been added to the LP passed in
+  //
   // Should be extendSimplexLpRandomVectors
   //  if (valid_simplex_basis)
   //    appendBasicRowsToBasis(simplex_lp, simplex_basis, XnumNewRow);

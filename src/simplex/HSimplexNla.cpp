@@ -64,7 +64,10 @@ void HSimplexNla::setPointers(const HighsLp* for_lp,
                               HighsSimplexAnalysis* analysis) {
   this->setLpAndScalePointers(for_lp);
   if (factor_a_matrix) factor_.setupMatrix(factor_a_matrix);
-  if (basic_index) basic_index_ = basic_index;
+  if (basic_index) {
+    // basic_index_ = basic_index;
+    setBasicIndexPointers(basic_index);
+  }
   if (options) options_ = options;
   if (timer) timer_ = timer;
   if (analysis) analysis_ = analysis;

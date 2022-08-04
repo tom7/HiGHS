@@ -87,8 +87,7 @@ class HEkk {
                    const std::vector<double>& new_col_upper,
                    const HighsSparseMatrix& new_a_matrix,
                    const std::vector<HighsBasisStatus>& new_col_status);
-  void addColsToNla(const HighsLp& lp,
-                    const HighsSparseMatrix& scaled_a_matrix);
+  void addColsToNla(const HighsLp& lp);
   void addRows(const HighsLp& lp, const HighsSparseMatrix& scaled_ar_matrix);
   void deleteCols(const HighsIndexCollection& index_collection);
   void deleteNonbasicColsFromLp(const HighsIndexCollection& index_collection);

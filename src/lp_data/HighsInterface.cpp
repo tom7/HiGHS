@@ -177,7 +177,7 @@ HighsStatus Highs::addColsInterface(
   invalidateModelStatusSolutionAndInfo();
 
   // Determine any implications for simplex data
-  ekk_instance_.addColsToNla(lp, local_a_matrix);
+  ekk_instance_.addColsToNla(lp);
   // ToDo: Remove this - which clears the HEkk instance - that's been
   // moved from HEkk::addColsToNla to allow the latter to handle the
   // addition of columns in sifting
