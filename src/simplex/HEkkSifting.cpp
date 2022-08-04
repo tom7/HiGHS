@@ -211,7 +211,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
   HighsLp& sifted_lp = sifted_solver_object.lp_;
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
   HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
-  const HighsInt sifted_lp_num_col = sifted_list.size();
+  HighsInt sifted_lp_num_col = sifted_list.size();
   const HighsInt sifted_lp_num_row = lp_.num_row_;
   const bool primal_feasible = info_.num_primal_infeasibilities == 0;
   std::vector<double>& workDual = sifted_ekk_instance.info_.workDual_;
@@ -482,11 +482,16 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       sifted_solver_object.ekk_instance_.moveLp(sifted_solver_object);
     
   } else {
+    sifted_lp_num_col = sifted_list.size();
+    const HighsInt sifted_lp_num_tot = sifted_lp_num_col + sifted_lp_num_row;
+    sifted_solver_object.ekk_instance_.info_.workLower_.resize(sifted_lp_num_tot);
+    sifted_solver_object.ekk_instance_.info_.workUpper_.resize(sifted_lp_num_tot);
     for (HighsInt iRow = 0; iRow < sifted_lp_num_row; iRow++) {
       HighsInt iVar = lp_.num_col_ + iRow;
-      sifted_solver_object.ekk_instance_.info_.workLower_[iVar] =
+      HighsInt sifted_iVar = sifted_lp_num_col + iRow;
+      sifted_solver_object.ekk_instance_.info_.workLower_[sifted_iVar] =
         info_.workLower_[iVar] - unsifted_row_activity[iRow];
-      sifted_solver_object.ekk_instance_.info_.workUpper_[iVar] =
+      sifted_solver_object.ekk_instance_.info_.workUpper_[sifted_iVar] =
         info_.workUpper_[iVar] - unsifted_row_activity[iRow];
     }
     sifted_solver_object.ekk_instance_.addColsToLp(num_add_to_sifted_list,
