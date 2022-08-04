@@ -270,10 +270,10 @@ HighsDebugStatus HEkk::debugSimplex(const std::string message,
   }
   if (num_nonbasic != num_col) {
     highsLogDev(options.log_options, HighsLogType::kError,
-		"HEkk::debugSimplex - %s: Iteration %" HIGHSINT_FORMAT
-		" Number of nonbasic variables is %" HIGHSINT_FORMAT
-		", not  %" HIGHSINT_FORMAT "\n",
-		message.c_str(), iteration_count, num_nonbasic, num_col);
+                "HEkk::debugSimplex - %s: Iteration %" HIGHSINT_FORMAT
+                " Number of nonbasic variables is %" HIGHSINT_FORMAT
+                ", not  %" HIGHSINT_FORMAT "\n",
+                message.c_str(), iteration_count, num_nonbasic, num_col);
     assert(num_nonbasic == num_col);
     return HighsDebugStatus::kLogicalError;
   }

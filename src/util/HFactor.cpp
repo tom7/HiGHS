@@ -581,6 +581,15 @@ void HFactor::buildSimple() {
     }
 
     HighsInt iMat = basic_index[iCol];
+    const bool ok_iMat = iMat >= 0 && iMat < num_col + num_row;
+    if (!ok_iMat) {
+      printf(
+          "HFactor::buildSimple iMat = %d; num_col = %d; num_row = %d; num_tot "
+          "= %d\n",
+          (int)iMat, (int)num_col, (int)num_row, (int)(num_col + num_row));
+      fflush(stdout);
+      assert(ok_iMat);
+    }
     HighsInt iRow = -1;
     int8_t pivot_type = kPivotIllegal;
     // Look for unit columns as pivots. If there is already a pivot

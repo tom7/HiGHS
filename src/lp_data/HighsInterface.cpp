@@ -178,6 +178,10 @@ HighsStatus Highs::addColsInterface(
 
   // Determine any implications for simplex data
   ekk_instance_.addColsToNla(lp, local_a_matrix);
+  // ToDo: Remove this - which clears the HEkk instance - that's been
+  // moved from HEkk::addColsToNla to allow the latter to handle the
+  // addition of columns in sifting
+  ekk_instance_.updateStatus(LpAction::kNewCols);
   return return_status;
 }
 

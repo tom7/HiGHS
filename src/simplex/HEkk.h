@@ -82,12 +82,13 @@ class HEkk {
   void getDualEdgeWeights(const HEkk& from_ekk_instance_);
 
   void addColsToLp(const HighsInt num_new_col,
-		   const std::vector<double>& new_col_cost,
-		   const std::vector<double>& new_col_lower,
-		   const std::vector<double>& new_col_upper,
-		   const HighsSparseMatrix& new_a_matrix,
-		   const std::vector<HighsBasisStatus>& new_col_status);
-  void addColsToNla(const HighsLp& lp, const HighsSparseMatrix& scaled_a_matrix);
+                   const std::vector<double>& new_col_cost,
+                   const std::vector<double>& new_col_lower,
+                   const std::vector<double>& new_col_upper,
+                   const HighsSparseMatrix& new_a_matrix,
+                   const std::vector<HighsBasisStatus>& new_col_status);
+  void addColsToNla(const HighsLp& lp,
+                    const HighsSparseMatrix& scaled_a_matrix);
   void addRows(const HighsLp& lp, const HighsSparseMatrix& scaled_ar_matrix);
   void deleteCols(const HighsIndexCollection& index_collection);
   void deleteNonbasicColsFromLp(const HighsIndexCollection& index_collection);
@@ -132,7 +133,7 @@ class HEkk {
   HighsStatus sifting();
   void getInitialRowStatusAndDual(HighsLpSolverObject& sifted_solver_object);
   void getSiftedBasisSolution(HighsLpSolverObject& sifted_solver_object,
-			      const std::vector<HighsInt>& sifted_list);
+                              const std::vector<HighsInt>& sifted_list);
   HighsInt addToSiftedList(const HighsInt max_add_to_sifted_list,
                            HighsLpSolverObject& sifted_solver_object,
                            std::vector<HighsInt>& sifted_list,
@@ -144,13 +145,13 @@ class HEkk {
                        std::vector<bool>& in_sifted_list);
   void updateIncumbentData(HighsLpSolverObject& sifted_solver_object,
                            const std::vector<HighsInt>& sifted_list,
-			   const bool new_style);
+                           const bool new_style);
   bool okSiftedList(const std::vector<HighsInt>& sifted_list,
                     const std::vector<bool>& in_sifted_list);
 
   void chooseSimplexStrategyThreads(const HighsOptions& options,
                                     HighsSimplexInfo& info,
-				    const bool force_phase2);
+                                    const bool force_phase2);
   // Debug methods
   void debugInitialise();
   void debugReportInitialBasis();
@@ -330,7 +331,7 @@ class HEkk {
 
   double computeBasisCondition();
   void initialiseAnalysis();
-  
+
   std::string rebuildReason(const HighsInt rebuild_reason);
 
   void clearBadBasisChange(

@@ -205,7 +205,6 @@ void HSimplexNla::getInvert(const HSimplexNla& from_simplex_nla) {
   this->factor_.pf_pivot_value = from_simplex_nla.factor_.pf_pivot_value;
 }
 
-
 double HSimplexNla::rowEp2NormInScaledSpace(const HighsInt iRow,
                                             const HVector& row_ep) const {
   if (scale_ == NULL) {
