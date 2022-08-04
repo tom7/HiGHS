@@ -90,6 +90,7 @@ class HSimplexNla {
   void frozenBtran(HVector& rhs) const;
   void frozenFtran(HVector& rhs) const;
   void update(HVector* aq, HVector* ep, HighsInt* iRow, HighsInt* hint);
+  void getInvert(const HSimplexNla& from_simplex_nla);
 
   void frozenBasisClearAllData();
   void frozenBasisClearAllUpdate();

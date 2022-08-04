@@ -90,8 +90,9 @@ HighsStatus HEkk::sifting() {
       getSiftedBasisSolution(new_sifted_solver_object,
 			     new_sifted_list);
       this->updateStatus(LpAction::kNewBasis);
-      this->copyInvert(new_sifted_solver_object.ekk_instance_);
-      this->copyDualSteepestEdgeWeights(new_sifted_solver_object.ekk_instance_);
+      this->status_.has_basis = true;
+      this->getDualEdgeWeights(new_sifted_solver_object.ekk_instance_);
+      this->getInvert(new_sifted_solver_object.ekk_instance_);
       return returnFromSolve(HighsStatus::kOk);
     }
     assert(okSiftedList(sifted_list, in_sifted_list));

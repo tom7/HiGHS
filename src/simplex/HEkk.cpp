@@ -3959,12 +3959,16 @@ HighsStatus HEkk::getIterate() {
   return HighsStatus::kOk;
 }
 
-void HEkk::copyInvert(HEkk& from_ekk_instance_) {
-
+void HEkk::getInvert(const HEkk& from_ekk_instance_) {
+  assert(from_ekk_instance_.status_.has_invert);
+  this->simplex_nla_.getInvert(from_ekk_instance_.simplex_nla_);
+  this->status_.has_invert = true;
 }
 
-void HEkk::copyDualSteepestEdgeWeights(HEkk& from_ekk_instance_) {
-
+void HEkk::getDualEdgeWeights(const HEkk& from_ekk_instance_) {
+  assert(from_ekk_instance_.status_.has_dual_steepest_edge_weights);
+  dual_edge_weight_ = from_ekk_instance_.dual_edge_weight_;
+  this->status_.has_dual_steepest_edge_weights = true;
 }
 
 double HEkk::factorSolveError() {

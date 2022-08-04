@@ -172,6 +172,40 @@ void HSimplexNla::update(HVector* aq, HVector* ep, HighsInt* iRow,
   }
 }
 
+void HSimplexNla::getInvert(const HSimplexNla& from_simplex_nla) {
+  this->factor_.l_pivot_index = from_simplex_nla.factor_.l_pivot_index;
+  this->factor_.l_pivot_lookup = from_simplex_nla.factor_.l_pivot_lookup;
+  this->factor_.l_start = from_simplex_nla.factor_.l_start;
+  this->factor_.l_index = from_simplex_nla.factor_.l_index;
+  this->factor_.l_value = from_simplex_nla.factor_.l_value;
+  this->factor_.lr_start = from_simplex_nla.factor_.lr_start;
+  this->factor_.lr_index = from_simplex_nla.factor_.lr_index;
+  this->factor_.lr_value = from_simplex_nla.factor_.lr_value;
+
+  // Factor U
+  this->factor_.u_pivot_lookup = from_simplex_nla.factor_.u_pivot_lookup;
+  this->factor_.u_pivot_index = from_simplex_nla.factor_.u_pivot_index;
+  this->factor_.u_pivot_value = from_simplex_nla.factor_.u_pivot_value;
+
+  //  HighsInt u_total_x;
+  this->factor_.u_start = from_simplex_nla.factor_.u_start;
+  this->factor_.u_last_p = from_simplex_nla.factor_.u_last_p;
+  this->factor_.u_index = from_simplex_nla.factor_.u_index;
+  this->factor_.u_value = from_simplex_nla.factor_.u_value;
+
+  this->factor_.ur_start = from_simplex_nla.factor_.ur_start;
+  this->factor_.ur_lastp = from_simplex_nla.factor_.ur_lastp;
+  this->factor_.ur_space = from_simplex_nla.factor_.ur_space;
+  this->factor_.ur_index = from_simplex_nla.factor_.ur_index;
+  this->factor_.ur_value = from_simplex_nla.factor_.ur_value;
+  this->factor_.pf_start = from_simplex_nla.factor_.pf_start;
+  this->factor_.pf_index = from_simplex_nla.factor_.pf_index;
+  this->factor_.pf_value = from_simplex_nla.factor_.pf_value;
+  this->factor_.pf_pivot_index = from_simplex_nla.factor_.pf_pivot_index;
+  this->factor_.pf_pivot_value = from_simplex_nla.factor_.pf_pivot_value;
+}
+
+
 double HSimplexNla::rowEp2NormInScaledSpace(const HighsInt iRow,
                                             const HVector& row_ep) const {
   if (scale_ == NULL) {

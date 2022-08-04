@@ -212,6 +212,7 @@ class HFactor {
    */
   bool setPivotThreshold(
       const double new_pivot_threshold = kDefaultPivotThreshold);
+
   /**
    * @brief Sets minimum absolute pivot
    */
