@@ -63,14 +63,11 @@ HighsStatus HEkk::sifting() {
                    "Optimal after %d sifting iterations\n", (int)sifting_iter);
       model_status_ = HighsModelStatus::kOptimal;
       exit_algorithm_ = last_algorithm;
-      getSiftedBasisSolution(sifted_solver_object, sifted_list);
-      this->updateStatus(LpAction::kNewBasis);
-      this->status_.has_basis = true;
-      this->getDualEdgeWeights(sifted_solver_object.ekk_instance_);
-      this->getInvert(sifted_solver_object.ekk_instance_);
+
+      getSiftedBasisSolutionInvertWeightsInfo(sifted_solver_object, sifted_list);
       return returnFromSolve(HighsStatus::kOk);
     }
-    assert(okSiftedList(sifted_list, in_sifted_list));
+    assert(debugOkSiftedList(sifted_list, in_sifted_list));
     first_sifted_lp = false;
     sifting_iter++;
     const bool write_lp = false;
@@ -84,7 +81,8 @@ HighsStatus HEkk::sifting() {
 
     last_algorithm = sifted_ekk_instance.exit_algorithm_;
 
-    updateIncumbentData(sifted_solver_object, sifted_list);
+    assert(sifted_ekk_instance.debugRetainedDataOk(sifted_ekk_instance.lp_) !=
+	   HighsDebugStatus::kLogicalError);
 
     highsLogUser(options_->log_options, HighsLogType::kInfo,
                  "Sifting iter %3d: LP has %6d rows and %9d columns. "
@@ -130,31 +128,6 @@ void HEkk::getInitialRowStatusAndDual(
       sifted_basis.row_status[iRow] = HighsBasisStatus::kBasic;
     }
     workDual[iRow] = info_.workDual_[iVar];
-  }
-}
-
-void HEkk::getSiftedBasisSolution(HighsLpSolverObject& sifted_solver_object,
-                                  const std::vector<HighsInt>& sifted_list) {
-  SimplexBasis& sifted_basis = sifted_solver_object.ekk_instance_.basis_;
-  const HighsInt sifted_lp_num_col = sifted_list.size();
-  const HighsInt sifted_lp_num_row = lp_.num_row_;
-  for (HighsInt iX = 0; iX < sifted_lp_num_col; iX++) {
-    HighsInt iCol = sifted_list[iX];
-    basis_.nonbasicFlag_[iCol] = sifted_basis.nonbasicFlag_[iX];
-    basis_.nonbasicMove_[iCol] = sifted_basis.nonbasicMove_[iX];
-  }
-  const HighsInt var_offset = lp_.num_col_ - sifted_lp_num_col;
-  for (HighsInt iRow = 0; iRow < sifted_lp_num_row; iRow++) {
-    basis_.nonbasicFlag_[lp_.num_col_ + iRow] =
-        sifted_basis.nonbasicFlag_[sifted_lp_num_col + iRow];
-    basis_.nonbasicMove_[lp_.num_col_ + iRow] =
-        sifted_basis.nonbasicMove_[sifted_lp_num_col + iRow];
-    HighsInt iX = sifted_basis.basicIndex_[iRow];
-    if (iX < sifted_lp_num_col) {
-      basis_.basicIndex_[iRow] = sifted_list[iX];
-    } else {
-      basis_.basicIndex_[iRow] = var_offset + iX;
-    }
   }
 }
 
@@ -407,6 +380,8 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
     sifted_lp.setMatrixDimensions();
     // Move the first sifted LP to HEkk
     sifted_solver_object.ekk_instance_.moveLp(sifted_solver_object);
+    // Local sifted LP is not updated - so clear it
+    sifted_lp.clear();
   } else {
     // Update the row bounds of the sifted LP
     sifted_lp_num_col = sifted_list.size();
@@ -431,8 +406,67 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
   return num_add_to_sifted_list;
 }
 
-bool HEkk::okSiftedList(const std::vector<HighsInt>& sifted_list,
-                        const std::vector<bool>& in_sifted_list) {
+void HEkk::getSiftedBasisSolutionInvertWeightsInfo(HighsLpSolverObject& sifted_solver_object,
+						   const std::vector<HighsInt>& sifted_list) {
+  const HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
+  const SimplexBasis& sifted_basis = sifted_ekk_instance.basis_;
+  const HighsInt sifted_lp_num_col = sifted_list.size();
+  const HighsInt sifted_lp_num_row = lp_.num_row_;
+
+  // Get the nonbasic info for columns in the final sifted LP
+  for (HighsInt iX = 0; iX < sifted_lp_num_col; iX++) {
+    HighsInt iCol = sifted_list[iX];
+    basis_.nonbasicFlag_[iCol] = sifted_basis.nonbasicFlag_[iX];
+    basis_.nonbasicMove_[iCol] = sifted_basis.nonbasicMove_[iX];
+  }
+  const HighsInt var_offset = lp_.num_col_ - sifted_lp_num_col;
+  // Get the nonbasic info for rows in the final sifted LP, and basic
+  // info for variables in the final sifted LP
+  for (HighsInt iRow = 0; iRow < sifted_lp_num_row; iRow++) {
+    basis_.nonbasicFlag_[lp_.num_col_ + iRow] =
+        sifted_basis.nonbasicFlag_[sifted_lp_num_col + iRow];
+    basis_.nonbasicMove_[lp_.num_col_ + iRow] =
+        sifted_basis.nonbasicMove_[sifted_lp_num_col + iRow];
+    HighsInt iX = sifted_basis.basicIndex_[iRow];
+    if (iX < sifted_lp_num_col) {
+      basis_.basicIndex_[iRow] = sifted_list[iX];
+    } else {
+      basis_.basicIndex_[iRow] = var_offset + iX;
+    }
+  }
+  // Clear statuses for a new basis
+  this->updateStatus(LpAction::kNewBasis);
+  this->status_.has_basis = true;
+  // Copy any dual edge weights
+  this->getDualEdgeWeights(sifted_solver_object.ekk_instance_);
+  // Copy the INVERT
+  this->getInvert(sifted_solver_object.ekk_instance_);
+
+  // Save data on infeasibilities
+  info_.num_primal_infeasibilities =
+      sifted_ekk_instance.info_.num_primal_infeasibilities;
+  info_.num_dual_infeasibilities =
+      sifted_ekk_instance.info_.num_dual_infeasibilities;
+
+  // Copy over iteration count data
+  iteration_count_ = sifted_ekk_instance.iteration_count_;
+  info_.dual_phase1_iteration_count =
+    sifted_ekk_instance.info_.dual_phase1_iteration_count;
+  info_.dual_phase2_iteration_count =
+    sifted_ekk_instance.info_.dual_phase2_iteration_count;
+  info_.primal_phase1_iteration_count =
+    sifted_ekk_instance.info_.primal_phase1_iteration_count;
+  info_.primal_phase2_iteration_count =
+    sifted_ekk_instance.info_.primal_phase2_iteration_count;
+  info_.primal_bound_swap = sifted_ekk_instance.info_.primal_bound_swap;
+
+  // Set analysis data so that reporting is correct
+  analysis_.simplex_iteration_count = iteration_count_;
+  analysis_.objective_value = sifted_ekk_instance.info_.primal_objective_value;
+}
+
+bool HEkk::debugOkSiftedList(const std::vector<HighsInt>& sifted_list,
+			     const std::vector<bool>& in_sifted_list) {
   std::vector<bool> local_in_sifted_list = in_sifted_list;
   for (HighsInt iX = 0; iX < sifted_list.size(); iX++) {
     if (!local_in_sifted_list[sifted_list[iX]]) {
@@ -450,39 +484,3 @@ bool HEkk::okSiftedList(const std::vector<HighsInt>& sifted_list,
   return true;
 }
 
-void HEkk::updateIncumbentData(HighsLpSolverObject& sifted_solver_object,
-                               const std::vector<HighsInt>& sifted_list) {
-  HighsLp& sifted_lp = sifted_solver_object.lp_;
-  HighsBasis& sifted_basis = sifted_solver_object.basis_;
-  HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
-  HighsLp& sifted_ekk_lp = sifted_ekk_instance.lp_;
-  const HighsInt sifted_lp_num_col = sifted_list.size();
-  const HighsInt sifted_lp_num_row = lp_.num_row_;
-  // Set the values and duals for basic variables
-  //  info_.baseValue_ = sifted_ekk_instance.info_.baseValue_;
-  for (HighsInt iRow = 0; iRow < sifted_lp_num_row; iRow++) {
-    const HighsInt iX = sifted_ekk_instance.basis_.basicIndex_[iRow];
-    const HighsInt iVar = iX < sifted_lp_num_col
-                              ? sifted_list[iX]
-                              : lp_.num_col_ + (iX - sifted_lp_num_col);
-    if (check_duals) info_.workDual_[iVar] = 0;
-  }
-  assert(sifted_ekk_instance.debugRetainedDataOk(sifted_ekk_lp) !=
-	 HighsDebugStatus::kLogicalError);
-  info_.num_primal_infeasibilities =
-      sifted_ekk_instance.info_.num_primal_infeasibilities;
-  info_.num_dual_infeasibilities =
-      sifted_ekk_instance.info_.num_dual_infeasibilities;
-  iteration_count_ = sifted_ekk_instance.iteration_count_;
-  info_.dual_phase1_iteration_count =
-    sifted_ekk_instance.info_.dual_phase1_iteration_count;
-  info_.dual_phase2_iteration_count =
-    sifted_ekk_instance.info_.dual_phase2_iteration_count;
-  info_.primal_phase1_iteration_count =
-    sifted_ekk_instance.info_.primal_phase1_iteration_count;
-  info_.primal_phase2_iteration_count =
-    sifted_ekk_instance.info_.primal_phase2_iteration_count;
-  info_.primal_bound_swap = sifted_ekk_instance.info_.primal_bound_swap;
-  analysis_.simplex_iteration_count = iteration_count_;
-  analysis_.objective_value = sifted_ekk_instance.info_.primal_objective_value;
-}
