@@ -3952,9 +3952,12 @@ void HEkk::getInvert(const HEkk& from_ekk_instance_) {
 }
 
 void HEkk::getDualEdgeWeights(const HEkk& from_ekk_instance_) {
-  assert(from_ekk_instance_.status_.has_dual_steepest_edge_weights);
-  dual_edge_weight_ = from_ekk_instance_.dual_edge_weight_;
-  this->status_.has_dual_steepest_edge_weights = true;
+  if (from_ekk_instance_.status_.has_dual_steepest_edge_weights) {
+      dual_edge_weight_ = from_ekk_instance_.dual_edge_weight_;
+      this->status_.has_dual_steepest_edge_weights = true;
+  } else {
+      this->status_.has_dual_steepest_edge_weights = false;
+  }
 }
 
 double HEkk::factorSolveError() {

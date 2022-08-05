@@ -80,7 +80,6 @@ HighsStatus HEkk::sifting() {
       HighsInt new_num_add_to_sifted_list = addToSiftedList(
           lp_.num_row_, new_sifted_solver_object, new_sifted_list,
           new_in_sifted_list, new_style, first_sifted_lp);
-      assert(num_add_to_sifted_list == new_num_add_to_sifted_list);
     }
     if (num_add_to_sifted_list == 0) {
       highsLogUser(options_->log_options, HighsLogType::kInfo,
@@ -133,15 +132,6 @@ HighsStatus HEkk::sifting() {
                  sifted_ekk_instance.info_.primal_objective_value,
                  (int)info_.num_primal_infeasibilities,
                  (int)info_.num_dual_infeasibilities);
-    if (test_new_style) {
-      assert(std::fabs(sifted_ekk_instance.info_.primal_objective_value -
-                       new_sifted_ekk_instance.info_.primal_objective_value) /
-                 std::max(std::fabs(
-                              sifted_ekk_instance.info_.primal_objective_value),
-                          1.0) <
-             1e-8);
-    }
-
     sifted_ekk_instance.clear();
     if (sifting_iter > 100) break;
   }
