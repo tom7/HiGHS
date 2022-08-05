@@ -29,73 +29,73 @@ HighsStatus HEkk::sifting() {
 
   HighsInt sifted_list_max_count = lp_.num_row_;
 
-  std::vector<HighsInt> new_sifted_list;
-  std::vector<bool> new_in_sifted_list;
-  new_in_sifted_list.assign(lp_.num_col_, false);
-  HEkk new_sifted_ekk_instance;
-  HighsLp new_sifted_lp;
-  HighsBasis new_sifted_basis;
-  HighsSolution new_sifted_solution;
-  HighsInfo new_sifted_highs_info;
-  HighsOptions new_sifted_options = *options_;
-  HighsLpSolverObject new_sifted_solver_object(
-      new_sifted_lp, new_sifted_basis, new_sifted_solution,
-      new_sifted_highs_info, new_sifted_ekk_instance, new_sifted_options,
+  std::vector<HighsInt> sifted_list;
+  std::vector<bool> in_sifted_list;
+  in_sifted_list.assign(lp_.num_col_, false);
+  HEkk sifted_ekk_instance;
+  HighsLp sifted_lp;
+  HighsBasis sifted_basis;
+  HighsSolution sifted_solution;
+  HighsInfo sifted_highs_info;
+  HighsOptions sifted_options = *options_;
+  HighsLpSolverObject sifted_solver_object(
+      sifted_lp, sifted_basis, sifted_solution,
+      sifted_highs_info, sifted_ekk_instance, sifted_options,
       *timer_);
 
   // Prevent recursive sifting!
-  new_sifted_options.sifting_strategy = kSiftingStrategyOff;
+  sifted_options.sifting_strategy = kSiftingStrategyOff;
   //  sifted_options.log_dev_level = 3;
   //  sifted_options.highs_analysis_level = 4;
   SimplexAlgorithm last_algorithm = SimplexAlgorithm::kNone;
 
-  getInitialRowStatusAndDual(new_sifted_solver_object);
+  getInitialRowStatusAndDual(sifted_solver_object);
 
   HighsInt sifting_iter = 0;
   bool first_sifted_lp = true;
-  const bool new_style = true;
+  const bool fred_style = true;
   this->called_return_from_solve_ = false;
   for (;;) {
-    HighsInt new_num_add_to_sifted_list =
-      addToSiftedList(lp_.num_row_, new_sifted_solver_object, new_sifted_list,
-		      new_in_sifted_list, new_style, first_sifted_lp);
-    if (new_num_add_to_sifted_list == 0) {
+    HighsInt num_add_to_sifted_list =
+      addToSiftedList(lp_.num_row_, sifted_solver_object, sifted_list,
+		      in_sifted_list, fred_style, first_sifted_lp);
+    if (num_add_to_sifted_list == 0) {
       highsLogUser(options_->log_options, HighsLogType::kInfo,
                    "Optimal after %d sifting iterations\n", (int)sifting_iter);
       model_status_ = HighsModelStatus::kOptimal;
       exit_algorithm_ = last_algorithm;
-      getSiftedBasisSolution(new_sifted_solver_object, new_sifted_list);
+      getSiftedBasisSolution(sifted_solver_object, sifted_list);
       this->updateStatus(LpAction::kNewBasis);
       this->status_.has_basis = true;
-      this->getDualEdgeWeights(new_sifted_solver_object.ekk_instance_);
-      this->getInvert(new_sifted_solver_object.ekk_instance_);
+      this->getDualEdgeWeights(sifted_solver_object.ekk_instance_);
+      this->getInvert(sifted_solver_object.ekk_instance_);
       return returnFromSolve(HighsStatus::kOk);
     }
-    assert(okSiftedList(new_sifted_list, new_in_sifted_list));
+    assert(okSiftedList(sifted_list, in_sifted_list));
     first_sifted_lp = false;
     sifting_iter++;
     const bool write_lp = false;
     if (write_lp) {
       HighsModel model;
-      model.lp_ = new_sifted_solver_object.lp_;
+      model.lp_ = sifted_solver_object.lp_;
       writeModelAsMps(*options_, "sifted.mps", model);
     }
-    return_status = new_sifted_ekk_instance.solve();
+    return_status = sifted_ekk_instance.solve();
     assert(return_status == HighsStatus::kOk);
 
-    last_algorithm = new_sifted_ekk_instance.exit_algorithm_;
+    last_algorithm = sifted_ekk_instance.exit_algorithm_;
 
-    updateIncumbentData(new_sifted_solver_object, new_sifted_list, new_style);
+    updateIncumbentData(sifted_solver_object, sifted_list, fred_style);
 
     highsLogUser(options_->log_options, HighsLogType::kInfo,
                  "Sifting iter %3d: LP has %6d rows and %9d columns. "
                  "After %6d simplex iters: %6d primal and %6d dual infeas; obj "
                  "= %15.8g\n",
                  (int)sifting_iter,
-		 (int)new_sifted_solver_object.lp_.num_row_,
-                 (int)new_sifted_solver_object.lp_.num_col_,
+		 (int)sifted_solver_object.lp_.num_row_,
+                 (int)sifted_solver_object.lp_.num_col_,
 		 (int)iteration_count_,
-                 new_sifted_ekk_instance.info_.primal_objective_value,
+                 sifted_ekk_instance.info_.primal_objective_value,
                  (int)info_.num_primal_infeasibilities,
                  (int)info_.num_dual_infeasibilities);
     if (sifting_iter > 100) break;
@@ -163,7 +163,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
                                HighsLpSolverObject& sifted_solver_object,
                                std::vector<HighsInt>& sifted_list,
                                std::vector<bool>& in_sifted_list,
-                               const bool new_style,
+                               const bool fred_style,
                                const bool first_sifted_lp) {
   HighsLp& sifted_lp = sifted_solver_object.lp_;
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
@@ -296,7 +296,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       num_add_to_sifted_list++;
       sifted_list.push_back(iCol);
       in_sifted_list[iCol] = true;
-      if (!new_style || first_sifted_lp) {
+      if (!fred_style || first_sifted_lp) {
         sifted_lp.col_cost_.push_back(info_.workCost_[iCol]);
         sifted_lp.col_lower_.push_back(info_.workLower_[iCol]);
         sifted_lp.col_upper_.push_back(info_.workUpper_[iCol]);
@@ -328,7 +328,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       } else {
         status = HighsBasisStatus::kZero;
       }
-      if (!new_style || first_sifted_lp) {
+      if (!fred_style || first_sifted_lp) {
         sifted_basis.col_status.push_back(status);
       } else {
         new_col_status.push_back(status);
@@ -362,7 +362,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       num_add_to_sifted_list++;
       sifted_list.push_back(iCol);
       in_sifted_list[iCol] = true;
-      if (!new_style || first_sifted_lp) {
+      if (!fred_style || first_sifted_lp) {
         sifted_lp.col_cost_.push_back(info_.workCost_[iCol]);
         sifted_lp.col_lower_.push_back(info_.workLower_[iCol]);
         sifted_lp.col_upper_.push_back(info_.workUpper_[iCol]);
@@ -394,7 +394,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       } else {
         status = HighsBasisStatus::kZero;
       }
-      if (!new_style || first_sifted_lp) {
+      if (!fred_style || first_sifted_lp) {
         sifted_basis.col_status.push_back(status);
       } else {
         new_col_status.push_back(status);
@@ -415,7 +415,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       unsifted_row_activity[iRow] += value * lp_.a_matrix_.value_[iEl];
     }
   }
-  if (!new_style || first_sifted_lp) {
+  if (!fred_style || first_sifted_lp) {
     sifted_lp.row_lower_.resize(sifted_lp_num_row);
     sifted_lp.row_upper_.resize(sifted_lp_num_row);
     for (HighsInt iRow = 0; iRow < sifted_lp_num_row; iRow++) {
@@ -432,7 +432,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
     assert(sifted_basis.col_status.size() == sifted_lp.num_col_);
     assert(sifted_lp.num_row_ == sifted_lp_num_row);
     sifted_lp.setMatrixDimensions();
-    if (new_style)
+    if (fred_style)
       sifted_solver_object.ekk_instance_.moveLp(sifted_solver_object);
 
   } else {
@@ -478,14 +478,14 @@ bool HEkk::okSiftedList(const std::vector<HighsInt>& sifted_list,
 
 void HEkk::updateIncumbentData(HighsLpSolverObject& sifted_solver_object,
                                const std::vector<HighsInt>& sifted_list,
-                               const bool new_style) {
+                               const bool fred_style) {
   HighsLp& sifted_lp = sifted_solver_object.lp_;
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
   HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
   HighsLp& sifted_ekk_lp = sifted_ekk_instance.lp_;
   const HighsInt sifted_lp_num_col = sifted_list.size();
   const HighsInt sifted_lp_num_row = lp_.num_row_;
-  if (!new_style) {
+  if (!fred_style) {
     sifted_basis.col_status.resize(sifted_lp_num_col);
     sifted_basis.row_status.resize(sifted_lp_num_row);
     for (HighsInt iX = 0; iX < sifted_lp_num_col; iX++) {
@@ -535,14 +535,14 @@ void HEkk::updateIncumbentData(HighsLpSolverObject& sifted_solver_object,
                               : lp_.num_col_ + (iX - sifted_lp_num_col);
     if (check_duals) info_.workDual_[iVar] = 0;
   }
-  if (new_style)
+  if (fred_style)
     assert(sifted_ekk_instance.debugRetainedDataOk(sifted_ekk_lp) !=
            HighsDebugStatus::kLogicalError);
   info_.num_primal_infeasibilities =
       sifted_ekk_instance.info_.num_primal_infeasibilities;
   info_.num_dual_infeasibilities =
       sifted_ekk_instance.info_.num_dual_infeasibilities;
-  if (new_style) {
+  if (fred_style) {
     iteration_count_ = sifted_ekk_instance.iteration_count_;
     info_.dual_phase1_iteration_count =
         sifted_ekk_instance.info_.dual_phase1_iteration_count;
