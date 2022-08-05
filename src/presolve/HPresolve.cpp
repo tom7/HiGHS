@@ -2380,6 +2380,22 @@ HPresolve::Result HPresolve::doubletonEq(HighsPostsolveStack& postsolve_stack,
   double substcoef;
   double staycoef;
   double rhs = model->row_upper_[row];
+  HighsInt iCol1 = Acol[nzPos1];
+  const HighsInt i1 = iCol1/81;
+  iCol1 -= 81*i1;
+  const HighsInt j1 = iCol1/9;
+  iCol1 -= 9*j1;
+  const HighsInt k1 = iCol1;
+  HighsInt iCol2 = Acol[nzPos2];
+  const HighsInt i2 = iCol2/81;
+  iCol2 -= 81*i2;
+  const HighsInt j2 = iCol2/9;
+  iCol2 -= 9*j2;
+  const HighsInt k2 = iCol2;
+  printf("Doubleton row: x_{%3d = [%1d %1d %1d]} + x_{%3d = [%1d %1d %1d]} = %g\n",
+	 (int)Acol[nzPos1], (int)(i1+1), (int)(j1+1), (int)(k1+1),
+	 (int)Acol[nzPos2], (int)(i2+1), (int)(j2+1), (int)(k2+1),
+	 model->row_lower_[row]);
   if (model->integrality_[Acol[nzPos1]] == HighsVarType::kInteger) {
     if (model->integrality_[Acol[nzPos2]] == HighsVarType::kInteger) {
       // both columns integer. For substitution choose smaller absolute

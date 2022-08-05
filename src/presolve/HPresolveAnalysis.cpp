@@ -115,7 +115,7 @@ void HPresolveAnalysis::startPresolveRuleLog(const HighsInt rule_type) {
 }
 
 void HPresolveAnalysis::stopPresolveRuleLog(const HighsInt rule_type) {
-  const bool debug_print = false;
+  const bool debug_print = true;
   assert(logging_on_);
   assert(rule_type == log_rule_type_);
   if (debug_print)
