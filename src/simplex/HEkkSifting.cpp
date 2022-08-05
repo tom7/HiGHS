@@ -27,22 +27,7 @@ HighsStatus HEkk::sifting() {
   // Need to start from a primal feasible solution
   assert(info_.num_primal_infeasibilities >= 0);
 
-  const bool test_new_style = true;
-
   HighsInt sifted_list_max_count = lp_.num_row_;
-
-  std::vector<HighsInt> sifted_list;
-  std::vector<bool> in_sifted_list;
-  in_sifted_list.assign(lp_.num_col_, false);
-  HEkk sifted_ekk_instance;
-  HighsLp sifted_lp;
-  HighsBasis sifted_basis;
-  HighsSolution sifted_solution;
-  HighsInfo sifted_highs_info;
-  HighsOptions sifted_options = *options_;
-  HighsLpSolverObject sifted_solver_object(
-      sifted_lp, sifted_basis, sifted_solution, sifted_highs_info,
-      sifted_ekk_instance, sifted_options, *timer_);
 
   std::vector<HighsInt> new_sifted_list;
   std::vector<bool> new_in_sifted_list;
@@ -59,13 +44,11 @@ HighsStatus HEkk::sifting() {
       *timer_);
 
   // Prevent recursive sifting!
-  sifted_options.sifting_strategy = kSiftingStrategyOff;
   new_sifted_options.sifting_strategy = kSiftingStrategyOff;
   //  sifted_options.log_dev_level = 3;
   //  sifted_options.highs_analysis_level = 4;
   SimplexAlgorithm last_algorithm = SimplexAlgorithm::kNone;
 
-  getInitialRowStatusAndDual(sifted_solver_object);
   getInitialRowStatusAndDual(new_sifted_solver_object);
 
   HighsInt sifting_iter = 0;
@@ -73,15 +56,10 @@ HighsStatus HEkk::sifting() {
   const bool new_style = true;
   this->called_return_from_solve_ = false;
   for (;;) {
-    HighsInt num_add_to_sifted_list =
-        addToSiftedList(lp_.num_row_, sifted_solver_object, sifted_list,
-                        in_sifted_list, !new_style, first_sifted_lp);
-    if (test_new_style) {
-      HighsInt new_num_add_to_sifted_list = addToSiftedList(
-          lp_.num_row_, new_sifted_solver_object, new_sifted_list,
-          new_in_sifted_list, new_style, first_sifted_lp);
-    }
-    if (num_add_to_sifted_list == 0) {
+    HighsInt new_num_add_to_sifted_list =
+      addToSiftedList(lp_.num_row_, new_sifted_solver_object, new_sifted_list,
+		      new_in_sifted_list, new_style, first_sifted_lp);
+    if (new_num_add_to_sifted_list == 0) {
       highsLogUser(options_->log_options, HighsLogType::kInfo,
                    "Optimal after %d sifting iterations\n", (int)sifting_iter);
       model_status_ = HighsModelStatus::kOptimal;
@@ -93,46 +71,33 @@ HighsStatus HEkk::sifting() {
       this->getInvert(new_sifted_solver_object.ekk_instance_);
       return returnFromSolve(HighsStatus::kOk);
     }
-    assert(okSiftedList(sifted_list, in_sifted_list));
-    if (test_new_style)
-      assert(okSiftedList(new_sifted_list, new_in_sifted_list));
+    assert(okSiftedList(new_sifted_list, new_in_sifted_list));
     first_sifted_lp = false;
     sifting_iter++;
     const bool write_lp = false;
     if (write_lp) {
       HighsModel model;
-      model.lp_ = sifted_solver_object.lp_;
+      model.lp_ = new_sifted_solver_object.lp_;
       writeModelAsMps(*options_, "sifted.mps", model);
     }
-    sifted_ekk_instance.moveLp(sifted_solver_object);
-    if (!first_sifted_lp) {
-      return_status = sifted_ekk_instance.setBasis(sifted_solver_object.basis_);
-      assert(return_status == HighsStatus::kOk);
-    }
-    return_status = sifted_ekk_instance.solve();
+    return_status = new_sifted_ekk_instance.solve();
     assert(return_status == HighsStatus::kOk);
-    if (test_new_style) {
-      return_status = new_sifted_ekk_instance.solve();
-      assert(return_status == HighsStatus::kOk);
-    }
 
-    sifted_lp.moveBackLpAndUnapplyScaling(sifted_ekk_instance.lp_);
-    last_algorithm = sifted_ekk_instance.exit_algorithm_;
+    last_algorithm = new_sifted_ekk_instance.exit_algorithm_;
 
-    updateIncumbentData(sifted_solver_object, sifted_list, !new_style);
-    if (test_new_style)
-      updateIncumbentData(new_sifted_solver_object, sifted_list, new_style);
+    updateIncumbentData(new_sifted_solver_object, new_sifted_list, new_style);
 
     highsLogUser(options_->log_options, HighsLogType::kInfo,
                  "Sifting iter %3d: LP has %6d rows and %9d columns. "
                  "After %6d simplex iters: %6d primal and %6d dual infeas; obj "
                  "= %15.8g\n",
-                 (int)sifting_iter, (int)sifted_solver_object.lp_.num_row_,
-                 (int)sifted_solver_object.lp_.num_col_, (int)iteration_count_,
-                 sifted_ekk_instance.info_.primal_objective_value,
+                 (int)sifting_iter,
+		 (int)new_sifted_solver_object.lp_.num_row_,
+                 (int)new_sifted_solver_object.lp_.num_col_,
+		 (int)iteration_count_,
+                 new_sifted_ekk_instance.info_.primal_objective_value,
                  (int)info_.num_primal_infeasibilities,
                  (int)info_.num_dual_infeasibilities);
-    sifted_ekk_instance.clear();
     if (sifting_iter > 100) break;
   }
 
