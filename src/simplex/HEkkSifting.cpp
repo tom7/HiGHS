@@ -276,8 +276,8 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
   std::vector<double> new_col_cost;
   std::vector<double> new_col_lower;
   std::vector<double> new_col_upper;
-  std::vector<HighsBasisStatus> new_col_status;
   HighsSparseMatrix new_a_matrix;
+  std::vector<HighsBasisStatus> new_col_status;
   if (!primal_feasible) {
     // Add a random collection of max_add_to_sifted_list nonbasic
     // columns to the sifted list, unless the sifted list is approaching
@@ -295,27 +295,15 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       num_add_to_sifted_list++;
       sifted_list.push_back(iCol);
       in_sifted_list[iCol] = true;
-      if (first_sifted_lp) {
-        sifted_lp.col_cost_.push_back(info_.workCost_[iCol]);
-        sifted_lp.col_lower_.push_back(info_.workLower_[iCol]);
-        sifted_lp.col_upper_.push_back(info_.workUpper_[iCol]);
-        for (HighsInt iEl = lp_.a_matrix_.start_[iCol];
-             iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
-          sifted_lp.a_matrix_.index_.push_back(lp_.a_matrix_.index_[iEl]);
-          sifted_lp.a_matrix_.value_.push_back(lp_.a_matrix_.value_[iEl]);
-        }
-        sifted_lp.a_matrix_.start_.push_back(sifted_lp.a_matrix_.index_.size());
-      } else {
-        new_col_cost.push_back(info_.workCost_[iCol]);
-        new_col_lower.push_back(info_.workLower_[iCol]);
-        new_col_upper.push_back(info_.workUpper_[iCol]);
-        for (HighsInt iEl = lp_.a_matrix_.start_[iCol];
-             iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
-          new_a_matrix.index_.push_back(lp_.a_matrix_.index_[iEl]);
-          new_a_matrix.value_.push_back(lp_.a_matrix_.value_[iEl]);
-        }
-        new_a_matrix.start_.push_back(new_a_matrix.index_.size());
+      new_col_cost.push_back(info_.workCost_[iCol]);
+      new_col_lower.push_back(info_.workLower_[iCol]);
+      new_col_upper.push_back(info_.workUpper_[iCol]);
+      for (HighsInt iEl = lp_.a_matrix_.start_[iCol];
+	   iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
+	new_a_matrix.index_.push_back(lp_.a_matrix_.index_[iEl]);
+	new_a_matrix.value_.push_back(lp_.a_matrix_.value_[iEl]);
       }
+      new_a_matrix.start_.push_back(new_a_matrix.index_.size());
       assert(basis_.nonbasicFlag_[iCol]);
       HighsBasisStatus status = HighsBasisStatus::kBasic;
       if (basis_.nonbasicMove_[iCol] > 0) {
@@ -327,11 +315,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       } else {
         status = HighsBasisStatus::kZero;
       }
-      if (first_sifted_lp) {
-        sifted_basis.col_status.push_back(status);
-      } else {
-        new_col_status.push_back(status);
-      }
+      new_col_status.push_back(status);
       // Break out if the number of columns added to the sifted list
       // has reached max_add_to_sifted_list, or if the sifted list
       // contains all columns
@@ -339,6 +323,11 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
           sifted_list.size() >= lp_.num_col_)
         break;
     }
+    sifted_lp.col_cost_ = new_col_cost;
+    sifted_lp.col_lower_ = new_col_lower;
+    sifted_lp.col_upper_ = new_col_upper;
+    sifted_lp.a_matrix_ = new_a_matrix;
+    sifted_basis.col_status = new_col_status;
   } else {
     // Sort any candidates for the sifted list
     HighsInt heap_num_en = heap_index.size() - 1;
