@@ -229,7 +229,7 @@ class HFactor {
    * @brief Updates instance with respect to nonbasic columns in the
    * constraint matrix being deleted
    */
-  //  void deleteNonbasicCols(const HighsInt num_deleted_col);
+  void deleteNonbasicCols(const HighsInt new_num_col);
 
   /**
    * @brief Updates instance with respect to new rows in the

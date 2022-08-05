@@ -10,7 +10,7 @@ const double inf = kHighsInf;
 
 // No commas in test case name.
 TEST_CASE("test-sifting", "[highs_sifting]") {
-
+  /*
   const bool test_sifting = true;
   if (test_sifting) {
     HighsLp lp;
@@ -95,4 +95,5 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
     highs.setSolution();
     highs.run();
   }
+  */
 }

@@ -20,17 +20,23 @@
 
 using std::fabs;
 
+// When the constraint matrix is extended row-wise or column-wise, or
+// nonbasic columns are deleted, it has to be assumed that the
+// start/index/value pointers in HFactor are no longer valid. This is
+// indicated by setting a_matrix_valid = false, and is OK since the
+// matrix is only needed for build(), where an assert(a_matrix_valid)
+// checks that the constraint matrix pointers have been set up in the
+// interim.
+
 void HFactor::addCols(const HighsInt new_num_col) {
   invalidAMatrixAction();
   num_col = new_num_col;
 }
 
-/*
-void HFactor::deleteNonbasicCols(const HighsInt num_deleted_col) {
+void HFactor::deleteNonbasicCols(const HighsInt new_num_col) {
   invalidAMatrixAction();
-  num_col -= num_deleted_col;
+  num_col = new_num_col;
 }
-*/
 
 void HFactor::addRows(const HighsSparseMatrix* ar_matrix) {
   invalidAMatrixAction();
