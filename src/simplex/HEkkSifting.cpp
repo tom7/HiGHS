@@ -39,9 +39,8 @@ HighsStatus HEkk::sifting() {
   HighsInfo sifted_highs_info;
   HighsOptions sifted_options = *options_;
   HighsLpSolverObject sifted_solver_object(
-      sifted_lp, sifted_basis, sifted_solution,
-      sifted_highs_info, sifted_ekk_instance, sifted_options,
-      *timer_);
+      sifted_lp, sifted_basis, sifted_solution, sifted_highs_info,
+      sifted_ekk_instance, sifted_options, *timer_);
 
   // Prevent recursive sifting!
   sifted_options.sifting_strategy = kSiftingStrategyOff;
@@ -56,15 +55,16 @@ HighsStatus HEkk::sifting() {
   this->called_return_from_solve_ = false;
   for (;;) {
     HighsInt num_add_to_sifted_list =
-      addToSiftedList(lp_.num_row_, sifted_solver_object, sifted_list,
-		      in_sifted_list, first_sifted_lp);
+        addToSiftedList(lp_.num_row_, sifted_solver_object, sifted_list,
+                        in_sifted_list, first_sifted_lp);
     if (num_add_to_sifted_list == 0) {
       highsLogUser(options_->log_options, HighsLogType::kInfo,
                    "Optimal after %d sifting iterations\n", (int)sifting_iter);
       model_status_ = HighsModelStatus::kOptimal;
       exit_algorithm_ = last_algorithm;
 
-      getSiftedBasisSolutionInvertWeightsInfo(sifted_solver_object, sifted_list);
+      getSiftedBasisSolutionInvertWeightsInfo(sifted_solver_object,
+                                              sifted_list);
       return returnFromSolve(HighsStatus::kOk);
     }
     assert(debugOkSiftedList(sifted_list, in_sifted_list));
@@ -82,16 +82,14 @@ HighsStatus HEkk::sifting() {
     last_algorithm = sifted_ekk_instance.exit_algorithm_;
 
     assert(sifted_ekk_instance.debugRetainedDataOk(sifted_ekk_instance.lp_) !=
-	   HighsDebugStatus::kLogicalError);
+           HighsDebugStatus::kLogicalError);
 
     highsLogUser(options_->log_options, HighsLogType::kInfo,
                  "Sifting iter %3d: LP has %6d rows and %9d columns. "
                  "After %6d simplex iters: %6d primal and %6d dual infeas; obj "
                  "= %15.8g\n",
-                 (int)sifting_iter,
-		 (int)lp_.num_row_,
-                 (int)sifted_list.size(),
-		 (int)iteration_count_,
+                 (int)sifting_iter, (int)lp_.num_row_, (int)sifted_list.size(),
+                 (int)iteration_count_,
                  sifted_ekk_instance.info_.primal_objective_value,
                  (int)info_.num_primal_infeasibilities,
                  (int)info_.num_dual_infeasibilities);
@@ -274,9 +272,9 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       new_col_lower.push_back(info_.workLower_[iCol]);
       new_col_upper.push_back(info_.workUpper_[iCol]);
       for (HighsInt iEl = lp_.a_matrix_.start_[iCol];
-	   iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
-	new_a_matrix.index_.push_back(lp_.a_matrix_.index_[iEl]);
-	new_a_matrix.value_.push_back(lp_.a_matrix_.value_[iEl]);
+           iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
+        new_a_matrix.index_.push_back(lp_.a_matrix_.index_[iEl]);
+        new_a_matrix.value_.push_back(lp_.a_matrix_.value_[iEl]);
       }
       new_a_matrix.start_.push_back(new_a_matrix.index_.size());
       assert(basis_.nonbasicFlag_[iCol]);
@@ -324,9 +322,9 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       new_col_lower.push_back(info_.workLower_[iCol]);
       new_col_upper.push_back(info_.workUpper_[iCol]);
       for (HighsInt iEl = lp_.a_matrix_.start_[iCol];
-	   iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
-	new_a_matrix.index_.push_back(lp_.a_matrix_.index_[iEl]);
-	new_a_matrix.value_.push_back(lp_.a_matrix_.value_[iEl]);
+           iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
+        new_a_matrix.index_.push_back(lp_.a_matrix_.index_[iEl]);
+        new_a_matrix.value_.push_back(lp_.a_matrix_.value_[iEl]);
       }
       new_a_matrix.start_.push_back(new_a_matrix.index_.size());
       assert(basis_.nonbasicFlag_[iCol]);
@@ -408,8 +406,9 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
   return num_add_to_sifted_list;
 }
 
-void HEkk::getSiftedBasisSolutionInvertWeightsInfo(HighsLpSolverObject& sifted_solver_object,
-						   const std::vector<HighsInt>& sifted_list) {
+void HEkk::getSiftedBasisSolutionInvertWeightsInfo(
+    HighsLpSolverObject& sifted_solver_object,
+    const std::vector<HighsInt>& sifted_list) {
   const HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
   const SimplexBasis& sifted_basis = sifted_ekk_instance.basis_;
   const HighsInt sifted_lp_num_col = sifted_list.size();
@@ -453,13 +452,13 @@ void HEkk::getSiftedBasisSolutionInvertWeightsInfo(HighsLpSolverObject& sifted_s
   // Copy over iteration count data
   iteration_count_ = sifted_ekk_instance.iteration_count_;
   info_.dual_phase1_iteration_count =
-    sifted_ekk_instance.info_.dual_phase1_iteration_count;
+      sifted_ekk_instance.info_.dual_phase1_iteration_count;
   info_.dual_phase2_iteration_count =
-    sifted_ekk_instance.info_.dual_phase2_iteration_count;
+      sifted_ekk_instance.info_.dual_phase2_iteration_count;
   info_.primal_phase1_iteration_count =
-    sifted_ekk_instance.info_.primal_phase1_iteration_count;
+      sifted_ekk_instance.info_.primal_phase1_iteration_count;
   info_.primal_phase2_iteration_count =
-    sifted_ekk_instance.info_.primal_phase2_iteration_count;
+      sifted_ekk_instance.info_.primal_phase2_iteration_count;
   info_.primal_bound_swap = sifted_ekk_instance.info_.primal_bound_swap;
 
   // Set analysis data so that reporting is correct
@@ -468,7 +467,7 @@ void HEkk::getSiftedBasisSolutionInvertWeightsInfo(HighsLpSolverObject& sifted_s
 }
 
 bool HEkk::debugOkSiftedList(const std::vector<HighsInt>& sifted_list,
-			     const std::vector<bool>& in_sifted_list) {
+                             const std::vector<bool>& in_sifted_list) {
   std::vector<bool> local_in_sifted_list = in_sifted_list;
   for (HighsInt iX = 0; iX < sifted_list.size(); iX++) {
     if (!local_in_sifted_list[sifted_list[iX]]) {
@@ -485,4 +484,3 @@ bool HEkk::debugOkSiftedList(const std::vector<HighsInt>& sifted_list,
   }
   return true;
 }
-

@@ -95,6 +95,9 @@ class HighsSparseMatrix {
   void createRowwisePartitioned(const HighsSparseMatrix& matrix,
                                 const int8_t* in_partition = NULL);
   bool debugPartitionOk(const int8_t* in_partition) const;
+  bool debugFindEntry(const HighsInt iRow, const HighsInt iCol,
+                      const int8_t nonbasic_flag = -1) const;
+
   void priceByColumn(const bool quad_precision, HVector& result,
                      const HVector& column,
                      const HighsInt debug_report = kDebugReportOff) const;
@@ -135,8 +138,6 @@ class HighsSparseMatrix {
   void debugReportRowPrice(const HighsInt iRow, const double multiplier,
                            const HighsInt to_iEl,
                            HighsSparseVectorSum& sum) const;
-  bool debugFindEntry(const HighsInt iRow, const HighsInt iCol) const;
-
 };
 
 #endif

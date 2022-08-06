@@ -1182,6 +1182,36 @@ bool HighsSparseMatrix::debugPartitionOk(const int8_t* in_partition) const {
   return ok;
 }
 
+bool HighsSparseMatrix::debugFindEntry(const HighsInt iRow, const HighsInt iCol,
+                                       const int8_t nonbasic_flag) const {
+  if (iRow >= this->num_row_ || iCol >= this->num_col_) return true;
+  printf("Looking for [%2d, %2d]", int(iRow), int(iCol));
+  if (nonbasic_flag >= 0)
+    printf(" with nonbasic_flag = %d", int(nonbasic_flag));
+  printf("\n");
+  if (this->format_ == MatrixFormat::kColwise) {
+    for (HighsInt iEl = this->start_[iCol]; iEl < this->start_[iCol + 1]; iEl++)
+      if (this->index_[iEl] == iRow) return true;
+  } else {
+    HighsInt from_el = this->start_[iRow];
+    HighsInt to_el = this->start_[iRow + 1];
+    if (nonbasic_flag >= 0) {
+      // Check in partitioned matrix
+      assert(this->format_ == MatrixFormat::kRowwisePartitioned);
+      if (nonbasic_flag == 0) {
+        // Should be in the basic section
+        from_el = this->p_end_[iRow];
+      } else {
+        // Should be in the nonbasic section
+        to_el = this->p_end_[iRow];
+      }
+    }
+    for (HighsInt iEl = from_el; iEl < to_el; iEl++)
+      if (this->index_[iEl] == iCol) return true;
+  }
+  return false;
+}
+
 void HighsSparseMatrix::priceByColumn(const bool quad_precision,
                                       HVector& result, const HVector& column,
                                       const HighsInt debug_report) const {
@@ -1506,17 +1536,4 @@ void HighsSparseMatrix::debugReportRowPrice(const HighsInt iRow,
     num_print++;
   }
   printf("\n");
-}
-
-bool HighsSparseMatrix::debugFindEntry(const HighsInt iRow, const HighsInt iCol) const {
-  if (this->format_ == MatrixFormat::kColwise) {
-     for (HighsInt iEl = this->start_[iCol];
-	  iEl < this->start_[iCol + 1]; iEl++)
-       if (this->index_[iEl] == iRow) return true;
-  } else {
-     for (HighsInt iEl = this->start_[iRow];
-	  iEl < this->start_[iRow + 1]; iEl++)
-       if (this->index_[iEl] == iCol) return true;
-  }
-  return false;
 }

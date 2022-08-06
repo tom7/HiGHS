@@ -1316,7 +1316,7 @@ void HEkk::addColsToLp(const HighsInt num_new_col,
   // Shift the row indices in the basis and work info
   for (HighsInt iRow = this->lp_.num_row_ - 1; iRow >= 0; iRow--) {
     HighsInt iVar = this->basis_.basicIndex_[iRow];
-    if (iVar > this->lp_.num_col_)
+    if (iVar >= this->lp_.num_col_)
       this->basis_.basicIndex_[iRow] += num_new_col;
     iVar = this->lp_.num_col_ + iRow;
     this->basis_.nonbasicFlag_[iVar + num_new_col] =
@@ -3953,10 +3953,10 @@ void HEkk::getInvert(const HEkk& from_ekk_instance_) {
 
 void HEkk::getDualEdgeWeights(const HEkk& from_ekk_instance_) {
   if (from_ekk_instance_.status_.has_dual_steepest_edge_weights) {
-      dual_edge_weight_ = from_ekk_instance_.dual_edge_weight_;
-      this->status_.has_dual_steepest_edge_weights = true;
+    dual_edge_weight_ = from_ekk_instance_.dual_edge_weight_;
+    this->status_.has_dual_steepest_edge_weights = true;
   } else {
-      this->status_.has_dual_steepest_edge_weights = false;
+    this->status_.has_dual_steepest_edge_weights = false;
   }
 }
 
