@@ -89,13 +89,13 @@ HighsStatus HEkk::sifting() {
                  "After %6d simplex iters: %6d primal and %6d dual infeas; obj "
                  "= %15.8g\n",
                  (int)sifting_iter,
-		 (int)sifted_solver_object.lp_.num_row_,
-                 (int)sifted_solver_object.lp_.num_col_,
+		 (int)lp_.num_row_,
+                 (int)sifted_list.size(),
 		 (int)iteration_count_,
                  sifted_ekk_instance.info_.primal_objective_value,
                  (int)info_.num_primal_infeasibilities,
                  (int)info_.num_dual_infeasibilities);
-    if (sifting_iter > 100) break;
+    if (sifting_iter > 1000) break;
   }
 
   assert(1 == 0);
@@ -143,6 +143,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
   const HighsInt sifted_lp_num_row = lp_.num_row_;
   const bool primal_feasible = info_.num_primal_infeasibilities == 0;
   std::vector<double>& workDual = sifted_ekk_instance.info_.workDual_;
+  HighsInt& num_dual_infeasibilities = info_.num_dual_infeasibilities;
   if (!primal_feasible) assert(first_sifted_lp);
   if (first_sifted_lp) {
     assert(sifted_basis.col_status.size() == 0);
@@ -239,6 +240,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       dual_infeasibility = -basis_.nonbasicMove_[iCol] * dual;
     }
     if (dual_infeasibility > options_->dual_feasibility_tolerance) {
+      num_dual_infeasibilities++;
       // Dual infeasible, so store the index and dual merit
       heap_index.push_back(iCol);
       heap_value.push_back(dual_infeasibility);
