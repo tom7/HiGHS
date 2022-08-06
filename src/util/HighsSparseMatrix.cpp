@@ -1357,6 +1357,8 @@ void HighsSparseMatrix::update(const HighsInt var_in, const HighsInt var_out,
       HighsInt iFind = this->p_end_[iRow];
       HighsInt iSwap = this->p_end_[iRow]++;
       while (this->index_[iFind] != var_out) iFind++;
+      assert(iFind >= 0 && iFind < int(this->index_.size()));
+      assert(iSwap >= 0 && iSwap < int(this->value_.size()));
       swap(this->index_[iFind], this->index_[iSwap]);
       swap(this->value_[iFind], this->value_[iSwap]);
     }
@@ -1504,4 +1506,17 @@ void HighsSparseMatrix::debugReportRowPrice(const HighsInt iRow,
     num_print++;
   }
   printf("\n");
+}
+
+bool HighsSparseMatrix::debugFindEntry(const HighsInt iRow, const HighsInt iCol) const {
+  if (this->format_ == MatrixFormat::kColwise) {
+     for (HighsInt iEl = this->start_[iCol];
+	  iEl < this->start_[iCol + 1]; iEl++)
+       if (this->index_[iEl] == iRow) return true;
+  } else {
+     for (HighsInt iEl = this->start_[iRow];
+	  iEl < this->start_[iRow + 1]; iEl++)
+       if (this->index_[iEl] == iCol) return true;
+  }
+  return false;
 }

@@ -135,6 +135,8 @@ class HighsSparseMatrix {
   void debugReportRowPrice(const HighsInt iRow, const double multiplier,
                            const HighsInt to_iEl,
                            HighsSparseVectorSum& sum) const;
+  bool debugFindEntry(const HighsInt iRow, const HighsInt iCol) const;
+
 };
 
 #endif
