@@ -307,6 +307,10 @@ struct HighsOptionsStruct {
   bool output_flag;
   bool log_to_console;
 
+  // Presolve options
+  bool presolve_log_report;
+  bool doubleton_equation_sudoku_report;
+
   // Advanced options
   HighsInt log_dev_level;
   bool run_crossover;
@@ -620,6 +624,17 @@ class HighsOptions : public HighsOptionsStruct {
     record_bool = new OptionRecordBool("log_to_console",
                                        "Enables or disables console logging",
                                        advanced, &log_to_console, true);
+    records.push_back(record_bool);
+
+    record_bool = new OptionRecordBool("presolve_log_report",
+                                       "Enables or disables presolve logging",
+                                       advanced, &presolve_log_report, false);
+    records.push_back(record_bool);
+
+    record_bool =
+        new OptionRecordBool("doubleton_equation_sudoku_report",
+                             "Report doubleton equations for Sudoku", advanced,
+                             &doubleton_equation_sudoku_report, false);
     records.push_back(record_bool);
 
     record_string =
