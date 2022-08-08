@@ -388,6 +388,17 @@ void HSimplexNla::addRows(const HighsLp* updated_lp, HighsInt* basic_index,
   factor_.addRows(scaled_ar_matrix);
 }
 
+void HSimplexNla::deleteNonbasicCols(const HighsLp* updated_lp) {
+  // Deleting nonbasic columns is easy
+  //
+  // Set the pointers for the LP and scaling. The pointer to the
+  // vector of basic variables isn't updated, since it hasn't been
+  // resized. The HFactor matrix isn't needed until reinversion has to
+  // be performed
+  //  setLpAndScalePointers(updated_lp);
+  factor_.deleteNonbasicCols(updated_lp->num_col_);
+}
+
 bool HSimplexNla::sparseLoopStyle(const HighsInt count, const HighsInt dim,
                                   HighsInt& to_entry) const {
   // Parameter to decide whether to use just the values in a HVector, or

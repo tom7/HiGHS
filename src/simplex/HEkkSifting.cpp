@@ -21,6 +21,8 @@
 #include "util/HighsSort.h"
 
 const bool check_duals = true;
+const double purge_threshold = 1.5;
+const double purge_multiplier = 0.8;
 
 HighsStatus HEkk::sifting() {
   HighsStatus return_status = HighsStatus::kOk;
@@ -80,24 +82,107 @@ HighsStatus HEkk::sifting() {
     assert(return_status == HighsStatus::kOk);
 
     last_algorithm = sifted_ekk_instance.exit_algorithm_;
+    getSiftedLpInfo(sifted_solver_object);
 
     assert(sifted_ekk_instance.debugRetainedDataOk(sifted_ekk_instance.lp_) !=
            HighsDebugStatus::kLogicalError);
 
     highsLogUser(options_->log_options, HighsLogType::kInfo,
-                 "Sifting iter %3d: LP has %6d rows and %9d columns. "
+                 "Sifting iter %3d: LP has %6d rows and %6d columns. "
                  "After %6d simplex iters: %6d primal and %6d dual infeas; obj "
                  "= %15.8g\n",
-                 (int)sifting_iter, (int)lp_.num_row_, (int)sifted_list.size(),
-                 (int)iteration_count_,
+                 int(sifting_iter), int(lp_.num_row_), int(sifted_list.size()),
+                 int(iteration_count_),
                  sifted_ekk_instance.info_.primal_objective_value,
-                 (int)info_.num_primal_infeasibilities,
-                 (int)info_.num_dual_infeasibilities);
+                 int(info_.num_primal_infeasibilities),
+                 int(info_.num_dual_infeasibilities));
     if (sifting_iter > 1000) break;
+
+    const HighsInt sifted_lp_num_col = sifted_list.size();
+    if (sifted_lp_num_col < purge_threshold * lp_.num_row_) continue;
+    // Purge some entries
+    const HighsInt purge_num_col = purge_multiplier * lp_.num_row_;
+    
+    highsLogUser(options_->log_options, HighsLogType::kInfo,
+                 "Sifting iter %3d: Purge %6d of %6d columns from the LP\n",
+                 int(sifting_iter), int(purge_num_col), int(sifted_lp_num_col));
+    purgeSiftedList(purge_num_col, sifted_solver_object,
+		    sifted_list, in_sifted_list);
+    
   }
 
   assert(1 == 0);
   return HighsStatus::kError;
+}
+
+void HEkk::purgeSiftedList(const HighsInt num_purge_from_sifted_list,
+			   HighsLpSolverObject& sifted_solver_object,
+			   std::vector<HighsInt>& sifted_list,
+			   std::vector<bool>& in_sifted_list) {
+  const HighsInt sifted_lp_num_col = sifted_list.size();
+  const HighsInt sifted_lp_num_row = lp_.num_row_;
+  HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
+  std::vector<double>& workDual =
+      sifted_solver_object.ekk_instance_.info_.workDual_;
+  std::vector<HighsInt> heap_index;
+  std::vector<double> heap_value;
+  heap_index.push_back(0);
+  heap_value.push_back(0);
+  for (HighsInt iX = 0; iX < sifted_lp_num_col; iX++) {
+    HighsInt iCol = sifted_list[iX];
+    double dual = workDual[iX];
+    // Determine the dual feasibility for this column
+    const double lower = info_.workLower_[iCol];
+    const double upper = info_.workUpper_[iCol];
+    assert(lower<upper);
+    double dual_feasibility = 0;
+    if (lower > -kHighsInf || upper < kHighsInf) {
+      // Not free: dual feasibility is given by the dual value signed
+      // by nonbasicMove since there must be no equalities
+      dual_feasibility = basis_.nonbasicMove_[iCol] * dual;
+    }
+    assert(dual_feasibility >= -options_->dual_feasibility_tolerance);
+    heap_index.push_back(iX);
+    heap_value.push_back(-dual_feasibility);
+  }  
+  // Sort candidates to leave the sifted list
+  HighsInt heap_num_en = heap_index.size() - 1;
+  assert(heap_num_en == sifted_lp_num_col);
+  // Sort by increasing dual merit - since decreasing sort isn't
+  // available.
+  maxheapsort(&heap_value[0], &heap_index[0], heap_num_en);
+  std::vector<HighsInt> mask;
+  mask.assign(sifted_lp_num_col, 0);
+  for (HighsInt k = 1; k <= num_purge_from_sifted_list; k++)
+    mask[heap_index[k]] = 1;
+  HighsInt sifted_lp_new_num_col = 0;
+  for (HighsInt iX = 0; iX < sifted_lp_num_col; iX++) {
+    HighsInt iCol = sifted_list[iX];
+    if (mask[iX]) {
+      // Purge
+      in_sifted_list[iCol] = false;
+      // Need to ensure that the main dual value is up-to-date, since
+      // they are used to consider adding the variable to the sifted
+      // LP
+      this->info_.workDual_[iCol] = workDual[iX];
+    } else {
+      // Keep
+      sifted_list[sifted_lp_new_num_col] = iCol;
+      // Shift workDual, as it's needed for to check duals in
+      // HEkk::addToSiftedList
+      if (check_duals)
+	workDual[sifted_lp_new_num_col] = workDual[iX];
+      sifted_lp_new_num_col++;
+    }
+  }
+  // Shift the row duals as they're needed for HEkk::addToSiftedList
+  for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++) 
+    workDual[sifted_lp_new_num_col+iRow] = workDual[sifted_lp_num_col+iRow];
+  workDual.resize(sifted_lp_new_num_col + lp_.num_row_);
+  HighsIndexCollection delete_sifted_cols;
+  create(delete_sifted_cols, &mask[0], sifted_lp_num_col);
+  sifted_ekk_instance.deleteNonbasicColsFromLp(delete_sifted_cols);
+  sifted_list.resize(sifted_lp_new_num_col);
 }
 
 void HEkk::getInitialRowStatusAndDual(
@@ -164,7 +249,13 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
         HighsInt iRow = lp_.a_matrix_.index_[iEl];
         dual += lp_.a_matrix_.value_[iEl] * workDual[sifted_lp_num_col + iRow];
       }
-      assert(std::fabs(dual - workDual[iX]) < 1e-4);
+      const bool dual_ok = std::fabs(dual - workDual[iX]) < 1e-4;
+      if (!dual_ok) {
+	printf("iX %2d; iCol %4d: dual = %11.4g; workDual[iX] =  %11.4g\n",
+	       int(iX), int(iCol), dual, workDual[iX]);
+	fflush(stdout);
+      }
+      assert(dual_ok);
     }
   }
 
@@ -224,6 +315,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       }
       if (first_sifted_lp)
         assert(std::fabs(dual - info_.workDual_[iCol]) < 1e-4);
+      info_.workDual_[iCol] = dual;
     }
     // Determine the dual infeasibility for this column
     const double lower = info_.workLower_[iCol];
@@ -233,11 +325,13 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       // Free: any nonzero dual value is infeasible
       dual_infeasibility = fabs(dual);
     } else {
-      // Not free: any dual infeasibility is given by the dual value
-      // signed by nonbasicMove
+      // Not free: any dual infeasibility is given by the negation of
+      // the dual value signed by nonbasicMove
       dual_infeasibility = -basis_.nonbasicMove_[iCol] * dual;
     }
     if (dual_infeasibility > options_->dual_feasibility_tolerance) {
+      // Mustn't be an equality
+      assert(lower<upper);
       num_dual_infeasibilities++;
       // Dual infeasible, so store the index and dual merit
       heap_index.push_back(iCol);
@@ -406,6 +500,31 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
   return num_add_to_sifted_list;
 }
 
+void HEkk::getSiftedLpInfo(HighsLpSolverObject& sifted_solver_object) {
+  const HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
+  // Save data on infeasibilities
+  info_.num_primal_infeasibilities =
+      sifted_ekk_instance.info_.num_primal_infeasibilities;
+  info_.num_dual_infeasibilities =
+      sifted_ekk_instance.info_.num_dual_infeasibilities;
+
+  // Copy over iteration count data
+  iteration_count_ = sifted_ekk_instance.iteration_count_;
+  info_.dual_phase1_iteration_count =
+      sifted_ekk_instance.info_.dual_phase1_iteration_count;
+  info_.dual_phase2_iteration_count =
+      sifted_ekk_instance.info_.dual_phase2_iteration_count;
+  info_.primal_phase1_iteration_count =
+      sifted_ekk_instance.info_.primal_phase1_iteration_count;
+  info_.primal_phase2_iteration_count =
+      sifted_ekk_instance.info_.primal_phase2_iteration_count;
+  info_.primal_bound_swap = sifted_ekk_instance.info_.primal_bound_swap;
+
+  // Set analysis data so that reporting is correct
+  analysis_.simplex_iteration_count = iteration_count_;
+  analysis_.objective_value = sifted_ekk_instance.info_.primal_objective_value;
+}
+
 void HEkk::getSiftedBasisSolutionInvertWeightsInfo(
     HighsLpSolverObject& sifted_solver_object,
     const std::vector<HighsInt>& sifted_list) {
@@ -443,27 +562,7 @@ void HEkk::getSiftedBasisSolutionInvertWeightsInfo(
   // Copy the INVERT
   this->getInvert(sifted_solver_object.ekk_instance_);
 
-  // Save data on infeasibilities
-  info_.num_primal_infeasibilities =
-      sifted_ekk_instance.info_.num_primal_infeasibilities;
-  info_.num_dual_infeasibilities =
-      sifted_ekk_instance.info_.num_dual_infeasibilities;
-
-  // Copy over iteration count data
-  iteration_count_ = sifted_ekk_instance.iteration_count_;
-  info_.dual_phase1_iteration_count =
-      sifted_ekk_instance.info_.dual_phase1_iteration_count;
-  info_.dual_phase2_iteration_count =
-      sifted_ekk_instance.info_.dual_phase2_iteration_count;
-  info_.primal_phase1_iteration_count =
-      sifted_ekk_instance.info_.primal_phase1_iteration_count;
-  info_.primal_phase2_iteration_count =
-      sifted_ekk_instance.info_.primal_phase2_iteration_count;
-  info_.primal_bound_swap = sifted_ekk_instance.info_.primal_bound_swap;
-
-  // Set analysis data so that reporting is correct
-  analysis_.simplex_iteration_count = iteration_count_;
-  analysis_.objective_value = sifted_ekk_instance.info_.primal_objective_value;
+  getSiftedLpInfo(sifted_solver_object);
 }
 
 bool HEkk::debugOkSiftedList(const std::vector<HighsInt>& sifted_list,

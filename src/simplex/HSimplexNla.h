@@ -120,6 +120,7 @@ class HSimplexNla {
   void addCols(const HighsLp* updated_lp);
   void addRows(const HighsLp* updated_lp, HighsInt* basic_index,
                const HighsSparseMatrix* scaled_ar_matrix);
+  void deleteNonbasicCols(const HighsLp* updated_lp);
   bool sparseLoopStyle(const HighsInt count, const HighsInt dim,
                        HighsInt& to_entry) const;
   void reportVector(const std::string message, const HighsInt num_index,

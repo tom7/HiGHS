@@ -89,9 +89,9 @@ class HEkk {
                    const std::vector<HighsBasisStatus>& new_col_status);
   void addColsToNla(const HighsLp& lp);
   void addRows(const HighsLp& lp, const HighsSparseMatrix& scaled_ar_matrix);
-  void deleteCols(const HighsIndexCollection& index_collection);
-  void deleteNonbasicColsFromLp(const HighsIndexCollection& index_collection);
-  void deleteRows(const HighsIndexCollection& index_collection);
+  void deleteCols(HighsIndexCollection& index_collection);
+  void deleteNonbasicColsFromLp(HighsIndexCollection& index_collection);
+  void deleteRows(HighsIndexCollection& index_collection);
   void unscaleSimplex(const HighsLp& incumbent_lp);
   double factorSolveError();
 
@@ -140,6 +140,7 @@ class HEkk {
                        HighsLpSolverObject& sifted_solver_object,
                        std::vector<HighsInt>& sifted_list,
                        std::vector<bool>& in_sifted_list);
+  void getSiftedLpInfo(HighsLpSolverObject& sifted_solver_object);
   void getSiftedBasisSolutionInvertWeightsInfo(
       HighsLpSolverObject& sifted_solver_object,
       const std::vector<HighsInt>& sifted_list);

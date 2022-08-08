@@ -1405,13 +1405,89 @@ void HEkk::addRows(const HighsLp& lp,
   this->updateStatus(LpAction::kNewRows);
 }
 
-void HEkk::deleteNonbasicColsFromLp(
-    const HighsIndexCollection& index_collection) {}
+void HEkk::deleteNonbasicColsFromLp(HighsIndexCollection& index_collection) {
+  HighsLp& lp = this->lp_;
+  SimplexBasis& basis = this->basis_;
+  HighsInt new_num_col = 0;
+  HighsInt new_num_nz = 0;
+  assert(index_collection.is_mask_);
+  for (HighsInt iCol = 0; iCol < lp.num_col_; iCol++) {
+    if (index_collection.mask_[iCol]) {
+      // Delete
+      //
+      // Must be nonbasic
+      assert(basis.nonbasicFlag_[iCol] == kNonbasicFlagTrue);
+      continue;
+    }
+    // Retain
+    //
+    // Modify LP data
+    lp.col_cost_[new_num_col] = lp.col_cost_[iCol];
+    lp.col_lower_[new_num_col] = lp.col_lower_[iCol];
+    lp.col_upper_[new_num_col] = lp.col_upper_[iCol];
+    for (HighsInt iEl = lp.a_matrix_.start_[iCol];
+	 iEl < lp.a_matrix_.start_[iCol+1]; iEl++) {
+      lp.a_matrix_.index_[new_num_nz] = lp.a_matrix_.index_[iEl];
+      lp.a_matrix_.value_[new_num_nz] = lp.a_matrix_.value_[iEl];
+      new_num_nz++;
+    }
+    lp.a_matrix_.start_[new_num_col+1] = new_num_nz;
+    // Shift nonbasic data
+    basis.nonbasicFlag_[new_num_col] = basis.nonbasicFlag_[iCol];
+    basis.nonbasicMove_[new_num_col] = basis.nonbasicMove_[iCol];
+    index_collection.mask_[iCol] = new_num_col;
+    new_num_col++;
+  }
+  for (HighsInt iCol = 0; iCol < lp.num_col_; iCol++) {
+    const bool start_ok = lp.a_matrix_.start_[iCol+1] >= lp.a_matrix_.start_[iCol];
+    if (!start_ok) {
+      printf("Start error: iCol = %2d: [%3d; %3d)\n",
+	     int(iCol), int(lp.a_matrix_.start_[iCol]), int(lp.a_matrix_.start_[iCol+1]));
+      fflush(stdout);
+    }
+    assert(start_ok);
+  }
+  lp.col_cost_.resize(new_num_col);
+  lp.col_lower_.resize(new_num_col);
+  lp.col_upper_.resize(new_num_col);
+  const HighsInt new_num_tot = new_num_col + lp.num_row_;
+  const HighsInt num_del_col = lp.num_col_ - new_num_col;
+  for (HighsInt iRow = 0; iRow < lp.num_row_; iRow++) {
+    // Shift nonbasic data
+    basis.nonbasicFlag_[new_num_col + iRow] = basis.nonbasicFlag_[lp.num_col_ + iRow];
+    basis.nonbasicMove_[new_num_col + iRow] = basis.nonbasicMove_[lp.num_col_ + iRow];
+    // Shift basic data
+    HighsInt iVar = basis.basicIndex_[iRow];
+    if (iVar < lp.num_col_) {
+      basis.basicIndex_[iRow] = index_collection.mask_[iVar];
+    } else {
+      basis.basicIndex_[iRow] = iVar - num_del_col;
+    }
+  }
+  for (HighsInt iRow = 0; iRow < lp.num_row_; iRow++)
+    assert(basis.nonbasicFlag_[basis.basicIndex_[iRow]] == kNonbasicFlagFalse);
+  basis.nonbasicFlag_.resize(new_num_tot);
+  basis.nonbasicMove_.resize(new_num_tot);
+  // Invalidate the row-wise matrix
+  this->status_.has_ar_matrix = false;
+  this->status_.has_primal_objective_value = false;
 
-void HEkk::deleteCols(const HighsIndexCollection& index_collection) {
+  // Resize the vector used to scatter dual_edge_weight_
+  if (this->status_.has_dual_steepest_edge_weights)
+    scattered_dual_edge_weight_.resize(new_num_tot);
+
+  // Update the LP and matrix column dimension
+  lp.num_col_ -= num_del_col;
+  lp.a_matrix_.num_col_ = lp.num_col_;
+
+  // Call to HSimplexNla::addCols
+  if (this->status_.has_nla) this->simplex_nla_.deleteNonbasicCols(&lp);
+}
+
+void HEkk::deleteCols(HighsIndexCollection& index_collection) {
   this->updateStatus(LpAction::kDelCols);
 }
-void HEkk::deleteRows(const HighsIndexCollection& index_collection) {
+void HEkk::deleteRows(HighsIndexCollection& index_collection) {
   this->updateStatus(LpAction::kDelRows);
 }
 
