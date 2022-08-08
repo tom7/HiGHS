@@ -459,16 +459,19 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
   // sifted list so that the row bounds can be modified appropriately
   std::vector<double> unsifted_row_activity;
   unsifted_row_activity.assign(sifted_lp_num_row, 0);
+  HighsInt num_nonzero_nonbasic_values = 0;
   for (HighsInt iCol = 0; iCol < lp_.num_col_; iCol++) {
     if (in_sifted_list[iCol]) continue;
     double value = info_.workValue_[iCol];
-    assert(value == 0);
+    if (std::abs(value) > 1e-4) num_nonzero_nonbasic_values++;
     for (HighsInt iEl = lp_.a_matrix_.start_[iCol];
          iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
       HighsInt iRow = lp_.a_matrix_.index_[iEl];
       unsifted_row_activity[iRow] += value * lp_.a_matrix_.value_[iEl];
     }
   }
+  assert(num_nonzero_nonbasic_values==0);
+  printf("HEkk::addToSiftedList %d nonzero nonbasic values\n", int(num_nonzero_nonbasic_values));
   if (first_sifted_lp) {
     // Complete the first sifted LP by adding its rows
     sifted_lp.row_lower_.resize(sifted_lp_num_row);
