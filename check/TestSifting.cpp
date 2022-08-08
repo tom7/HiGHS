@@ -24,8 +24,11 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
   const HighsInt row_count = num_col * density;
   
   HighsRandom random;
-  lp.col_lower_.assign(num_col, 0);//1);//
-  lp.col_upper_.assign(num_col, 100.0);
+  const bool simple_boundedlp = true;
+  const double lower_bound = simple_boundedlp ? 0 : 1;
+  const double upper_bound = simple_boundedlp ? 100 : 100;
+  lp.col_lower_.assign(num_col, lower_bound);
+  lp.col_upper_.assign(num_col, upper_bound);
   for (HighsInt iCol = 0; iCol < num_col; iCol++) {
     double cost = 1 + random.fraction();
     if (num_row == 1) cost = 0.1 * (num_col - iCol);
