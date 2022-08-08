@@ -1450,6 +1450,9 @@ void HEkk::deleteNonbasicColsFromLp(HighsIndexCollection& index_collection) {
   lp.col_cost_.resize(new_num_col);
   lp.col_lower_.resize(new_num_col);
   lp.col_upper_.resize(new_num_col);
+  lp.a_matrix_.start_.resize(new_num_col+1);
+  lp.a_matrix_.index_.resize(new_num_nz);
+  lp.a_matrix_.value_.resize(new_num_nz);
   const HighsInt new_num_tot = new_num_col + lp.num_row_;
   const HighsInt num_del_col = lp.num_col_ - new_num_col;
   for (HighsInt iRow = 0; iRow < lp.num_row_; iRow++) {
