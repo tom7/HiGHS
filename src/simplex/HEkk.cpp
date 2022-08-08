@@ -1438,7 +1438,7 @@ void HEkk::deleteNonbasicColsFromLp(HighsIndexCollection& index_collection) {
     index_collection.mask_[iCol] = new_num_col;
     new_num_col++;
   }
-  for (HighsInt iCol = 0; iCol < lp.num_col_; iCol++) {
+  for (HighsInt iCol = 0; iCol < new_num_col; iCol++) {
     const bool start_ok = lp.a_matrix_.start_[iCol+1] >= lp.a_matrix_.start_[iCol];
     if (!start_ok) {
       printf("Start error: iCol = %2d: [%3d; %3d)\n",
