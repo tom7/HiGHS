@@ -21,8 +21,10 @@
 #include "util/HighsSort.h"
 
 const bool check_duals = true;
-const double purge_threshold = kHighsInf;//5.0;//1.5;
-const double purge_multiplier = 3.0;//0.8;
+const double purge_col_threshold = 0.25;//kHighsInf;//
+const double purge_col_multiplier = 0.5*purge_col_threshold;
+const double purge_row_threshold = 5.0;//1.5;
+const double purge_row_multiplier = 3.0;//0.8;
 
 HighsStatus HEkk::sifting() {
   HighsStatus return_status = HighsStatus::kOk;
@@ -99,9 +101,11 @@ HighsStatus HEkk::sifting() {
     if (sifting_iter > 1000) break;
 
     const HighsInt sifted_lp_num_col = sifted_list.size();
-    if (sifted_lp_num_col < purge_threshold * lp_.num_row_) continue;
+    //    if (sifted_lp_num_col < purge_row_threshold * lp_.num_row_) continue;
+    if (sifted_lp_num_col < purge_col_threshold * lp_.num_col_) continue;
     // Purge some entries
-    const HighsInt purge_num_col = purge_multiplier * lp_.num_row_;
+    //    const HighsInt purge_num_col = purge_row_multiplier * lp_.num_row_;
+    const HighsInt purge_num_col = purge_col_multiplier * lp_.num_col_;
     
     highsLogUser(options_->log_options, HighsLogType::kInfo,
                  "Sifting iter %3d: Purge %6d of %6d columns from the LP\n",
@@ -125,6 +129,7 @@ void HEkk::purgeSiftedList(const HighsInt num_purge_from_sifted_list,
   SimplexBasis& sifted_basis = sifted_ekk_instance.basis_;
   std::vector<double>& sifted_workLower = sifted_ekk_instance.info_.workLower_;
   std::vector<double>& sifted_workUpper = sifted_ekk_instance.info_.workUpper_;
+  std::vector<double>& sifted_workValue = sifted_ekk_instance.info_.workValue_;
   std::vector<double>& sifted_workDual =
       sifted_solver_object.ekk_instance_.info_.workDual_;
   std::vector<HighsInt> heap_index;
@@ -164,9 +169,10 @@ void HEkk::purgeSiftedList(const HighsInt num_purge_from_sifted_list,
     if (mask[iX]) {
       // Purge
       in_sifted_list[iCol] = false;
-      // Need to ensure that the main dual value is up-to-date, since
-      // they are used to consider adding the variable to the sifted
-      // LP
+      // Need to ensure that the main primal and dual values are
+      // up-to-date, since they are used to consider adding the
+      // variable to the sifted LP and determine the RHS shifts
+      this->info_.workValue_[iCol] = sifted_workValue[iX];
       this->info_.workDual_[iCol] = sifted_workDual[iX];
     } else {
       // Keep
@@ -225,6 +231,11 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
   HighsLp& sifted_lp = sifted_solver_object.lp_;
   HighsBasis& sifted_basis = sifted_solver_object.basis_;
   HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
+  std::vector<double>& sifted_workLower = sifted_ekk_instance.info_.workLower_;
+  std::vector<double>& sifted_workUpper = sifted_ekk_instance.info_.workUpper_;
+  std::vector<double>& sifted_workValue = sifted_ekk_instance.info_.workValue_;
+  std::vector<double>& sifted_workDual =
+      sifted_solver_object.ekk_instance_.info_.workDual_;
   HighsInt sifted_lp_num_col = sifted_list.size();
   const HighsInt sifted_lp_num_row = lp_.num_row_;
   const bool primal_feasible = info_.num_primal_infeasibilities == 0;
@@ -451,6 +462,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
   for (HighsInt iCol = 0; iCol < lp_.num_col_; iCol++) {
     if (in_sifted_list[iCol]) continue;
     double value = info_.workValue_[iCol];
+    assert(value == 0);
     for (HighsInt iEl = lp_.a_matrix_.start_[iCol];
          iEl < lp_.a_matrix_.start_[iCol + 1]; iEl++) {
       HighsInt iRow = lp_.a_matrix_.index_[iEl];
@@ -483,16 +495,14 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
     // Update the row bounds of the sifted LP
     sifted_lp_num_col = sifted_list.size();
     const HighsInt sifted_lp_num_tot = sifted_lp_num_col + sifted_lp_num_row;
-    sifted_solver_object.ekk_instance_.info_.workLower_.resize(
-        sifted_lp_num_tot);
-    sifted_solver_object.ekk_instance_.info_.workUpper_.resize(
-        sifted_lp_num_tot);
+    sifted_workLower.resize(sifted_lp_num_tot);
+    sifted_workUpper.resize(sifted_lp_num_tot);
     for (HighsInt iRow = 0; iRow < sifted_lp_num_row; iRow++) {
       HighsInt iVar = lp_.num_col_ + iRow;
       HighsInt sifted_iVar = sifted_lp_num_col + iRow;
-      sifted_solver_object.ekk_instance_.info_.workLower_[sifted_iVar] =
+      sifted_workLower[sifted_iVar] =
           info_.workLower_[iVar] - unsifted_row_activity[iRow];
-      sifted_solver_object.ekk_instance_.info_.workUpper_[sifted_iVar] =
+      sifted_workUpper[sifted_iVar] =
           info_.workUpper_[iVar] - unsifted_row_activity[iRow];
     }
     // Add new columns to the LP in HEkk
