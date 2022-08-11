@@ -108,7 +108,7 @@ HighsStatus HEkk::sifting() {
     // Purge some entries. Have to ensure that there can be at least
     // lp_.num_row_ unpurged columns to account for basic columns
     const HighsInt purge_num_col =
-        std::min(int(purge_col_multiplier * lp_.num_col_),
+        std::min(HighsInt(purge_col_multiplier * lp_.num_col_),
                  sifted_lp_num_col - lp_.num_row_);
     // This should be true by virtue of there being more than twice as
     // many sifted columns as rows
@@ -392,7 +392,11 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
     HighsInt iCol = -1;
     // ToDo: Compile initial LP and basis in new data structures
     for (;;) {
-      iCol = use_random ? random.integer(lp_.num_col_) : iCol++;
+      if (use_random) {
+        iCol = random.integer(lp_.num_col_);
+      } else {
+        iCol++;
+      }
       if (in_sifted_list[iCol]) continue;
       // Add to sifted list
       num_add_to_sifted_list++;
