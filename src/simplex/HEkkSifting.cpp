@@ -21,7 +21,7 @@
 #include "util/HighsSort.h"
 
 const bool check_duals = true;
-const double purge_col_threshold = 0.6;//0.25;//kHighsInf;//
+const double purge_col_threshold = 0.25;//kHighsInf;//
 const double purge_col_multiplier = 0.5*purge_col_threshold;
 const double purge_row_threshold = 5.0;//1.5;
 const double purge_row_multiplier = 3.0;//0.8;
@@ -98,7 +98,7 @@ HighsStatus HEkk::sifting() {
                  sifted_ekk_instance.info_.primal_objective_value,
                  int(info_.num_primal_infeasibilities),
                  int(info_.num_dual_infeasibilities));
-    if (sifting_iter > 10) break;
+    if (sifting_iter > 1000) break;
 
     const HighsInt sifted_lp_num_col = sifted_list.size();
     //    if (sifted_lp_num_col < purge_row_threshold * lp_.num_row_) continue;

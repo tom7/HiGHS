@@ -10,6 +10,7 @@ const double inf = kHighsInf;
 
 // No commas in test case name.
 TEST_CASE("test-sifting", "[highs_sifting]") {
+  /*
   HighsLp lp;
   Highs highs;
   highs.setOptionValue("output_flag", dev_run);
@@ -24,7 +25,7 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
   const HighsInt row_count = num_col * density;
   
   HighsRandom random;
-  const bool simple_boundedlp = true;
+  const bool simple_boundedlp = false;
   const double lower_bound = simple_boundedlp ? 0 : 1;
   const double upper_bound = simple_boundedlp ? 100 : 100;
   lp.col_lower_.assign(num_col, lower_bound);
@@ -94,4 +95,5 @@ TEST_CASE("test-sifting", "[highs_sifting]") {
   highs.setBasis();
   highs.setSolution();
   highs.run();
+  */
 }
