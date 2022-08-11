@@ -21,10 +21,10 @@
 #include "util/HighsSort.h"
 
 const bool check_duals = true;
-const double purge_col_threshold = 0.25;//kHighsInf;//
-const double purge_col_multiplier = 0.5*purge_col_threshold;
-const double purge_row_threshold = 5.0;//1.5;
-const double purge_row_multiplier = 3.0;//0.8;
+const double purge_col_threshold = 0.25;  // kHighsInf;//
+const double purge_col_multiplier = 0.5 * purge_col_threshold;
+const double purge_row_threshold = 5.0;   // 1.5;
+const double purge_row_multiplier = 3.0;  // 0.8;
 
 HighsStatus HEkk::sifting() {
   HighsStatus return_status = HighsStatus::kOk;
@@ -104,21 +104,21 @@ HighsStatus HEkk::sifting() {
     //    if (sifted_lp_num_col < purge_row_threshold * lp_.num_row_) continue;
     if (sifted_lp_num_col < purge_col_threshold * lp_.num_col_) continue;
     // Only purge with more than twice as many sifted columns as rows
-    if (sifted_lp_num_col <= 2*lp_.num_row_) continue;
+    if (sifted_lp_num_col <= 2 * lp_.num_row_) continue;
     // Purge some entries. Have to ensure that there can be at least
     // lp_.num_row_ unpurged columns to account for basic columns
-    const HighsInt purge_num_col = std::min(int(purge_col_multiplier * lp_.num_col_),
-					    sifted_lp_num_col - lp_.num_row_);
+    const HighsInt purge_num_col =
+        std::min(int(purge_col_multiplier * lp_.num_col_),
+                 sifted_lp_num_col - lp_.num_row_);
     // This should be true by virtue of there being more than twice as
     // many sifted columns as rows
     assert(purge_num_col > 0);
-    
+
     highsLogUser(options_->log_options, HighsLogType::kInfo,
                  "Sifting iter %3d: Purge %6d of %6d columns from the LP\n",
                  int(sifting_iter), int(purge_num_col), int(sifted_lp_num_col));
-    purgeSiftedList(purge_num_col, sifted_solver_object,
-		    sifted_list, in_sifted_list);
-    
+    purgeSiftedList(purge_num_col, sifted_solver_object, sifted_list,
+                    in_sifted_list);
   }
 
   assert(1 == 0);
@@ -126,9 +126,9 @@ HighsStatus HEkk::sifting() {
 }
 
 void HEkk::purgeSiftedList(const HighsInt num_purge_from_sifted_list,
-			   HighsLpSolverObject& sifted_solver_object,
-			   std::vector<HighsInt>& sifted_list,
-			   std::vector<bool>& in_sifted_list) {
+                           HighsLpSolverObject& sifted_solver_object,
+                           std::vector<HighsInt>& sifted_list,
+                           std::vector<bool>& in_sifted_list) {
   const HighsInt sifted_lp_num_col = sifted_list.size();
   const HighsInt sifted_lp_num_row = lp_.num_row_;
   HEkk& sifted_ekk_instance = sifted_solver_object.ekk_instance_;
@@ -154,7 +154,7 @@ void HEkk::purgeSiftedList(const HighsInt num_purge_from_sifted_list,
     // Determine the dual feasibility for this column
     const double lower = sifted_workLower[iX];
     const double upper = sifted_workUpper[iX];
-    assert(lower<upper);
+    assert(lower < upper);
     double dual_feasibility = 0;
     if (lower > -kHighsInf || upper < kHighsInf) {
       // Not free: dual feasibility is given by the dual value signed
@@ -164,7 +164,7 @@ void HEkk::purgeSiftedList(const HighsInt num_purge_from_sifted_list,
     assert(dual_feasibility >= -options_->dual_feasibility_tolerance);
     heap_index.push_back(iX);
     heap_value.push_back(-dual_feasibility);
-  }  
+  }
   // Sort candidates to leave the sifted list
   HighsInt heap_num_en = heap_index.size() - 1;
   assert(heap_num_en == sifted_lp_num_col - num_basic_sifted_col);
@@ -202,13 +202,14 @@ void HEkk::purgeSiftedList(const HighsInt num_purge_from_sifted_list,
       // Shift workDual, as it's needed for to check duals in
       // HEkk::addToSiftedList
       if (check_duals)
-	sifted_workDual[sifted_lp_new_num_col] = sifted_workDual[iX];
+        sifted_workDual[sifted_lp_new_num_col] = sifted_workDual[iX];
       sifted_lp_new_num_col++;
     }
   }
   // Shift the row duals as they're needed for HEkk::addToSiftedList
-  for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++) 
-    sifted_workDual[sifted_lp_new_num_col+iRow] = sifted_workDual[sifted_lp_num_col+iRow];
+  for (HighsInt iRow = 0; iRow < lp_.num_row_; iRow++)
+    sifted_workDual[sifted_lp_new_num_col + iRow] =
+        sifted_workDual[sifted_lp_num_col + iRow];
   sifted_workDual.resize(sifted_lp_new_num_col + lp_.num_row_);
   HighsIndexCollection delete_sifted_cols;
   create(delete_sifted_cols, &mask[0], sifted_lp_num_col);
@@ -286,9 +287,9 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
       }
       const bool dual_ok = std::fabs(dual - workDual[iX]) < 1e-4;
       if (!dual_ok) {
-	printf("iX %2d; iCol %4d: dual = %11.4g; workDual[iX] =  %11.4g\n",
-	       int(iX), int(iCol), dual, workDual[iX]);
-	fflush(stdout);
+        printf("iX %2d; iCol %4d: dual = %11.4g; workDual[iX] =  %11.4g\n",
+               int(iX), int(iCol), dual, workDual[iX]);
+        fflush(stdout);
       }
       assert(dual_ok);
     }
@@ -366,7 +367,7 @@ HighsInt HEkk::addToSiftedList(const HighsInt max_add_to_sifted_list,
     }
     if (dual_infeasibility > options_->dual_feasibility_tolerance) {
       // Mustn't be an equality
-      assert(lower<upper);
+      assert(lower < upper);
       num_dual_infeasibilities++;
       // Dual infeasible, so store the index and dual merit
       heap_index.push_back(iCol);

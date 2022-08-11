@@ -1426,12 +1426,12 @@ void HEkk::deleteNonbasicColsFromLp(HighsIndexCollection& index_collection) {
     lp.col_lower_[new_num_col] = lp.col_lower_[iCol];
     lp.col_upper_[new_num_col] = lp.col_upper_[iCol];
     for (HighsInt iEl = lp.a_matrix_.start_[iCol];
-	 iEl < lp.a_matrix_.start_[iCol+1]; iEl++) {
+         iEl < lp.a_matrix_.start_[iCol + 1]; iEl++) {
       lp.a_matrix_.index_[new_num_nz] = lp.a_matrix_.index_[iEl];
       lp.a_matrix_.value_[new_num_nz] = lp.a_matrix_.value_[iEl];
       new_num_nz++;
     }
-    lp.a_matrix_.start_[new_num_col+1] = new_num_nz;
+    lp.a_matrix_.start_[new_num_col + 1] = new_num_nz;
     // Shift nonbasic data
     basis.nonbasicFlag_[new_num_col] = basis.nonbasicFlag_[iCol];
     basis.nonbasicMove_[new_num_col] = basis.nonbasicMove_[iCol];
@@ -1441,15 +1441,17 @@ void HEkk::deleteNonbasicColsFromLp(HighsIndexCollection& index_collection) {
   lp.col_cost_.resize(new_num_col);
   lp.col_lower_.resize(new_num_col);
   lp.col_upper_.resize(new_num_col);
-  lp.a_matrix_.start_.resize(new_num_col+1);
+  lp.a_matrix_.start_.resize(new_num_col + 1);
   lp.a_matrix_.index_.resize(new_num_nz);
   lp.a_matrix_.value_.resize(new_num_nz);
   const HighsInt new_num_tot = new_num_col + lp.num_row_;
   const HighsInt num_del_col = lp.num_col_ - new_num_col;
   for (HighsInt iRow = 0; iRow < lp.num_row_; iRow++) {
     // Shift nonbasic data
-    basis.nonbasicFlag_[new_num_col + iRow] = basis.nonbasicFlag_[lp.num_col_ + iRow];
-    basis.nonbasicMove_[new_num_col + iRow] = basis.nonbasicMove_[lp.num_col_ + iRow];
+    basis.nonbasicFlag_[new_num_col + iRow] =
+        basis.nonbasicFlag_[lp.num_col_ + iRow];
+    basis.nonbasicMove_[new_num_col + iRow] =
+        basis.nonbasicMove_[lp.num_col_ + iRow];
     // Shift basic data
     HighsInt iVar = basis.basicIndex_[iRow];
     if (iVar < lp.num_col_) {
