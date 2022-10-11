@@ -15,7 +15,7 @@ HiGHS uses CMake as a build system. The simplest setup is to create a build fold
 cd HiGHS
 mkdir build
 cd build
-cmake ..
+cmake -DFAST_BUILD=ON ..
 cmake --build . 
 ```
 
@@ -40,7 +40,7 @@ cmake --install .
 To install in a specified installation directory run CMake with the `CMAKE_INSTALL_PREFIX` flag set: 
 
 ``` bash
-cmake -DCMAKE_INSTALL_PREFIX=/path/to/highs_install ..
+cmake -DFAST_BUILD=ON -DCMAKE_INSTALL_PREFIX=/path/to/highs_install ..
 cmake --build .
 cmake --install . 
 ```
