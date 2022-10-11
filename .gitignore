@@ -8,3 +8,9 @@ site/
 *__pycache__*
 *highspy.egg-info
 *.egg
+*.whl
+
+bazel-*
+
+HiGHS.log
+*.so
