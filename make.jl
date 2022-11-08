@@ -19,7 +19,7 @@ makedocs(
     ),
     clean = false,
     sitename = "HiGHS Documentation",
-    authors = "Julian Hall, Ivet Galabova, Leona Gottwald and Michael Feldmeier.",
+    authors = "Julian Hall, Ivet Galabova and Michael Feldmeier.",
     pages = [
         "Home" => "index.md",
         "About" => "about.md", 
