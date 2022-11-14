@@ -57,11 +57,16 @@ Int LpSolver::Solve() {
     try {
         InteriorPointSolve();
 	// Force crossover if info_.status_ipm == IPX_STATUS_imprecise
+	//
 	//        if ((info_.status_ipm == IPX_STATUS_optimal ||
 	//             info_.status_ipm == IPX_STATUS_imprecise) && control_.crossover()) {
         if ((info_.status_ipm == IPX_STATUS_optimal && control_.crossover()) ||
 	    info_.status_ipm == IPX_STATUS_imprecise) {
-            control_.Log() << "Crossover\n";
+	  if (!control_.crossover()) {
+	    control_.Log() << "Forcing crossover since IPM solution was imprecise\n";
+	  } else {
+	    control_.Log() << "Running crossover\n";
+	  }
             BuildCrossoverStartingPoint();
             RunCrossover();
         }
