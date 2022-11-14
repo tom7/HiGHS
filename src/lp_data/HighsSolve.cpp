@@ -74,9 +74,18 @@ HighsStatus solveLp(HighsLpSolverObject& solver_object, const string message) {
              HighsModelStatus::kUnboundedOrInfeasible &&
          !options.allow_unbounded_or_infeasible);
     if (unwelcome_ipx_status) {
-      if (options.run_crossover) {
-        //      if (solver_object.basis_.valid) {
-        //
+      const bool old_simplex_cleanup_logic = options.run_crossover;
+      const bool simplex_cleanup =
+          options.run_crossover || solver_object.basis_.valid;
+      if (simplex_cleanup && !solver_object.basis_.valid) {
+        printf("HighsStatus solveLp: simplex_cleanup but no basis\n");
+      }
+      if (solver_object.basis_.valid && !options.run_crossover) {
+        printf(
+            "HighsStatus solveLp: has basis but options.run_crossover is "
+            "false\n");
+      }
+      if (simplex_cleanup) {
         // IPX has returned a model status that HiGHS would rather
         // avoid, so perform simplex clean-up if crossover was allowed.
         //
