@@ -173,6 +173,14 @@ std::pair<HighsInt, HighsImplications::VarBound> HighsImplications::getBestVub(
     if (vub.coef == kHighsInf) return;
     if (mipsolver.mipdata_->domain.isFixed(vubCol)) return;
     assert(mipsolver.mipdata_->domain.isBinary(vubCol));
+    const bool is_nan = std::isnan(vub.coef);
+    if (is_nan) {
+      printf(
+          "HighsImplications::computeImplications: col %d: using vub.coef as "
+          "NAN\n",
+          int(vubCol));
+      assert(!is_nan);
+    }
     double vubval = lpSolution.col_value[vubCol] * vub.coef + vub.constant;
     double ubDist = std::max(0.0, vubval - lpSolution.col_value[col]);
 
