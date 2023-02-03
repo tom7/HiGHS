@@ -86,3 +86,34 @@ TEST_CASE("Presolve", "[highs_test_presolve]") {
   REQUIRE(highs.getModelStatus() == HighsModelStatus::kInfeasible);
   REQUIRE(presolved_model.isEmpty());
 }
+
+TEST_CASE("Presolve-logging", "[highs_test_presolve]") {
+  HighsLp lp;
+  lp.num_col_ = 2;
+  lp.num_row_ = 3;
+  lp.col_cost_ = {1.0, 2.0};
+  lp.col_lower_ = {0.0, 0.0};
+  lp.col_upper_ = {kHighsInf, kHighsInf};
+  lp.row_lower_ = {1.0, -kHighsInf, -kHighsInf};
+  lp.row_upper_ = {kHighsInf, kHighsInf, kHighsInf};
+  lp.a_matrix_.start_ = {0, 3, 6};
+  lp.a_matrix_.index_ = {0, 1, 2, 0, 1, 2};
+  lp.a_matrix_.value_ = {1.0, 2.0, 3.0, 1.0, 3.0, 4.0};
+  Highs highs;
+  highs.setOptionValue("output_flag", dev_run);
+  highs.setOptionValue("presolve_rule_logging", true);
+  highs.setOptionValue("log_dev_level", 1);
+  highs.passModel(lp);
+  highs.writeModel("");
+  highs.run();
+  const HighsPresolveLog& presolve_log = highs.getPresolveLog();
+  REQUIRE(presolve_log.rule[kPresolveRuleSingletonRow].call == 1);
+  REQUIRE(presolve_log.rule[kPresolveRuleSingletonRow].col_removed == 1);
+  REQUIRE(presolve_log.rule[kPresolveRuleSingletonRow].row_removed == 1);
+  REQUIRE(presolve_log.rule[kPresolveRuleRedundantRow].call == 2);
+  REQUIRE(presolve_log.rule[kPresolveRuleRedundantRow].col_removed == 0);
+  REQUIRE(presolve_log.rule[kPresolveRuleRedundantRow].row_removed == 2);
+  REQUIRE(presolve_log.rule[kPresolveRuleDominatedCol].call == 1);
+  REQUIRE(presolve_log.rule[kPresolveRuleDominatedCol].col_removed == 1);
+  REQUIRE(presolve_log.rule[kPresolveRuleDominatedCol].row_removed == 0);
+}
