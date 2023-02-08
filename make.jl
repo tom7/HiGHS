@@ -23,15 +23,18 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "About" => "about.md", 
-        "Get Started" => "get-started.md",
-        "Running the executable" => "run-executable.md",
-        "Using HiGHS" => Any[
-            "Model operations" => "man/guide.md",
-            "Examples" => "man/examples.md"],
-        "Options" => "man/options.md",
-        "Linking" => "man/link.md",
-        "Interfaces" => "man/interfaces.md",
-    ],
+        "HiGHS in Python" => Any[
+            "Get Started in Python" => "python/pip.md",
+            "Example" => "python/example-py.md",
+            "Notebooks" => "python/notebooks.md"],
+        "HiGHS in C++" => Any[
+            "Get Started in C++" => "cpp/get-started.md",
+            "The HiGHS Library" => "cpp/library.md",
+            "Options" => "cpp/options.md",
+            "Linking" => "cpp/link.md",
+            "Examples" => "cpp/examples.md"],
+        "Interfaces" => "interfaces.md",
+],
     strict = !("strict=false" in ARGS),
     doctest = ("doctest=only" in ARGS) ? :only : true,
 )

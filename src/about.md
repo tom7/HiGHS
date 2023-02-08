@@ -1,4 +1,4 @@
-## Specification
+### Specification
 
 HiGHS solves large scale sparse linear programming (LP) problems of the form
 ```math
@@ -7,10 +7,10 @@ HiGHS solves large scale sparse linear programming (LP) problems of the form
 
 The HiGHS core solver implementes the dual revised simplex method in parallel C++. An interior point solver is available as an optional feature.
 
-## OS
+### OS
 HiGHS can be used on Windows, Linux and MacOS.
 
-## Compilers
+### Compilers
 
 HiGHS can be used with the following compilers:
 
@@ -18,21 +18,19 @@ HiGHS can be used with the following compilers:
 - GNU ` g++ ` 
 - Intel ` icc `
 
-## Dependencies
+### Dependencies
 
 No third party sortware is required by HiGHS, except for the Threads library.
 
 In order to build HiGHS from source CMake 3.15 is required. For precompiled executables and libraries please contact us at [highsopt@gmail.com](mailto:highsopt@gmail.com).
 
-## Reference
+### Reference
 
 [Parallelizing the dual revised simplex method](http://www.maths.ed.ac.uk/hall/HuHa13/)
 Q. Huangfu and J. A. J. Hall
 Mathematical Programming Computation, 10 (1), 119-142, 2018.
 DOI: 10.1007/s12532-017-0130-5
 
-
-
-### Performance
+#### Performance
 
 The performance of HiGHS relative to some commercial and open-source simplex solvers may be assessed via the [Mittelmann benchmarks](http://plato.asu.edu/ftp/lpsimp.html).
