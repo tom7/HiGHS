@@ -1,6 +1,8 @@
+The HiGHS library is defined in the [`src/Highs.h`](https://github.com/ERGO-Code/HiGHS/blob/master/src/Highs.h) header file. It contains the definition of the methods and members of the class. 
+
 ## Define model
 
-Models in HiGHS are defined as an instance of the HighsModel class. This consists of one instance of the `HighsLp` class, and one instance of the `HighsHessian` class. Communication of models to and from HiGHS is possible via instances of the `HighsLp` or `HighsModel` class. In the C and other interfaces, communication of models is via scalar values and addresses of arrays.
+Models in HiGHS are defined as an instance of the `HighsModel` class. This consists of one instance of the `HighsLp` class, and one instance of the `HighsHessian` class. Communication of models to and from HiGHS is possible via instances of the `HighsLp` or `HighsModel` class. In the C and other interfaces, communication of models is via scalar values and addresses of arrays.
 
 In C++, the neatest way of passing a model to HiGHS is to create an instance of the `HighsModel` class, populate its data, and call
 ```
@@ -20,17 +22,17 @@ Below is an example of building a `HighsModel`
 
 ```
   // Create and populate a HighsModel instance for the LP
-  //
+  
   // Min    f  =  x_0 +  x_1 + 3
   // s.t.                x_1 <= 7
   //        5 <=  x_0 + 2x_1 <= 15
   //        6 <= 3x_0 + 2x_1
   // 0 <= x_0 <= 4; 1 <= x_1
-  //
+  
   // Although the first constraint could be expressed as an upper
   // bound on x_1, it serves to illustrate a non-trivial packed
   // column-wise matrix.
-  //
+  
   HighsModel model;
   model.lp_.num_col_ = 2;
   model.lp_.num_row_ = 3;
@@ -41,7 +43,7 @@ Below is an example of building a `HighsModel`
   model.lp_.col_upper_ = {4.0, 1.0e30};
   model.lp_.row_lower_ = {-1.0e30, 5.0, 6.0};
   model.lp_.row_upper_ = {7.0, 15.0, 1.0e30};
-  //
+  
   // Here the orientation of the matrix is column-wise
   model.lp_.a_matrix_.format_ = MatrixFormat::kColwise;
   // a_start_ has num_col_1 entries, and the last entry is the number
@@ -58,25 +60,24 @@ Below is an example of building a `HighsModel`
   // Create a Highs instance
   Highs highs;
   HighsStatus return_status;
-  //
+  
   // Pass the model to HiGHS
   return_status = highs.passModel(model);
   assert(return_status==HighsStatus::kOk);
-  //
+  
   // Get a const reference to the LP data in HiGHS
   const HighsLp& lp = highs.getLp();
-  //
+  
   // Solve the model
   return_status = highs.run();
   assert(return_status==HighsStatus::kOk);
-  //
+  
   // Get the model status
   const HighsModelStatus& model_status = highs.getModelStatus();
   assert(model_status==HighsModelStatus::kOptimal);
-  cout << "Model status: " << highs.modelStatusToString(model_status) << endl;
 ```
 
-## Solution information
+Solution information:
 
 ```
   const HighsInfo& info = highs.getInfo();
@@ -97,7 +98,3 @@ To indicate that variables must take integer values use the `HighsLp::integralit
 
   highs.passModel(model);
 ```
-
-## Example
-
-An example of how to solve the problem is in `examples/call_highs_from_cpp.cpp`.

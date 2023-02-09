@@ -1,7 +1,9 @@
 
 If highspy is not already installed, run
 
-```pip install highspy```
+```
+pip install highspy
+```
 
 ## Initialize Highs
 

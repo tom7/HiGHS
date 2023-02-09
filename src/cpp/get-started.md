@@ -1,6 +1,6 @@
 ## Download source code
 
-HiGHS can be cloned from the Edinburgh Group in Research and Optimization ([ERGO](https://www.maths.ed.ac.uk/ERGO/)) [GitHub repo](https://www.github.com/ERGO-COde/HiGHS).
+HiGHS can be cloned from the Edinburgh Group in Research and Optimization ([ERGO](https://www.maths.ed.ac.uk/ERGO/)) [GitHub repo](https://www.github.com/ERGO-Code/HiGHS).
 
 ``` bash
 git clone https://github.com/ERGO-Code/HiGHS.git
@@ -60,7 +60,7 @@ HiGHS can parse .mps and .lp files. Models can also be loaded at runtime from an
 
 ## Running the executable
 
-Assuming the executable was created following the [build]() instructions, and the lp model is specified in `model.mps` (see more on LP [Input file formats])In the following discussion, the name of the executable file created in build/bin when building HiGHS is assumed to be highs. HiGHS can read plain text MPS files and LP files (but not compressed files), and the following command solves the model in model.mps
+Assuming the executable was created following the build instructions above, and the lp model is specified in `model.mps` (see more on LP [Input file formats])In the following discussion, the name of the executable file created in `build/bin` when building HiGHS is assumed to be `highs`. HiGHS can read plain text MPS files and LP files (but not compressed files), and the following command solves the model in `model.mps`
 
 ```bash
   /build/bin/highs /path/to/model.mps
