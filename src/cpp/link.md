@@ -1,8 +1,8 @@
+## Using HiGHS from another CMake Project
+
 There are several ways the HiGHS library can be used within another C++ project. 
 
-## Use HiGHS from another CMake Project
-
-Make sure HiGHS is installed locally with the correct CMake flags:
+Firstly, make sure that HiGHS is installed locally with the correct CMake flags:
 
 ``` bash
 cd HiGHS
@@ -60,7 +60,11 @@ target_link_libraries(main highs::highs)
 
 ### Compiling and linking without CMake
 
-An executable defined in the file `use_highs.cpp` is linked with the HiGHS library as follows. Make sure HiGHS is installed in `install_folder` following the [installation guide](https://ergo-code.github.io/HiGHS/cpp/get-started.html#Install). Afterwards, compile and run with
+An executable defined in the file `use_highs.cpp` is linked with the
+HiGHS library as follows. Make sure HiGHS is installed in
+`install_folder` following the [installation
+guide](https://ergo-code.github.io/HiGHS/cpp/get-started.html#Install). Afterwards,
+compile and run with
 
 `g++ -o use_highs use_highs.cpp -I install_folder/include/ -L install_folder/lib/ -lhighs`
 

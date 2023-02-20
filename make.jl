@@ -23,6 +23,7 @@ makedocs(
     pages = [
         "Home" => "index.md",
         "About" => "about.md", 
+        "Guide" => "guide.md", 
         "HiGHS in Python" => Any[
             "Get Started in Python" => "python/pip.md",
             "Example" => "python/example-py.md",
@@ -34,6 +35,7 @@ makedocs(
             "Linking" => "cpp/link.md",
             "Examples" => "cpp/examples.md"],
         "Interfaces" => "interfaces.md",
+        "Terminology" => "terminology.md",
 ],
     strict = !("strict=false" in ARGS),
     doctest = ("doctest=only" in ARGS) ? :only : true,

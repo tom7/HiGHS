@@ -1,13 +1,36 @@
 ### Specification
 
-HiGHS solves large scale sparse linear programming (LP) problems of the form
+HiGHS is software for definition, modification and solution of general bounded large scale sparse linear optimization problems. It can solve linear programming (LP) problems of the form
 ```math
-\textrm{min} \qquad c^Tx \qquad \textrm{subject to} \qquad L <= Ax <= U; \qquad l <= x <= u.
+\textrm{min} \qquad c^Tx \qquad \textrm{subject to} \qquad L \le Ax \le U; \qquad l \le x \le u.
 ```
+and mixed integer programming (MIP) problems of the same form, for
+which some of the variables must take integer values. HiGHS also
+solves quadratic programming (QP) problems, with objective term
+$(1/2)x^TQx$, where the Hessian matrix $Q$ is positive
+semi-definite. It cannot solve QP problems where some of the variables
+must take integer values.
 
-The HiGHS core solver implementes the dual revised simplex method in parallel C++. An interior point solver is available as an optional feature.
+More on the
+[terminology](http://ergo-code.github.io/HiGHS/terminology.html) of
+optimization is available.
+
+### Solvers
+
+For LP problems, HiGHS has implementations of both the revised simplex
+and interior point methods. MIPs are solved by branch-and-price, and
+QPs by active set.
+
+### Model and solution management
+
+HiGHS has comprehensive tools for defining and extracting models. This
+can be done either to/from MPS or (CPLEX) format LP files, or via
+method calls. HiGHS also has methods that permit the incumbent model
+to be modified. Soluitons can be supplied and extracted using either
+files or method calls.
 
 ### OS
+
 HiGHS can be used on Windows, Linux and MacOS.
 
 ### Compilers
