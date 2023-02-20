@@ -54,6 +54,6 @@ Q. Huangfu and J. A. J. Hall
 Mathematical Programming Computation, 10 (1), 119-142, 2018.
 DOI: 10.1007/s12532-017-0130-5
 
-#### Performance
+### Performance
 
 The performance of HiGHS relative to some commercial and open-source simplex solvers may be assessed via the [Mittelmann benchmarks](http://plato.asu.edu/ftp/lpsimp.html).
