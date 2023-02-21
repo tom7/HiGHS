@@ -15,7 +15,35 @@ import numpy as np
 h = highspy.Highs()
 ```
 
-## Set up problem
+## Load a model
+
+```
+# Load a model from MPS file model.mps
+filename = 'model.mps'
+h.readModel(filename)
+```
+
+## Pass a model
+
+```
+# Pass a model from a HighsLp instance
+inf = highspy.kHighsInf
+lp = highspy.HighsLp()
+lp.num_col_ = 2
+lp.num_row_ = 2
+lp.sense_ = highspy.ObjSense.kMaximize
+lp.col_cost_ = np.array([8, 10], dtype=np.double)
+lp.col_lower_ = np.array([0, 0], dtype=np.double)
+lp.col_upper_ = np.array([inf, inf], dtype=np.double)
+lp.row_lower_ = np.array([-inf, -inf], dtype=np.double)
+lp.row_upper_ = np.array([120, 210], dtype=np.double)
+lp.a_matrix_.start_ = np.array([0, 2, 4])
+lp.a_matrix_.index_ = np.array([0, 1, 0, 1])
+lp.a_matrix_.value_ = np.array([0.3, 0.7, 0.5, 0.5], dtype=np.double)
+h.passModel(lp)
+```
+
+## Build a model
 
 ```
 inf = highspy.kHighsInf

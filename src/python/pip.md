@@ -7,7 +7,7 @@ If highspy is not already installed, run
 pip install highspy
 ```
 
-## Methods and structures to document by example
+### WIP: Methods and structures to document by example
 
 * __readModel__
 * __HighsLp__
