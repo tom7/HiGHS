@@ -9,10 +9,7 @@ pip install highspy
 
 ### WIP: Methods and structures to document by example
 
-* __readModel__
 * __HighsLp__
-* __passModel__
-* __run__
 * __getModelStatus__
 * __HighsModelStatus__
 * __getObjectiveValue__
@@ -36,8 +33,6 @@ pip install highspy
 * __changeColsBounds__
 * __changeRowsBounds__
 * __changeCoeff__
-* __addCol__
-* __addRow__
 * __addCols__
 * __addRows__
 * __deleteCols__

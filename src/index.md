@@ -6,26 +6,6 @@ large scale sparse linear optimization problems. It is freely
 available from [GitHub](https://github.com/ERGO-Code/HiGHS) under the
 MIT licence, and has no third-party dependencies.
 
-HiGHS can be used as a standalone
-[executable](https://ergo-code.github.io/HiGHS/executable.html) on
-Windows, Linux and MacOS. There is also a C++11 library that can be
-used within a C++ project or, via its C, C#, FORTRAN, Julia and Python
-interfaces.
-
-[Building HiGHS from source
-code](https://ergo-code.github.io/HiGHS/cpp/get-started.html#Building-HiGHS-from-source-code)
-requires a C++ compiler and CMake, but no other third-party utilities.
-
-Precompiled binaries are available for a variety of platforms at the
-[JuliaBinaryWrappers HiGHS
-repository](https://github.com/JuliaBinaryWrappers/HiGHS_jll.jl/releases). Each
-includes library files for linking to external projects, and a
-stand-alone executable
-
-For Windows users: if in doubt, choose the `x86_64-w64-mingw32-cxx11.tar.gz` file
-
-For Mac users: choose the `x86_64-apple-darwin.tar.gz` file.
-
 ### Specification
 
 HiGHS can solve linear programming (LP) problems of the form
@@ -42,6 +22,49 @@ must take integer values.
 More on the
 [terminology](http://ergo-code.github.io/HiGHS/terminology.html) of
 optimization is available.
+
+### Using HiGHS
+
+HiGHS can be used as a standalone executable on Windows, Linux and
+MacOS. There is also a C++11 library that can be used within a C++
+project or, via its C, C#, FORTRAN, Julia and Python interfaces.
+
+The executable and libraries can be built from source code, or
+downloaded as precompiled binaries.  [Building HiGHS from source
+code](https://ergo-code.github.io/HiGHS/cpp/get-started.html#Building-HiGHS-from-source-code)
+requires a C++ compiler and CMake, but no other third-party
+utilities. Precompiled binaries are available for a variety of
+platforms at the [JuliaBinaryWrappers HiGHS
+repository](https://github.com/JuliaBinaryWrappers/HiGHS_jll.jl/releases). Each
+includes library files for linking to external projects, and a
+stand-alone executable.
+
+*Maybe need a proper section on how to use the binaries, where observations on issues can be set out*
+
+* For Windows users: if in doubt, choose the `x86_64-w64-mingw32-cxx11.tar.gz` file
+
+* For Mac users: choose the `x86_64-apple-darwin.tar.gz` file.
+
+### Overview
+
+The standalone
+[executable](https://ergo-code.github.io/HiGHS/executable.html) allows
+models to be solved from
+[MPS](https://en.wikipedia.org/wiki/MPS_(format)) files or (CPLEX)
+[LP](https://web.mit.edu/lpsolve/doc/CPLEX-format.htm) files, with
+full control of- the HiGHS run-time options, and the solution can be
+written to files in human and computer-readable formats.
+
+The functionality of the HiGHS is introduced via a
+[guide](https://ergo-code.github.io/HiGHS/guide.html), with links to
+examples of its use in
+[Python](http://ergo-code.github.io/HiGHS/python/pip.html). This makes
+use of the C++ structures and enums, and is as close as possible to
+the native C++ library calls. These can be studied via the [C++ header
+file](https://github.com/ERGO-Code/HiGHS/blob/master/src/Highs.h). The
+C interface cannot make use of the C++ structures and enums, and can
+be studied via the [C header
+file](https://github.com/ERGO-Code/HiGHS/blob/master/src/interfaces/highs_c_api.h).
 
 ### Solvers
 
