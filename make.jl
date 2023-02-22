@@ -32,6 +32,7 @@ makedocs(
             "The HiGHS library" => "cpp/library.md",
             "Linking" => "cpp/link.md",
             "Examples" => "cpp/examples.md"],
+        "Binaries" => "binaries.md",
         "Executable" => "executable.md",
 	"Options" => "options.md",
         "Interfaces" => "interfaces.md",

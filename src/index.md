@@ -30,20 +30,11 @@ MacOS. There is also a C++11 library that can be used within a C++
 project or, via its C, C#, FORTRAN, Julia and Python interfaces.
 
 The executable and libraries can be built from source code, or
-downloaded as precompiled binaries.  [Building HiGHS from source
+downloaded as precompiled
+[binaries](https://ergo-code.github.io/HiGHS/binaries.html).
+[Building HiGHS from source
 code](https://ergo-code.github.io/HiGHS/cpp/get-started.html#Building-HiGHS-from-source-code)
-requires a C++ compiler and CMake, but no other third-party
-utilities. Precompiled binaries are available for a variety of
-platforms at the [JuliaBinaryWrappers HiGHS
-repository](https://github.com/JuliaBinaryWrappers/HiGHS_jll.jl/releases). Each
-includes library files for linking to external projects, and a
-stand-alone executable.
-
-*Maybe need a proper section on how to use the binaries, where observations on issues can be set out*
-
-* For Windows users: if in doubt, choose the `x86_64-w64-mingw32-cxx11.tar.gz` file
-
-* For Mac users: choose the `x86_64-apple-darwin.tar.gz` file.
+requires a C++ compiler and CMake, but no other third-party utilities.
 
 ### Overview
 
