@@ -13,7 +13,7 @@ This is (part of) the return value of most HiGHS methods
 
 ## MatrixFormat
 
-This defines the format of a [HighsSparseMatrix](https://ergo-code.github.io/HiGHS/enums.html#HighsSparseMatrix)
+This defines the format of a [HighsSparseMatrix](https://ergo-code.github.io/HiGHS/python/classes.html#HighsSparseMatrix)
 
 - kColwise: The matrix is stored column-wise
 - kRowwise: The matrix is stored row-wise
@@ -21,7 +21,7 @@ This defines the format of a [HighsSparseMatrix](https://ergo-code.github.io/HiG
 
 ## ObjSense
 
-This defines optimization sense of a [HighsLp](https://ergo-code.github.io/HiGHS/enums.html#HighsLp)
+This defines optimization sense of a [HighsLp](https://ergo-code.github.io/HiGHS/python/enums.html#HighsLp)
 
 - kMinimize: The objective is to be minimized
 - kMaximize: The objective is to be maximized

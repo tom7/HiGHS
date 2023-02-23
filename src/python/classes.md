@@ -21,7 +21,7 @@ Th data members of the HighsLp class are as follows
 - col\_upper\_: Vector of type double - Upper bounds on the variables
 - row\_lower\_: Vector of type double - Lower bounds on the constraints
 - row\_upper\_: Vector of type double - Upper bounds on the constraints
-- a\_matrix\_: Instance of [HighsSparseMatrix](https://ergo-code.github.io/HiGHS/python/enums.html#HighsSparseMatrix) class - Constraint matrix
+- a\_matrix\_: Instance of [HighsSparseMatrix](https://ergo-code.github.io/HiGHS/python/classes.html#HighsSparseMatrix) class - Constraint matrix
 - sense\_: Scalar of type [ObjSense](https://ergo-code.github.io/HiGHS/python/enums.html#ObjSense) - Optimization sense of the model
 - offset\_: Scalar of type double - Constant term in the objective function
 - model\_name\_: Scalar of type string - Name of the model
