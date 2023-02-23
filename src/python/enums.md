@@ -21,7 +21,7 @@ This defines the format of a [HighsSparseMatrix](https://ergo-code.github.io/HiG
 
 ## ObjSense
 
-This defines optimization sense of a [HighsLp](https://ergo-code.github.io/HiGHS/python/enums.html#HighsLp)
+This defines optimization sense of a [HighsLp](https://ergo-code.github.io/HiGHS/python/classes.html#HighsLp)
 
 - kMinimize: The objective is to be minimized
 - kMaximize: The objective is to be maximized
