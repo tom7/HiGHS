@@ -10,7 +10,7 @@ MIT licence, and has no third-party dependencies.
 
 HiGHS can solve linear programming (LP) problems of the form
 ```math
-\textrm{minimize} \qquad c^Tx \qquad \textrm{subject to} \qquad L \le Ax \le U; \qquad l \le x \le u.
+\textrm{minimize} \qquad c^Tx \qquad \textrm{subject to} \qquad l \le Ax \le u; \qquad L \le x \le U.
 ```
 and mixed integer programming (MIP) problems of the same form, for
 which some of the variables must take integer values. HiGHS also
@@ -46,9 +46,11 @@ models to be solved from
 full control of- the HiGHS run-time options, and the solution can be
 written to files in human and computer-readable formats.
 
-The functionality of the HiGHS is introduced via a
-[guide](https://ergo-code.github.io/HiGHS/guide.html), with links to
-examples of its use in
+The HiGHS library allows models to be loaded, built and modified. It
+can also be used to extract solution data and perform other operations
+relatin to the incumbent model. The full functionality is introduced
+via a [guide](https://ergo-code.github.io/HiGHS/guide.html), with
+links to examples of its use in
 [Python](http://ergo-code.github.io/HiGHS/python/pip.html). This makes
 use of the C++ structures and enums, and is as close as possible to
 the native C++ library calls. These can be studied via the [C++ header
@@ -65,17 +67,16 @@ QPs by active set.
 
 ###  Reference
 
-Academic users of HiGHS should cite the following article.
+If you use HiGHS in an academic context, please acknowledge this and cite the following article.
 
-[Parallelizing the dual revised simplex method](http://www.maths.ed.ac.uk/hall/HuHa13/)
+Parallelizing the dual revised simplex method
 Q. Huangfu and J. A. J. Hall
 Mathematical Programming Computation, 10 (1), 119-142, 2018.
-DOI: 10.1007/s12532-017-0130-5
+DOI: [10.1007/s12532-017-0130-5](https://link.springer.com/article/10.1007/s12532-017-0130-5)
 
 ### Performance
 
 The performance of HiGHS relative to some commercial and open-source simplex solvers may be assessed via the [Mittelmann benchmarks](http://plato.asu.edu/ftp/lpsimp.html).
-
 
 ### Feedback
 
