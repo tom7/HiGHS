@@ -5,7 +5,7 @@ If highspy is not already installed, run
 pip install highspy
 ```
 
-## Initialize Highs
+## Initialize HiGHS
 
 HiGHS must be initialized before making calls to the HiGHS Python
 library, and the examples below assume that it has been done
@@ -125,8 +125,9 @@ lp.a_matrix_.value_ = np.array([1, 3, 1, 2, 2], dtype=np.double)
 h.passModel(lp)
 ```
 
-## Solve problem
+## Solve a model
 
+The incumbent model in HiGHS is solved by calling
 ```
 h.run()
 ```

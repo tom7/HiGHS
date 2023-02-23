@@ -2,21 +2,21 @@
 [![Build Status](https://github.com/ERGO-Code/HiGHS/workflows/build/badge.svg)](https://github.com/ERGO-Code/HiGHS/actions?query=workflow%3Abuild+branch%3Amaster)
 
 HiGHS is software for the definition, modification and solution of
-large scale sparse linear optimization problems. It is freely
+large scale sparse linear optimization models. It is freely
 available from [GitHub](https://github.com/ERGO-Code/HiGHS) under the
 MIT licence, and has no third-party dependencies.
 
 ### Specification
 
-HiGHS can solve linear programming (LP) problems of the form
+HiGHS can solve linear programming (LP) models of the form
 ```math
-\textrm{minimize} \qquad c^Tx \qquad \textrm{subject to} \qquad l \le Ax \le u; \qquad L \le x \le U.
+\textrm{minimize} \qquad c^Tx \qquad \textrm{subject to} \qquad L \le Ax \le U; \qquad l \le x \le u.
 ```
-and mixed integer programming (MIP) problems of the same form, for
+and mixed integer programming (MIP) models of the same form, for
 which some of the variables must take integer values. HiGHS also
-solves quadratic programming (QP) problems, with (additional)
+solves quadratic programming (QP) models, with (additional)
 objective term $(1/2)x^TQx$, where the Hessian matrix $Q$ is positive
-semi-definite. It cannot solve QP problems where some of the variables
+semi-definite. It cannot solve QP models where some of the variables
 must take integer values.
 
 More on the
@@ -61,7 +61,7 @@ file](https://github.com/ERGO-Code/HiGHS/blob/master/src/interfaces/highs_c_api.
 
 ### Solvers
 
-For LP problems, HiGHS has implementations of both the revised simplex
+For LPs, HiGHS has implementations of both the revised simplex
 and interior point methods. MIPs are solved by branch-and-price, and
 QPs by active set.
 

@@ -25,7 +25,9 @@ makedocs(
         "Guide" => "guide.md", 
         "HiGHS in Python" => Any[
             "Get started in Python" => "python/pip.md",
-            "Example" => "python/example-py.md",
+            "Enums" => "python/enums.md",
+            "Classes" => "python/classes.md",
+            "Examples" => "python/example-py.md",
             "Notebooks" => "python/notebooks.md"],
         "HiGHS in C++" => Any[
             "Get started in C++" => "cpp/get-started.md",

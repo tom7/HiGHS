@@ -1,8 +1,8 @@
-Any linear optimization problem will have __decision variables__, a
+Any linear optimization model will have __decision variables__, a
 linear or quadratic __objective function__, and linear __constraints__
 and __bounds__ on the values of the decision variables. A
-__mixed-integer__ optimization problem will require some or all of the
-decision variables to take integer values. The problem may require the
+__mixed-integer__ optimization model will require some or all of the
+decision variables to take integer values. The model may require the
 objective function to be maximized or minimized whilst satisfying the
 constraints and bounds. By default, HiGHS minimizes the objective
 function.
@@ -15,7 +15,7 @@ objective function is given by a set of coefficients, one for each
 decision variable, and its value is the sum of products of
 coefficients and values of decision variables. The objective
 coefficients are often referred to as __costs__, and some may be
-zero. When a problem has been solved, the optimal values of the
+zero. When a model has been solved, the optimal values of the
 decision variables are referred to as the __(primal) solution__.
 
 ### Constraints and the feasible region
@@ -36,27 +36,27 @@ rows of a __matrix__. The constraint coefficients associated with a
 particular decision variable form a column of the constraint
 matrix. Hence constraints are sometimes referred to as __rows__, and
 decision variables as __columns__. Constraint matrix coefficients may
-be zero. Indeed, for large practical problems it is typical for most
+be zero. Indeed, for large practical models it is typical for most
 of the coefficients to be zero. When this property can be exploited to
 computational advantage, the matrix is said to be __sparse__. When the
-constraint matrix is not sparse, the solution of large problems is
+constraint matrix is not sparse, the solution of large models is
 normally intractable computationally.
 
 ### Optimization outcomes
 
 It is possible to define a set of constraints and bounds that cannot
-be satisfied, in which case the problem is said to be
+be satisfied, in which case the model is said to be
 __infeasible__. Conversely, it is possible that the value of the
 objective function can be improved without bound whilst satisfying the
-constraints and bounds, in which case the problem is said to be
-__unbounded__. If a problem is neither infeasible, nor unbounded, it
+constraints and bounds, in which case the model is said to be
+__unbounded__. If a model is neither infeasible, nor unbounded, it
 has an __optimal solution__. The optimal objective function value for
-a linear optimization problem may be achieved at more than point, in
+a linear optimization model may be achieved at more than point, in
 which case the optimal solution is said to be __non-unique__.
 
-### Basic solution of LP problems
+### Basic solution of LP models
 
-An LP problem that is neither infeasible, nor unbounded, has an
+An LP model that is neither infeasible, nor unbounded, has an
 optimal solution at a vertex. At a vertex, the decision variables can
 be partitioned into as many __basic variables__ as there are
 constraints, and __nonbasic variables__. Such a solution is known as a
@@ -65,13 +65,13 @@ __basic solution__, and the partition referred to as a __basis__.
 ### Dual values for continuous optimization
 
 When none of the decision variables is required to take integer
-values, the problem is said to be __continuous__. For
-continuous problems, each variable and constraint has an
+values, the model is said to be __continuous__. For
+continuous models, each variable and constraint has an
 associated __dual variable__. The values of the dual
 variables constitute the __dual solution__, and it is for
 this reason that the term __primal solution__ is used to
 distinguish the optimal values of the decision variables. At the
-optimal solution of a continuous problem, some of the decision
+optimal solution of a continuous model, some of the decision
 variables and values of constraint functions will be equal to their
 lower or upper bounds. Such a bound is said to
 be __active__. If a variable or constraint is at a bound,
@@ -89,7 +89,7 @@ often referred to as __Lagrange multipliers__.
 ### Sensitivity information for continuous optimization
 
 Analysis of the change in optimal objective value of a continuous
-linear optimization problem as the cost coefficients and bounds are
+linear optimization model as the cost coefficients and bounds are
 changed is referred to in HiGHS as __ranging__. For an
 active bound, the corresponding dual value gives the change in the
 objective if that bound is increased or decreased. This level of

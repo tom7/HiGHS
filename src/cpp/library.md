@@ -13,13 +13,13 @@ or create and populate an instance of the `HighsLp` class, and call
 ```
 Highs::passModel(const HighsLp& lp)
 ```
-For loading problems from a file, use
+
+For loading models from a file, use
 ```
 Highs::readModel(const std::string& filename)
 ```
 
 Below is an example of building a `HighsModel`
-
 ```
   // Create and populate a HighsModel instance for the LP
   
@@ -46,7 +46,7 @@ Below is an example of building a `HighsModel`
   
   // Here the orientation of the matrix is column-wise
   model.lp_.a_matrix_.format_ = MatrixFormat::kColwise;
-  // a_start_ has num_col_1 entries, and the last entry is the number
+  // a_start_ has num_col_+1 entries, and the last entry is the number
   // of nonzeros in A, allowing the number of nonzeros in the last
   // column to be defined
   model.lp_.a_matrix_.start_ = {0, 2, 5};

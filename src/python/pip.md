@@ -9,7 +9,6 @@ pip install highspy
 
 ### WIP: Methods and structures to document by example
 
-* __HighsLp__
 * __getModelStatus__
 * __HighsModelStatus__
 * __getObjectiveValue__
