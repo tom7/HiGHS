@@ -1,7 +1,9 @@
-The members of the fundamental HiGHS enums are defined below. If `Enum` refers to a particular enum, and `Member` to a particular member, the members are available as follows
+The members of the fundamental HiGHS enums are defined below. If `Enum` refers to a particular enum, and `Member` to a particular member, the members are available as follows.
 
 - Python: highspy.`Enum`.`Member`
 - C++: `Enum`::`Member`
+
+Members for internal use only are not documented.
 
 ## HighsStatus
 
@@ -17,7 +19,6 @@ This defines the format of a [HighsSparseMatrix](https://ergo-code.github.io/HiG
 
 - kColwise: The matrix is stored column-wise
 - kRowwise: The matrix is stored row-wise
-- kRowwisePartitioned: The matrix is stored row-wise, but with a partitioning of each row (internal use only)
 
 ## ObjSense
 
@@ -42,6 +43,13 @@ This defines the nature of any primal or dual solution information
 - kSolutionStatusNone: There is no solution information
 - kSolutionStatusInfeasible: The solution is not feasible
 - kSolutionStatusFeasible: The solution is feasible
+
+## BasisValidity
+
+This defines the nature of any basis information
+
+- kBasisValidityInvalid: There is no basisn information
+- kBasisValidityValid: The basis information is valid
 
 ## HighsModelStatus
 

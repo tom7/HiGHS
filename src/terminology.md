@@ -7,7 +7,7 @@ objective function to be maximized or minimized whilst satisfying the
 constraints and bounds. By default, HiGHS minimizes the objective
 function.
 
-### Bounds and the objective function
+## Bounds and the objective function
 
 The bounds on a decision variable are the least and greatest values
 that it may take, and infinite bounds can be specified. A linear
@@ -18,7 +18,7 @@ coefficients are often referred to as __costs__, and some may be
 zero. When a model has been solved, the optimal values of the
 decision variables are referred to as the __(primal) solution__.
 
-### Constraints and the feasible region
+## Constraints and the feasible region
 
 Linear constraints require linear functions of decision variables to
 lie between bounds, and infinite bounds can be specified. If the
@@ -29,7 +29,7 @@ bounds is known as the __feasible region__. Geometrically, this is a
 multi-dimensional convex polyhedron, whose extreme points are referred
 to as __vertices__.
 
-### The constraint matrix
+## The constraint matrix
 
 The coefficients of the linear constraints are naturally viewed as
 rows of a __matrix__. The constraint coefficients associated with a
@@ -42,7 +42,7 @@ computational advantage, the matrix is said to be __sparse__. When the
 constraint matrix is not sparse, the solution of large models is
 normally intractable computationally.
 
-### Optimization outcomes
+## Optimization outcomes
 
 It is possible to define a set of constraints and bounds that cannot
 be satisfied, in which case the model is said to be
@@ -54,15 +54,11 @@ has an __optimal solution__. The optimal objective function value for
 a linear optimization model may be achieved at more than point, in
 which case the optimal solution is said to be __non-unique__.
 
-### Basic solution of LP models
+## Primal values
 
-An LP model that is neither infeasible, nor unbounded, has an
-optimal solution at a vertex. At a vertex, the decision variables can
-be partitioned into as many __basic variables__ as there are
-constraints, and __nonbasic variables__. Such a solution is known as a
-__basic solution__, and the partition referred to as a __basis__.
+The values of the decision variables are referred to as __primal__ values to distingush them from __dual__ values.
 
-### Dual values for continuous optimization
+## Dual values
 
 When none of the decision variables is required to take integer
 values, the model is said to be __continuous__. For
@@ -86,7 +82,15 @@ associated with variables are often referred to as __reduced
 costs__, and the dual values associated with constraints are
 often referred to as __Lagrange multipliers__.
 
-### Sensitivity information for continuous optimization
+## Basic solution
+
+An LP model that is neither infeasible, nor unbounded, has an
+optimal solution at a vertex. At a vertex, the decision variables can
+be partitioned into as many __basic variables__ as there are
+constraints, and __nonbasic variables__. Such a solution is known as a
+__basic solution__, and the partition referred to as a __basis__.
+
+## Sensitivity information for continuous optimization
 
 Analysis of the change in optimal objective value of a continuous
 linear optimization model as the cost coefficients and bounds are
@@ -107,5 +111,29 @@ the variable or constraint can take, the objective values at the
 limits of the range, and the index of a variable or constraint with a
 bound that will become in active at both limits.
 
+## MIP
 
+When solving a MIP, some or all the variables must take discrete values. In HiGHS there are three types of discrete variables.
 
+- Integer: those that must take integer values between their bounds
+- Semi-continuous: those that must be zero or take continuous values between their bounds
+- Semi-integer: those that must be zero or take integer values between their bounds
+
+In the following discussion, for ease of reference to relative
+objective values, it is assumed that the objective is being minimized
+
+Any point for which the discrete variables satisfy their requirements,
+is said to be __integer feasible__. The objective value at such a
+point is an upper bound on the optimal objective value. The least such
+bound is known as the __primal bound__. The MIP solver generates a
+sequence of LP problems, each of which has bounds on the variables
+that are tighter than those of the original problem. When unsolved,
+there is a bound on the optimal objective value for each such LP and,
+the greatest such bound is known as the __dual bound__. The optimal
+objective value of the MIP cannot be less than the dual bound. Hence
+the gap between the primal and dual bounds is a measure of progress of
+the MIP solver. Although the absolute gap is of some interest, the gap
+relative to the primal bound is a better measure. When the gap reaches
+zero then the MIP is solved to optimality. However, it is often
+preferable to stop the MIP solver when the relative gap is below a
+specified tolerance.
