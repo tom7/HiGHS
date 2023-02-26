@@ -13,3 +13,4 @@ The class members for the latest options are defined in file [`src/lp_data/Highs
 ```
 struct HighsOptionsStruct
 ```
+

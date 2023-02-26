@@ -90,7 +90,7 @@ be partitioned into as many __basic variables__ as there are
 constraints, and __nonbasic variables__. Such a solution is known as a
 __basic solution__, and the partition referred to as a __basis__.
 
-## Sensitivity information for continuous optimization
+## Sensitivity
 
 Analysis of the change in optimal objective value of a continuous
 linear optimization model as the cost coefficients and bounds are
