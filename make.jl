@@ -36,7 +36,9 @@ makedocs(
             "Examples" => "cpp/examples.md"],
         "Binaries" => "binaries.md",
         "Executable" => "executable.md",
-	"Options" => "options.md",
+	"Options" => Any[
+	    "Introduction" => "options/intro.md",
+	    "Definitions" => "options/definitions.md"],
         "Interfaces" => "interfaces.md",
         "Terminology" => "terminology.md",
 ],
