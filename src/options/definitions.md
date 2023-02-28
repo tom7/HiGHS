@@ -84,27 +84,15 @@
 - Default: -inf
 
 ## random\_seed
-- random seed used in HiGHS
+- Random seed used in HiGHS
 - Type: integer
 - Range: {0, 2147483647}
 - Default: 0
 
 ## threads
-- number of threads used by HiGHS (0: automatic)
+- Number of threads used by HiGHS (0: automatic)
 - Type: integer
 - Range: {0, 2147483647}
-- Default: 0
-
-## highs\_debug\_level
-- Debugging level in HiGHS
-- Type: integer
-- Range: {0, 3}
-- Default: 0
-
-## highs\_analysis\_level
-- Analysis level in HiGHS
-- Type: integer
-- Range: {0, 63}
 - Default: 0
 
 ## simplex\_strategy
@@ -118,12 +106,6 @@
 - Type: integer
 - Range: {0, 5}
 - Default: 1
-
-## simplex\_crash\_strategy
-- Strategy for simplex crash: off / LTSSF / Bixby (0/1/2)
-- Type: integer
-- Range: {0, 9}
-- Default: 0
 
 ## simplex\_dual\_edge\_weight\_strategy
 - Strategy for simplex dual edge weights: Choose / Dantzig / Devex / Steepest Edge (-1/0/1/2)
@@ -193,53 +175,10 @@
 - Default: 0
 
 ## glpsol\_cost\_row\_location
-- Location of cost row for Glpsol file: -2 => Last; -1 => None; 0 => None if empty, otherwise data file location; 1 <= n <= num_row => Location n; n > num_row => Last
+- Location of cost row for Glpsol file: -2 => Last; -1 => None; 0 => None if empty, otherwise data file location; 1 <= n <= num\_row => Location n; n > num\_row => Last
 - Type: integer
 - Range: {-2, 2147483647}
 - Default: 0
-
-## icrash
-- Run iCrash
-- Type: boolean
-- Default: "false"
-
-## icrash\_dualize
-- Dualise strategy for iCrash
-- Type: boolean
-- Default: "false"
-
-## icrash\_strategy
-- Strategy for iCrash
-- Type: string
-- Default: "ICA"
-
-## icrash\_starting\_weight
-- iCrash starting weight
-- Type: double
-- Range: [1e-10, 1e+50]
-- Default: 0.001
-
-## icrash\_iterations
-- iCrash iterations
-- Type: integer
-- Range: {0, 200}
-- Default: 30
-
-## icrash\_approx\_iter
-- iCrash approximate minimization iterations
-- Type: integer
-- Range: {0, 100}
-- Default: 50
-
-## icrash\_exact
-- Exact subproblem solution for iCrash
-- Type: boolean
-- Default: "false"
-
-## icrash\_breakpoints
-- Exact subproblem solution for iCrash
-- Type: boolean
-- Default: "false"
 
 ## write\_model\_file
 - Write model file
@@ -275,37 +214,37 @@
 - Default: 2147483647
 
 ## mip\_max\_improving\_sols
-- limit on the number of improving solutions found to stop the MIP solver prematurely
+- Limit on the number of improving solutions found to stop the MIP solver prematurely
 - Type: integer
 - Range: {1, 2147483647}
 - Default: 2147483647
 
 ## mip\_lp\_age\_limit
-- maximal age of dynamic LP rows before they are removed from the LP relaxation
+- Maximal age of dynamic LP rows before they are removed from the LP relaxation
 - Type: integer
 - Range: {0, 32767}
 - Default: 10
 
 ## mip\_pool\_age\_limit
-- maximal age of rows in the cutpool before they are deleted
+- Maximal age of rows in the cutpool before they are deleted
 - Type: integer
 - Range: {0, 1000}
 - Default: 30
 
 ## mip\_pool\_soft\_limit
-- soft limit on the number of rows in the cutpool for dynamic age adjustment
+- Soft limit on the number of rows in the cutpool for dynamic age adjustment
 - Type: integer
 - Range: {1, 2147483647}
 - Default: 10000
 
 ## mip\_pscost\_minreliable
-- minimal number of observations before pseudo costs are considered reliable
+- Minimal number of observations before pseudo costs are considered reliable
 - Type: integer
 - Range: {0, 2147483647}
 - Default: 8
 
 ## mip\_min\_cliquetable\_entries\_for\_parallelism
-- minimal number of entries in the cliquetable before neighborhood queries of the conflict graph use parallel processing
+- Minimal number of entries in the cliquetable before neighborhood queries of the conflict graph use parallel processing
 - Type: integer
 - Range: {0, 2147483647}
 - Default: 100000
@@ -323,19 +262,19 @@
 - Default: 1e-06
 
 ## mip\_heuristic\_effort
-- effort spent for MIP heuristics
+- Effort spent for MIP heuristics
 - Type: double
 - Range: [0, 1]
 - Default: 0.05
 
 ## mip\_rel\_gap
-- tolerance on relative gap, |ub-lb|/|ub|, to determine whether optimality has been reached for a MIP instance
+- Tolerance on relative gap, |ub-lb|/|ub|, to determine whether optimality has been reached for a MIP instance
 - Type: double
 - Range: [0, inf]
 - Default: 0.0001
 
 ## mip\_abs\_gap
-- tolerance on absolute gap of MIP, |ub-lb|, to determine whether optimality has been reached for a MIP instance
+- Tolerance on absolute gap of MIP, |ub-lb|, to determine whether optimality has been reached for a MIP instance
 - Type: double
 - Range: [0, inf]
 - Default: 1e-06

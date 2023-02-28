@@ -1,6 +1,6 @@
 For convenience, the executable is assumed to be `bin/highs`
 
-## Running the executable
+### Running the executable
 
 The model given by the MPS file `model.mps` is solved by the command
 
@@ -10,7 +10,7 @@ The model given by the MPS file `model.mps` is solved by the command
 
 If the model file is not in the folder from which the command was issued, then a path name can be given
 
-## Command line options
+### Command line options
 
 When HiGHS is run from the command line, some fundamental option values may be specified directly. Many more may be specified via a file. Formally, the usage is
 
@@ -41,5 +41,5 @@ Usage:
   -h, --help                    Print help.
 ```
 
-The [Options](https://ergo-code.github.io/options.html) section gives a full list of options, and the format in which they are specified.
+The [Options](https://ergo-code.github.io/options/definition.html) section gives a full list of options, and the format in which they are specified.
 
