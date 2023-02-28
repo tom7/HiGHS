@@ -41,5 +41,5 @@ Usage:
   -h, --help                    Print help.
 ```
 
-The [Options](https://ergo-code.github.io/options/definition.html) section gives a full list of options, and the format in which they are specified.
+The [Options](https://ergo-code.github.io/options/definitions.html) section gives a full list of options, and the format in which they are specified.
 
