@@ -1,10 +1,3 @@
-
-If highspy is not already installed, run
-
-```
-pip install highspy
-```
-
 ## Initialize HiGHS
 
 HiGHS must be initialized before making calls to the HiGHS Python

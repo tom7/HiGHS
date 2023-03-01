@@ -26,7 +26,14 @@ makedocs(
         "HiGHS in Python" => Any[
             "Get started in Python" => "python/pip.md",
             "Enums" => "python/enums.md",
-            "Classes" => "python/classes.md",
+            "Classes" => Any[
+	        "Introduction" => "python/classes/Index.md",
+	        "HighsSparseMatrix" => "python/classes/HighsSparseMatrix.md",
+	        "HighsLp" => "python/classes/HighsLp.md",
+	        "HighsSolution" => "python/classes/HighsSolution.md",
+	        "HighsBasis" => "python/classes/HighsBasis.md",
+	        "HighsInfo" => "python/classes/HighsInfo.md",
+	        "Other" => "python/classes/Other.md"],
             "Examples" => "python/example-py.md",
             "Notebooks" => "python/notebooks.md"],
         "HiGHS in C++" => Any[

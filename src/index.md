@@ -48,7 +48,7 @@ written to files in human and computer-readable formats.
 
 The HiGHS library allows models to be loaded, built and modified. It
 can also be used to extract solution data and perform other operations
-relatin to the incumbent model. The full functionality is introduced
+relating to the incumbent model. The full functionality is introduced
 via a [guide](https://ergo-code.github.io/HiGHS/guide.html), with
 links to examples of its use in
 [Python](http://ergo-code.github.io/HiGHS/python/pip.html). This makes
