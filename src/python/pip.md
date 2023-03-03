@@ -64,7 +64,7 @@ print('Model ', filename, ' has return status ', h.modelStatusToString(h.getMode
 
 ### Examples
 
-to document by example
+WIP: to be documented by example
 
 * __getModelStatus__
 * __HighsModelStatus__
@@ -95,9 +95,3 @@ to document by example
 * __deleteRows__
 * __setSolution__
 * __setBasis__
-* __getBasicVariables__
-* __getBasisInverseRow__
-* __getBasisInverseRow__
-* __getBasisSolve__
-* __getBasisTransposeSolve__
-* __getReducedRow__

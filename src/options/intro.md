@@ -30,10 +30,8 @@ or an explicit value.
 To get the value of option `name`, call
 
 ```
-[status, value] = h.get"Type"OptionValue(name)
+[status, value] = h.getOptionValue(name)
 ```
-
-where "Type" is "Bool", "Int", "Double" or "String", as appropriate.
 
 To get the type of option `name`, call
 
