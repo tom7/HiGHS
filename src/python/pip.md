@@ -95,3 +95,5 @@ WIP: to be documented by example
 * __deleteRows__
 * __setSolution__
 * __setBasis__
+* __passColName__
+* __passRowName__
