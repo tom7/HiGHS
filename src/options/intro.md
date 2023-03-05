@@ -40,5 +40,5 @@ To get the type of option `name`, call
 ```
 
 Examples of calls to options methods are given in the [examples
-section](https://ergo-code.github.io/HiGHS/example-py.html).
+section](https://ergo-code.github.io/HiGHS/python/example-py.html).
 
