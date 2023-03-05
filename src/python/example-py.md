@@ -33,6 +33,7 @@ subject to              x1 <= 7
 
 Firstly, one variable at a time, via a sequence of calls to __addVar__ and __addRow__.
 ```
+inf = highspy.kHighsInf
 # Define two variables, first using identifiers for the bound values,
 # and then using constants
 lower = 0
@@ -64,8 +65,10 @@ value = np.array([1, 2])
 h.addRow(5, 15, num_nz, index, value)
 
 # The final constraint (6 <= 3x0 + 2x1) has the same indices but
-different values num_nz = 2 value = np.array([3, 2]) h.addRow(6, inf,
-num_nz, index, value)
+# different values
+num_nz = 2
+value = np.array([3, 2])
+h.addRow(6, inf, num_nz, index, value)
 
 # Access LP 
 lp = h.getLp()

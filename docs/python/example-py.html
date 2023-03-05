@@ -9,7 +9,8 @@ h.readModel(filename)</code></pre><h2 id="Build-a-model"><a class="docs-heading-
 subject to              x1 &lt;= 7
             5 &lt;=  x0 + 2x1 &lt;= 15
             6 &lt;= 3x0 + 2x1
-            0 &lt;= x0 &lt;= 4; 1 &lt;= x1</code></pre><p>Firstly, one variable at a time, via a sequence of calls to <strong>addVar</strong> and <strong>addRow</strong>.</p><pre><code class="nohighlight hljs"># Define two variables, first using identifiers for the bound values,
+            0 &lt;= x0 &lt;= 4; 1 &lt;= x1</code></pre><p>Firstly, one variable at a time, via a sequence of calls to <strong>addVar</strong> and <strong>addRow</strong>.</p><pre><code class="nohighlight hljs">inf = highspy.kHighsInf
+# Define two variables, first using identifiers for the bound values,
 # and then using constants
 lower = 0
 upper = 4
@@ -40,8 +41,10 @@ value = np.array([1, 2])
 h.addRow(5, 15, num_nz, index, value)
 
 # The final constraint (6 &lt;= 3x0 + 2x1) has the same indices but
-different values num_nz = 2 value = np.array([3, 2]) h.addRow(6, inf,
-num_nz, index, value)
+# different values
+num_nz = 2
+value = np.array([3, 2])
+h.addRow(6, inf, num_nz, index, value)
 
 # Access LP 
 lp = h.getLp()
@@ -89,4 +92,4 @@ print(&#39;Optimal objective = &#39;, info.objective_function_value)
 print(&#39;Iteration count = &#39;, info.simplex_iteration_count)
 print(&#39;Primal solution status = &#39;, h.solutionStatusToString(info.primal_solution_status))
 print(&#39;Dual solution status = &#39;, h.solutionStatusToString(info.dual_solution_status))
-print(&#39;Basis validity = &#39;, h.basisValidityToString(info.basis_validity))</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="classes/Other.html">« Other</a><a class="docs-footer-nextpage" href="notebooks.html">Notebooks »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Sunday 5 March 2023 15:54">Sunday 5 March 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+print(&#39;Basis validity = &#39;, h.basisValidityToString(info.basis_validity))</code></pre></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="classes/Other.html">« Other</a><a class="docs-footer-nextpage" href="notebooks.html">Notebooks »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Sunday 5 March 2023 16:46">Sunday 5 March 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
