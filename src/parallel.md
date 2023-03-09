@@ -1,15 +1,9 @@
-HiGHS currently has limited opportunities for exploiting parallel computing.
-
 ### Generally
 
-By default, HiGHS runs in serial.
-
-The parallelism set out below is
-activated if the [parallel](https://ergo-code.github.io/HiGHS/options/definitions.html#parallel) option is set "on", by specifying
-`--parallel` when running the
-[executable](https://ergo-code.github.io/HiGHS/executable.html) via
-the command line, or by setting it via a library call in an
-application.
+HiGHS currently has limited opportunities for exploiting parallel
+computing. These are currently restricted to the dual simplex solver
+for LP, and the MIP solver. Details of these and future plans are set
+out below.
 
 By default, when running in parallel, HiGHS will use half the
 available threads on a machine. This number can be modified by setting
@@ -19,10 +13,14 @@ option.
 
 ### Dual simplex
 
-The dual simplex solver has a variant allowing concurrent
-processing. This variant is used when the
+By default, the HiGHS dual simplex solver runs in serial. However, it
+has a variant allowing concurrent processing. This variant is used
+when the
 [parallel](https://ergo-code.github.io/HiGHS/options/definitions.html#parallel)
-option is set "on".
+option is set "on", by specifying `--parallel` when running the
+[executable](https://ergo-code.github.io/HiGHS/executable.html) via
+the command line, or by setting it via a library call in an
+application.
 
 The concurrency used will be the value of
 [simplex\_max\_concurrency](https://ergo-code.github.io/HiGHS/options/definitions.html#simplex_max_concurrency). If
@@ -42,7 +40,11 @@ parallel dual simplex solver is unlikely to be worth using.
 ### MIP
 
 The only parallel computation currently implemented in the MIP solver
-occurs when performing symmetry analysis on the problem.
+occurs when performing symmetry detection on the problem, and when
+querying clique tables. This parallelism is always advantageous, so is
+performed regardless of the value of the
+[parallel](https://ergo-code.github.io/HiGHS/options/definitions.html#parallel)
+option.
 
 ### Future plans
 
