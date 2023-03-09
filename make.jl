@@ -46,6 +46,7 @@ makedocs(
 	"Options" => Any[
 	    "Introduction" => "options/intro.md",
 	    "Definitions" => "options/definitions.md"],
+        "Parallel" => "parallel.md",
         "Interfaces" => "interfaces.md",
         "Terminology" => "terminology.md",
 ],

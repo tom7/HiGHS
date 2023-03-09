@@ -131,12 +131,6 @@
 - Range: {0, 2147483647}
 - Default: 5000
 
-## simplex\_min\_concurrency
-- Minimum level of concurrency in parallel simplex
-- Type: integer
-- Range: {1, 8}
-- Default: 1
-
 ## simplex\_max\_concurrency
 - Maximum level of concurrency in parallel simplex
 - Type: integer
