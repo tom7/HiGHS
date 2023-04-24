@@ -116,7 +116,10 @@ void HPresolve::setInput(HighsLp& model_, const HighsOptions& options_,
   changedColIndices.reserve(model->num_col_);
   numDeletedCols = 0;
   numDeletedRows = 0;
-  reductionLimit = std::numeric_limits<size_t>::max();
+  reductionLimit = options->presolve_reduction_limit < 0 ? kHighsSize_tInf : options->presolve_reduction_limit;
+  if (reductionLimit < kHighsSize_tInf)
+    highsLogUser(options->log_options, HighsLogType::kInfo,
+		 "HPresolve::setInput reductionLimit = %d\n", int(reductionLimit));
 }
 
 // for MIP presolve
@@ -4221,6 +4224,10 @@ HighsModelStatus HPresolve::run(HighsPostsolveStack& postsolve_stack) {
       return HighsModelStatus::kUnboundedOrInfeasible;
   }
 
+  if (reductionLimit < kHighsSize_tInf) {
+    highsLogUser(options->log_options, HighsLogType::kInfo,
+		 "Presolve performed %d of %d permitted reductions\n", int(postsolve_stack.numReductions()), int(reductionLimit));
+  }
   shrinkProblem(postsolve_stack);
 
   if (mipsolver != nullptr) {

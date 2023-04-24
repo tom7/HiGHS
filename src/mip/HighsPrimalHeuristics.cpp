@@ -115,7 +115,10 @@ bool HighsPrimalHeuristics::solveSubMip(
         mipsolver.mipdata_->feastol * std::max(curr_abs_gap, 1000.0);
   }
 
+  // Force presolve in submips, and allow unlimited reductions so that
+  // the limit only applies to the original MIP
   submipoptions.presolve = "on";
+  submipoptions.presolve_reduction_limit = -1;
   submipoptions.mip_detect_symmetry = false;
   submipoptions.mip_heuristic_effort = 0.8;
   // setup solver and run it

@@ -22,7 +22,8 @@ class HighsImplications;
 
 class HighsMipSolver {
  public:
-  const HighsOptions* options_mip_;
+  //  const JAJH non-const options
+  HighsOptions* options_mip_;
   const HighsLp* model_;
   const HighsLp* orig_model_;
   HighsModelStatus modelstatus_;
@@ -76,7 +77,9 @@ class HighsMipSolver {
     return model_->integrality_[col];
   }
 
-  HighsMipSolver(const HighsOptions& options, const HighsLp& lp,
+  HighsMipSolver(
+		 // const JAJH non-const options
+		 HighsOptions& options, const HighsLp& lp,
                  const HighsSolution& solution, bool submip = false);
 
   ~HighsMipSolver();

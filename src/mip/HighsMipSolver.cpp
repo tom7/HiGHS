@@ -29,7 +29,9 @@
 
 using std::fabs;
 
-HighsMipSolver::HighsMipSolver(const HighsOptions& options, const HighsLp& lp,
+HighsMipSolver::HighsMipSolver(
+			       //const JAJH non-const options
+			       HighsOptions& options, const HighsLp& lp,
                                const HighsSolution& solution, bool submip)
     : options_mip_(&options),
       model_(&lp),
