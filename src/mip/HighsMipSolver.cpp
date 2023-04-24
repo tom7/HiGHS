@@ -129,6 +129,11 @@ void HighsMipSolver::run() {
 
   mipdata_->runSetup();
 restart:
+  if (options_mip_->presolve_reduction_limit >= 0) {
+    highsLogUser(options_mip_->log_options, HighsLogType::kInfo,
+		 "Restart: forcing presolve reduction limit off");
+    options_mip_->presolve_reduction_limit  = -1;
+  }
   if (modelstatus_ == HighsModelStatus::kNotset) {
     mipdata_->evaluateRootNode();
     // age 5 times to remove stored but never violated cuts after root
