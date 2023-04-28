@@ -3573,6 +3573,7 @@ HPresolve::Result HPresolve::rowPresolve(HighsPostsolveStack& postsolve_stack,
             postsolve_stack.fixedColAtUpper(nonzero.index(),
                                             model->col_upper_[nonzero.index()],
                                             model->col_cost_[nonzero.index()],
+					    model->integrality_[nonzero.index()],
                                             getColumnVector(nonzero.index()));
             if (model->col_lower_[nonzero.index()] <
                 model->col_upper_[nonzero.index()])
@@ -3583,6 +3584,7 @@ HPresolve::Result HPresolve::rowPresolve(HighsPostsolveStack& postsolve_stack,
             postsolve_stack.fixedColAtLower(nonzero.index(),
                                             model->col_lower_[nonzero.index()],
                                             model->col_cost_[nonzero.index()],
+					    model->integrality_[nonzero.index()],
                                             getColumnVector(nonzero.index()));
             if (model->col_upper_[nonzero.index()] >
                 model->col_lower_[nonzero.index()])
@@ -3643,6 +3645,7 @@ HPresolve::Result HPresolve::rowPresolve(HighsPostsolveStack& postsolve_stack,
             postsolve_stack.fixedColAtUpper(nonzero.index(),
                                             model->col_upper_[nonzero.index()],
                                             model->col_cost_[nonzero.index()],
+					    model->integrality_[nonzero.index()],
                                             getColumnVector(nonzero.index()));
             if (model->col_lower_[nonzero.index()] <
                 model->col_upper_[nonzero.index()])
@@ -3667,6 +3670,7 @@ HPresolve::Result HPresolve::rowPresolve(HighsPostsolveStack& postsolve_stack,
             postsolve_stack.fixedColAtLower(nonzero.index(),
                                             model->col_lower_[nonzero.index()],
                                             model->col_cost_[nonzero.index()],
+					    model->integrality_[nonzero.index()],
                                             getColumnVector(nonzero.index()));
             if (model->col_upper_[nonzero.index()] >
                 model->col_lower_[nonzero.index()])
@@ -4742,6 +4746,7 @@ void HPresolve::fixColToLower(HighsPostsolveStack& postsolve_stack,
   // mark the column as deleted first so that it is not registered as singleton
   // column upon removing its nonzeros
   postsolve_stack.fixedColAtLower(col, fixval, model->col_cost_[col],
+				  model->integrality_[col],
                                   getColumnVector(col));
   markColDeleted(col);
 
@@ -4789,6 +4794,7 @@ void HPresolve::fixColToUpper(HighsPostsolveStack& postsolve_stack,
   // mark the column as deleted first so that it is not registered as singleton
   // column upon removing its nonzeros
   postsolve_stack.fixedColAtUpper(col, fixval, model->col_cost_[col],
+				  model->integrality_[col],
                                   getColumnVector(col));
   markColDeleted(col);
 

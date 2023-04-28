@@ -364,8 +364,16 @@ class HighsPostsolveStack {
 
   template <typename ColStorageFormat>
   void fixedColAtLower(HighsInt col, double fixValue, double colCost,
+		       const HighsVarType integrality,
                        const HighsMatrixSlice<ColStorageFormat>& colVec) {
     assert(std::isfinite(fixValue));
+    if (integrality == HighsVarType::kInteger) {
+      const bool ok_integer_fix = fixValue == std::floor(fixValue);
+      if (!ok_integer_fix) {
+	printf("fixedColAtLower: attempting to fix integer to %g\n", fixValue);
+	assert(ok_integer_fix);
+      }
+    }
     colValues.clear();
     for (const HighsSliceNonzero& colVal : colVec)
       colValues.emplace_back(origRowIndex[colVal.index()], colVal.value());
@@ -378,8 +386,16 @@ class HighsPostsolveStack {
 
   template <typename ColStorageFormat>
   void fixedColAtUpper(HighsInt col, double fixValue, double colCost,
+		       const HighsVarType integrality,
                        const HighsMatrixSlice<ColStorageFormat>& colVec) {
     assert(std::isfinite(fixValue));
+    if (integrality == HighsVarType::kInteger) {
+      const bool ok_integer_fix = fixValue == std::floor(fixValue);
+      if (!ok_integer_fix) {
+	printf("fixedColAtLower: attempting to fix integer to %g\n", fixValue);
+	assert(ok_integer_fix);
+      }
+    }
     colValues.clear();
     for (const HighsSliceNonzero& colVal : colVec)
       colValues.emplace_back(origRowIndex[colVal.index()], colVal.value());
