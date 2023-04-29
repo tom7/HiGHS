@@ -966,8 +966,12 @@ HPresolve::Result HPresolve::dominatedColumns(
   }
 
   HighsInt numFixedCols = 0;
+  const HighsInt check_j = 32;
   for (HighsInt j = 0; j < model->num_col_; ++j) {
     if (colDeleted[j]) continue;
+    if (j == check_j) {
+      printf("HPresolve::dominatedColumns j = %d\n", int(j));
+    }
     bool upperImplied = isUpperImplied(j);
     bool lowerImplied = isLowerImplied(j);
     bool hasPosCliques = false;
@@ -1158,9 +1162,26 @@ HPresolve::Result HPresolve::dominatedColumns(
              ajBestRowPlus >= ak - options->small_matrix_value) &&
             checkDomination(1, j, 1, k)) {
           // case (i)  ub(x_j) = inf, x_j > x_k: set x_k = lb(x_k)
-          ++numFixedCols;
-          fixColToLower(postsolve_stack, k);
-          HPRESOLVE_CHECKED_CALL(removeRowSingletons(postsolve_stack));
+	  const bool skip = k == 33 && reductionLimit < kHighsInf;
+	  printf("HPresolve::dominatedColumns %5sixing col k = %2d (%3s) [%g, %g] "
+		 "dominated by j = %2d with costs (j = %g, k = %g)"
+		 " and row %2d (%3s) [%g, %g] has bestRowPlusScale = %d\n",
+		 skip ? "Not f" : "    F",
+		 int(k),
+		 model->col_names_[k].c_str(), 
+		 model->col_lower_[k],
+		 model->col_upper_[k],
+		 int(j), model->col_cost_[j], model->col_cost_[k],
+		 bestRowPlus,
+		 model->row_names_[bestRowPlus].c_str(), 
+		 model->row_lower_[bestRowPlus],
+		 model->row_upper_[bestRowPlus],
+		 bestRowPlusScale);
+	  if (!skip) {
+	    ++numFixedCols;
+	    fixColToLower(postsolve_stack, k);
+	    HPRESOLVE_CHECKED_CALL(removeRowSingletons(postsolve_stack));
+	  }
         } else if (model->col_upper_[k] != kHighsInf &&
                    (upperImplied ||
                     mipsolver->mipdata_->cliquetable.haveCommonClique(
@@ -4197,6 +4218,10 @@ HPresolve::Result HPresolve::checkLimits(HighsPostsolveStack& postsolve_stack) {
       return Result::kStopped;
   }
 
+  if (numreductions >= reductionLimit - 1) {
+    printf("HPresolve::Result HPresolve::checkLimits: numreductions = %d / %d\n",
+	   int(numreductions), int(reductionLimit));
+  }
   return numreductions >= reductionLimit ? Result::kStopped : Result::kOk;
 }
 
