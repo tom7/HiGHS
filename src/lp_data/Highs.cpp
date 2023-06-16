@@ -924,7 +924,8 @@ HighsStatus Highs::run() {
       return returnFromRun(HighsStatus::kError);
     }
   }
-  const bool use_simplex_or_ipm = (options_.solver.compare(kHighsChooseString) != 0);
+  const bool use_simplex_or_ipm =
+      (options_.solver.compare(kHighsChooseString) != 0);
   if (!use_simplex_or_ipm) {
     // Leaving HiGHS to choose method according to model class
     if (model_.isQp()) {
