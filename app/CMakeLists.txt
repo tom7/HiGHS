@@ -48,6 +48,9 @@ target_include_directories(highs PRIVATE
 
 # install the binary
 install(TARGETS highs EXPORT highs-targets
-        RUNTIME)
+    LIBRARY
+    ARCHIVE
+    RUNTIME
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/highs)
 
 endif()

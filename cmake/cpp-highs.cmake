@@ -22,6 +22,25 @@ target_include_directories(highs INTERFACE
   $<INSTALL_INTERFACE:include>
   )
 
+ # todo sort out
+#  include_directories(
+#     ${HIGHS_BINARY_DIR}
+#     ${HIGHS_SOURCE_DIR}/app
+#     ${HIGHS_SOURCE_DIR}/extern
+#     ${HIGHS_SOURCE_DIR}/extern/zstr
+#     ${HIGHS_SOURCE_DIR}/highs
+#     ${HIGHS_SOURCE_DIR}/highs/io
+#     ${HIGHS_SOURCE_DIR}/highs/ipm/ipx
+#     ${HIGHS_SOURCE_DIR}/highs/ipm/basiclu
+#     ${HIGHS_SOURCE_DIR}/highs/lp_data
+#     ${HIGHS_SOURCE_DIR}/highs/mip
+#     ${HIGHS_SOURCE_DIR}/highs/model
+#     ${HIGHS_SOURCE_DIR}/highs/presolve
+#     ${HIGHS_SOURCE_DIR}/highs/qpsolver
+#     ${HIGHS_SOURCE_DIR}/highs/simplex
+#     ${HIGHS_SOURCE_DIR}/highs/test
+#     ${HIGHS_SOURCE_DIR}/highs/util)
+
 ###################
 ## Install rules ##
 ###################
