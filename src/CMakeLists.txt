@@ -377,10 +377,10 @@ export(TARGETS libhighs
     FILE "${HIGHS_BINARY_DIR}/highs-targets.cmake")
 
 # Configure the config file for the build tree:
-# Either list all the src/* directories here, or put explicit paths in all the
+# Either list all the highs/* directories here, or put explicit paths in all the
 # include statements.
 # M reckons that the latter is more transparent, and I'm inclined to agree.
-set(CONF_INCLUDE_DIRS "${HIGHS_SOURCE_DIR}/src" "${HIGHS_BINARY_DIR}")
+set(CONF_INCLUDE_DIRS "${HIGHS_SOURCE_DIR}/highs" "${HIGHS_BINARY_DIR}")
 configure_file(${HIGHS_SOURCE_DIR}/highs-config.cmake.in
     "${HIGHS_BINARY_DIR}/highs-config.cmake" @ONLY)
 
@@ -707,7 +707,7 @@ set(headers_fast_build_
 set(headers_fast_build_ ${headers_fast_build_} ipm/IpxWrapper.h ${basiclu_headers}
     ${ipx_headers})
 
-#set_target_properties(highs PROPERTIES PUBLIC_HEADER "src/Highs.h;src/lp_data/HighsLp.h;src/lp_data/HighsLpSolverObject.h")
+#set_target_properties(highs PROPERTIES PUBLIC_HEADER "highs/Highs.h;highs/lp_data/HighsLp.h;highs/lp_data/HighsLpSolverObject.h")
 
 # set the install rpath to the installed destination
 # set_target_properties(highs PROPERTIES INSTALL_RPATH
@@ -735,10 +735,10 @@ if (UNIX)
 endif()
 
     # Configure the config file for the build tree:
-    # Either list all the src/* directories here, or put explicit paths in all the
+    # Either list all the highs/* directories here, or put explicit paths in all the
     # include statements.
     # M reckons that the latter is more transparent, and I'm inclined to agree.
-    set(CONF_INCLUDE_DIRS "${HIGHS_SOURCE_DIR}/src" "${HIGHS_BINARY_DIR}")
+    set(CONF_INCLUDE_DIRS "${HIGHS_SOURCE_DIR}/highs" "${HIGHS_BINARY_DIR}")
     configure_file(${HIGHS_SOURCE_DIR}/highs-config.cmake.in
         "${HIGHS_BINARY_DIR}/highs-config.cmake" @ONLY)
 

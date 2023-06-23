@@ -23,7 +23,7 @@ extern "C"{
     void ipx_free(void** p_self);
 
     /* The remaining functions call their equivalent method of LpSolver for the
-       object pointed to by @self. See src/lp_solver.h for documentation of the
+       object pointed to by @self. See highs/lp_solver.h for documentation of the
        methods. */
     ipxint ipx_load_model(void* self, ipxint num_var, const double* obj,
                           const double* lb, const double* ub, ipxint num_constr,

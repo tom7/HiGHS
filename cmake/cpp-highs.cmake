@@ -4,9 +4,9 @@ endif()
 
 # Main Target
 
-configure_file(${HIGHS_SOURCE_DIR}/src/HConfig.h.in ${HIGHS_BINARY_DIR}/HConfig.h)
+configure_file(${HIGHS_SOURCE_DIR}/highs/HConfig.h.in ${HIGHS_BINARY_DIR}/HConfig.h)
 
-add_subdirectory(src)
+add_subdirectory(highs)
 
 # ALIAS
 add_library(${PROJECT_NAMESPACE}::highs ALIAS highs)

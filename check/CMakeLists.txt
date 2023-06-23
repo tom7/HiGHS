@@ -1,10 +1,10 @@
 include(CTest)
 
 # prepare Catch library
-set(CATCH_INCLUDE_DIR ${HIGHS_SOURCE_DIR}/src/extern/catch)
+set(CATCH_INCLUDE_DIR ${HIGHS_SOURCE_DIR}/extern/catch)
 add_library(Catch INTERFACE)
 target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
-target_include_directories(Catch INTERFACE ${HIGHS_SOURCE_DIR}/src)
+target_include_directories(Catch INTERFACE ${HIGHS_SOURCE_DIR}/highs)
 
 FILE(WRITE ${CMAKE_BINARY_DIR}/testoptions.txt
 "mip_rel_gap=0.0
@@ -72,14 +72,14 @@ target_link_libraries(unit_tests libhighs Catch)
 
 if(FORTRAN_FOUND)
    set(CMAKE_Fortran_MODULE_DIRECTORY ${HIGHS_BINARY_DIR}/modules)
-   include_directories(${HIGHS_SOURCE_DIR}/src)
+   include_directories(${HIGHS_SOURCE_DIR}/highs)
    add_executable(fortrantest TestFortranAPI.f90)
    if (NOT FAST_BUILD)
        target_link_libraries(fortrantest libhighs FortranHighs)
     else()
        target_link_libraries(fortrantest highs FortranHighs)
     endif()
-   target_include_directories(fortrantest PUBLIC ${HIGHS_SOURCE_DIR}/src/interfaces)
+   target_include_directories(fortrantest PUBLIC ${HIGHS_SOURCE_DIR}/highs/interfaces)
  endif(FORTRAN_FOUND)
 
 # check the C API

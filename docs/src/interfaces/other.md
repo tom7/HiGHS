@@ -12,7 +12,7 @@ HiGHS can be used via AMPL, see the [AMPL Documentation](https://dev.ampl.com/so
 
 Here are observations on calling HiGHS from C#:
 
- * The file [`highs_csharp_api.cs`](https://github.com/ERGO-Code/HiGHS/blob/master/src/interfaces/highs_csharp_api.cs)
+ * The file [`highs_csharp_api.cs`](https://github.com/ERGO-Code/HiGHS/blob/master/highs/interfaces/highs_csharp_api.cs)
    contains all the PInvoke you need. Copy it into your C# project.
  * Make sure, that the native HiGHS library (`highs.dll`, `libhighs.dll`,
    `libhighs.so`, ... depending on your platform) can be found at runtime. How
@@ -34,7 +34,7 @@ that you don't have to write the PInvoke declarations yourself.
 ## [Fortran](@id fortran-api)
 
 The interface is in
-[`highs_fortran_api.f90`](https://github.com/ERGO-Code/HiGHS/blob/master/src/interfaces/highs_fortran_api.f90). Its
+[`highs_fortran_api.f90`](https://github.com/ERGO-Code/HiGHS/blob/master/highs/interfaces/highs_fortran_api.f90). Its
 methods are simply bindings to the [`C` API](@ref c-api)
 
 To include in the build, switch the Fortran CMake parameter on:

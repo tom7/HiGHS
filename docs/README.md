@@ -5,7 +5,7 @@ This directory contains the source files for the [documentation](https://ergo-co
 ## Editing the documentation
 
 To edit the documentation, checkout a branch and edit the Markdown files in the
-`src` directory.
+`highs` directory.
 
 ## Building the documentation
 
