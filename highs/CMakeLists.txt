@@ -31,7 +31,7 @@ set_target_properties(highs PROPERTIES INSTALL_RPATH
     "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 
 # Add library targets to the build-tree export set
-export(TARGETS highs FILE "${HIGHS_BINARY_DIR}/highs-targets.cmake")
+# export(TARGETS highs FILE "${HIGHS_BINARY_DIR}/highs-targets.cmake")
 
 # Configure the config file for the build tree:
 # Either list all the highs/* directories here, or put explicit paths in all the
@@ -417,11 +417,7 @@ if(FORTRAN_FOUND)
     set(fortransources interfaces/highs_fortran_api.f90)
     set(CMAKE_Fortran_MODULE_DIRECTORY ${HIGHS_BINARY_DIR}/modules)
     add_library(FortranHighs interfaces/highs_fortran_api.f90)
-    if (NOT FAST_BUILD)
-        target_link_libraries(FortranHighs PUBLIC libhighs)
-    else()
-        target_link_libraries(FortranHighs PUBLIC highs)
-    endif()
+    target_link_libraries(FortranHighs PUBLIC highs)
 
     install(TARGETS FortranHighs
         LIBRARY

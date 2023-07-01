@@ -69,28 +69,31 @@ set (TEST_SOURCES ${TEST_SOURCES} TestIpx.cpp)
 add_executable(unit_tests ${TEST_SOURCES})
 
 target_include_directories(unit_tests PUBLIC ${HIGHS_SOURCE_DIR}/highs/interfaces)
+target_include_directories(unit_tests PUBLIC ${HIGHS_SOURCE_DIR}/highs)
+target_include_directories(unit_tests PUBLIC ${HIGHS_BINARY_DIR})
 
 if (UNIX)
     target_compile_options(unit_tests PRIVATE "-Wno-unused-variable")
     target_compile_options(unit_tests PRIVATE "-Wno-unused-const-variable")
 endif()
-target_link_libraries(unit_tests libhighs Catch)
+target_link_libraries(unit_tests highs Catch)
 
 if(FORTRAN_FOUND)
    set(CMAKE_Fortran_MODULE_DIRECTORY ${HIGHS_BINARY_DIR}/modules)
    include_directories(${HIGHS_SOURCE_DIR}/highs)
    add_executable(fortrantest TestFortranAPI.f90)
-   if (NOT FAST_BUILD)
-       target_link_libraries(fortrantest libhighs FortranHighs)
-    else()
-       target_link_libraries(fortrantest highs FortranHighs)
-    endif()
+   target_link_libraries(fortrantest highs FortranHighs)
    target_include_directories(fortrantest PUBLIC ${HIGHS_SOURCE_DIR}/highs/interfaces)
  endif(FORTRAN_FOUND)
 
 # check the C API
 add_executable(capi_unit_tests TestCAPI.c)
-target_link_libraries(capi_unit_tests libhighs)
+
+target_include_directories(capi_unit_tests PUBLIC ${HIGHS_SOURCE_DIR}/highs/interfaces)
+target_include_directories(capi_unit_tests PUBLIC ${HIGHS_SOURCE_DIR}/highs)
+target_include_directories(capi_unit_tests PUBLIC ${HIGHS_BINARY_DIR})
+
+target_link_libraries(capi_unit_tests highs)
 add_test(NAME capi_unit_tests COMMAND capi_unit_tests)
 
 # Check whether test executable builds OK.

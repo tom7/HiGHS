@@ -5,6 +5,9 @@ function(add_c_example FILE_NAME)
   add_executable(${TEST_NAME} ${FILE_NAME})
   
   target_include_directories(${TEST_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(${TEST_NAME} PUBLIC ${PROJECT_BINARY_DIR})
+
   target_link_libraries(${TEST_NAME} PRIVATE ${PROJECT_NAMESPACE}::highs)
+  
   message(STATUS "Configuring test ${FILE_NAME}: ...DONE")
 endfunction()

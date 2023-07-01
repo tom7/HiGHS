@@ -101,6 +101,8 @@ function(add_cxx_test FILE_NAME)
 
   add_executable(${TEST_NAME} ${FILE_NAME})
   target_include_directories(${TEST_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+  target_include_directories(${TEST_NAME} PUBLIC ${CMAKE_BINARY_DIR})
+
   # target_compile_features(${TEST_NAME} PRIVATE cxx_std_17)
   target_link_libraries(${TEST_NAME} PRIVATE ${PROJECT_NAMESPACE}::highs)
 
