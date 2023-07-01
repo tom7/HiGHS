@@ -31,8 +31,7 @@ set_target_properties(highs PROPERTIES INSTALL_RPATH
     "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 
 # Add library targets to the build-tree export set
-export(TARGETS highs
-    FILE "${HIGHS_BINARY_DIR}/highs-targets.cmake")
+export(TARGETS highs FILE "${HIGHS_BINARY_DIR}/highs-targets.cmake")
 
 # Configure the config file for the build tree:
 # Either list all the highs/* directories here, or put explicit paths in all the
@@ -54,8 +53,8 @@ configure_file(${HIGHS_SOURCE_DIR}/highs.pc.in
 # Install the targets of the highs export group, the config file so that other
 # cmake-projects can link easily against highs, and the pkg-config flie so that
 # other projects can easily build against highs
-install(EXPORT highs-targets FILE highs-targets.cmake DESTINATION
-    ${CMAKE_INSTALL_LIBDIR}/cmake/highs)
+# install(EXPORT highs-targets FILE highs-targets.cmake DESTINATION
+#     ${CMAKE_INSTALL_LIBDIR}/cmake/highs)
 install(FILES "${HIGHS_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/highs-config.cmake"
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/highs)
 install(FILES "${HIGHS_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/highs.pc"
@@ -229,7 +228,7 @@ set(ipx_sources
     ipm/ipx/timer.cc
     ipm/ipx/utils.cc)
 
-target_sources(highs PRIVATE ${srcs}
+target_sources(highs PRIVATE ${srcs})
 target_sources(highs PRIVATE ${basiclu_sources} ${ipx_sources} ipm/IpxWrapper.cpp)
 
 target_include_directories(highs PUBLIC

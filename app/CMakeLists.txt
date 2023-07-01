@@ -19,7 +19,7 @@ target_link_libraries(highs-bin highs)
 
 
 # install the binary
-install(TARGETS highs-bin EXPORT highs-targets
+install(TARGETS highs-bin
     LIBRARY
     ARCHIVE
     RUNTIME

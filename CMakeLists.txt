@@ -374,78 +374,78 @@ include(CTest)
 
 
 # Targets
-add_subdirectory(highs)
+include(cpp-highs)
+include(c-highs)
+
 add_subdirectory(app)
 add_subdirectory(examples)
 
-# if (ALL_TESTS)
-#     enable_testing()
-#     # set BUILD_TESTING ON 
-# elseif (BUILD_TESTING)
-#     enable_testing()
-# endif()
+if (ALL_TESTS)
+    enable_testing()
+    # set BUILD_TESTING ON 
+elseif (BUILD_TESTING)
+    enable_testing()
+endif()
 
-# if(BUILD_TESTING AND ALL_TESTS)
-#     enable_testing()
-#     add_subdirectory(check)
-# endif()
+if(BUILD_TESTING AND ALL_TESTS)
+    enable_testing()
+    add_subdirectory(check)
+endif()
 
-# option(EXP "Experimental mode: run unit tests with doctest." OFF)
+option(EXP "Experimental mode: run unit tests with doctest." OFF)
 
-# include(coverage)
+include(coverage)
 
-# include(CMakeDependentOption)
+include(CMakeDependentOption)
 
-# option(BUILD_EXAMPLES "Build examples" ON)
-# message(STATUS "Build examples: ${BUILD_EXAMPLES}")
+option(BUILD_EXAMPLES "Build examples" ON)
+message(STATUS "Build examples: ${BUILD_EXAMPLES}")
 
-# CMAKE_DEPENDENT_OPTION(BUILD_CXX_EXAMPLE "Build cxx example" ON "BUILD_EXAMPLES;BUILD_CXX" OFF)
-# message(STATUS "Build C++: ${BUILD_CXX_EX}")
-# CMAKE_DEPENDENT_OPTION(BUILD_PYTHON_EXAMPLE "Build Python example" ON "BUILD_EXAMPLES;PYTHON" OFF)
-# message(STATUS "Build Python: ${BUILD_PYTHON_EXAMPLE}")
-# CMAKE_DEPENDENT_OPTION(BUILD_CSHARP_EXAMPLE "Build CSharp example" ON "BUILD_EXAMPLES;CSHARP" OFF)
-# message(STATUS "Build CSharp: ${BUILD_CSHARP_EXAMPLE}")
+CMAKE_DEPENDENT_OPTION(BUILD_CXX_EXAMPLE "Build cxx example" ON "BUILD_EXAMPLES;BUILD_CXX" OFF)
+message(STATUS "Build C++: ${BUILD_CXX_EX}")
+CMAKE_DEPENDENT_OPTION(BUILD_PYTHON_EXAMPLE "Build Python example" ON "BUILD_EXAMPLES;PYTHON" OFF)
+message(STATUS "Build Python: ${BUILD_PYTHON_EXAMPLE}")
+CMAKE_DEPENDENT_OPTION(BUILD_CSHARP_EXAMPLE "Build CSharp example" ON "BUILD_EXAMPLES;CSHARP" OFF)
+message(STATUS "Build CSharp: ${BUILD_CSHARP_EXAMPLE}")
 
-# # IF BUILD_DEPS=ON THEN Force all BUILD_*=ON
-# CMAKE_DEPENDENT_OPTION(BUILD_ZLIB "Build the ZLIB dependency Library" OFF
-#   "NOT BUILD_DEPS" ON)
-# message(STATUS "Build ZLIB: ${BUILD_ZLIB}")
+# IF BUILD_DEPS=ON THEN Force all BUILD_*=ON
+CMAKE_DEPENDENT_OPTION(BUILD_ZLIB "Build the ZLIB dependency Library" OFF
+  "NOT BUILD_DEPS" ON)
+message(STATUS "Build ZLIB: ${BUILD_ZLIB}")
 
-# if(PYTHON)
-#   CMAKE_DEPENDENT_OPTION(BUILD_pybind11 "Build the pybind11 dependency Library" OFF
-#     "NOT BUILD_DEPS" ON)
-#   message(STATUS "Python: Build pybind11: ${BUILD_pybind11}")
+if(PYTHON)
+  CMAKE_DEPENDENT_OPTION(BUILD_pybind11 "Build the pybind11 dependency Library" OFF
+    "NOT BUILD_DEPS" ON)
+  message(STATUS "Python: Build pybind11: ${BUILD_pybind11}")
 
-#   CMAKE_DEPENDENT_OPTION(BUILD_VENV "Create Python venv in BINARY_DIR/python/venv" OFF
-#     "NOT BUILD_TESTING" ON)
-#   message(STATUS "Python: Create venv: ${BUILD_VENV}")
+  CMAKE_DEPENDENT_OPTION(BUILD_VENV "Create Python venv in BINARY_DIR/python/venv" OFF
+    "NOT BUILD_TESTING" ON)
+  message(STATUS "Python: Create venv: ${BUILD_VENV}")
 
-#   option(VENV_USE_SYSTEM_SITE_PACKAGES "Python venv can use system site packages" OFF)
-#   message(STATUS "Python: Allow venv to use system site packages: ${VENV_USE_SYSTEM_SITE_PACKAGES}")
+  option(VENV_USE_SYSTEM_SITE_PACKAGES "Python venv can use system site packages" OFF)
+  message(STATUS "Python: Allow venv to use system site packages: ${VENV_USE_SYSTEM_SITE_PACKAGES}")
 
-#   option(FETCH_PYTHON_DEPS "Install python required modules if not available" ${BUILD_DEPS})
-#   message(STATUS "Python: Fetch dependencies: ${FETCH_PYTHON_DEPS}")
-# endif()
+  option(FETCH_PYTHON_DEPS "Install python required modules if not available" ${BUILD_DEPS})
+  message(STATUS "Python: Fetch dependencies: ${FETCH_PYTHON_DEPS}")
+endif()
 
-# option(JULIA "Build library and executable for Julia" OFF)
+option(JULIA "Build library and executable for Julia" OFF)
 
-# include(cpp-highs)
-# include(c-highs)
 
-# if (PYTHON)
-#   include(python-highs)
-# endif()
+if (PYTHON)
+  include(python-highs)
+endif()
 
-# if (EXP)
-#     add_executable(doctest)
-#     #target_sources(doctest PRIVATE check/doctest/TestPresolveColumnSingletons.cpp)
-#     target_sources(doctest PRIVATE check/doctest/TestPresolveIssue.cpp)
+if (EXP)
+    add_executable(doctest)
+    #target_sources(doctest PRIVATE check/doctest/TestPresolveColumnSingletons.cpp)
+    target_sources(doctest PRIVATE check/doctest/TestPresolveIssue.cpp)
 
-#     if (NOT APPLE)
-#         # triggers hanging on macOS
-#         target_sources(doctest PRIVATE check/doctest/TestGas11.cpp)
-#     endif()
+    if (NOT APPLE)
+        # triggers hanging on macOS
+        target_sources(doctest PRIVATE check/doctest/TestGas11.cpp)
+    endif()
 
-#     target_include_directories(doctest PRIVATE extern)
-#     target_link_libraries(doctest highs)
-# endif()
+    target_include_directories(doctest PRIVATE extern)
+    target_link_libraries(doctest highs)
+endif()

@@ -2,7 +2,10 @@ include(CTest)
 
 # prepare Catch library
 set(CATCH_INCLUDE_DIR ${HIGHS_SOURCE_DIR}/extern/catch)
+set(CATCH_INCLUDE_DIR ${HIGHS_SOURCE_DIR}/extern)
+
 add_library(Catch INTERFACE)
+
 target_include_directories(Catch INTERFACE ${CATCH_INCLUDE_DIR})
 target_include_directories(Catch INTERFACE ${HIGHS_SOURCE_DIR}/highs)
 
@@ -64,6 +67,9 @@ endif()
 set (TEST_SOURCES ${TEST_SOURCES} TestIpx.cpp)
 
 add_executable(unit_tests ${TEST_SOURCES})
+
+target_include_directories(unit_tests PUBLIC ${HIGHS_SOURCE_DIR}/highs/interfaces)
+
 if (UNIX)
     target_compile_options(unit_tests PRIVATE "-Wno-unused-variable")
     target_compile_options(unit_tests PRIVATE "-Wno-unused-const-variable")
