@@ -27,11 +27,11 @@ endif()
 #     MACOSX_RPATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 
 # set the install rpath to the installed destination
-set_target_properties(libhighs PROPERTIES INSTALL_RPATH
+set_target_properties(highs PROPERTIES INSTALL_RPATH
     "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LIBDIR}")
 
 # Add library targets to the build-tree export set
-export(TARGETS libhighs
+export(TARGETS highs
     FILE "${HIGHS_BINARY_DIR}/highs-targets.cmake")
 
 # Configure the config file for the build tree:
