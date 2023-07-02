@@ -164,7 +164,6 @@ set(srcs
     util/stringutil.cpp
     interfaces/highs_c_api.cpp)
 
-# FAST_BUILD is set to on.
 set(basiclu_sources
     ipm/basiclu/basiclu_factorize.c
     ipm/basiclu/basiclu_solve_dense.c
@@ -268,7 +267,7 @@ if (ZLIB AND ZLIB_FOUND)
     set(CONF_DEPENDENCIES "include(CMakeFindDependencyMacro)\nfind_dependency(ZLIB)")
 endif()
 
-set(headers_fast_build_
+set(headers
     ../extern/filereaderlp/builder.hpp
     ../extern/filereaderlp/model.hpp
     ../extern/filereaderlp/reader.hpp
@@ -397,13 +396,13 @@ set(headers_fast_build_
     interfaces/highs_c_api.h
 )
 
-set(headers_fast_build_ ${headers_fast_build_} ipm/IpxWrapper.h ${basiclu_headers}
+set(headers ${headers} ipm/IpxWrapper.h ${basiclu_headers}
     ${ipx_headers})
 
 # set_target_properties(highs PROPERTIES PUBLIC_HEADER "highs/Highs.h;highs/lp_data/HighsLp.h;highs/lp_data/HighsLpSolverObject.h")
 
 # install the header files of highs
-foreach ( file ${headers_fast_build_} )
+foreach ( file ${headers} )
     get_filename_component( dir ${file} DIRECTORY )
     if ( NOT dir STREQUAL "" )
         string( REPLACE ../extern/ "" dir ${dir} )
