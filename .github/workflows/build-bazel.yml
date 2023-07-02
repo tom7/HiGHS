@@ -1,10 +1,12 @@
 name: build-bazel
 
-on: [push, workflow_dispatch]
+on:  
+  workflow_dispatch:
 
 jobs:
   bazel:
-    runs-on: [self-hosted, macos]
+    # runs-on: [self-hosted, macOS, ARM64]
+    runs-on: [self-hosted]
 
     steps:
       - uses: actions/checkout@v3
