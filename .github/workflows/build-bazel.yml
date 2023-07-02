@@ -1,10 +1,10 @@
 name: build-bazel
 
-on: [push, pull_request]
+on: [push]
 
 jobs:
   bazel:
-    runs-on: ${{ matrix.os }}
+    runs-on: [self-hosted, ${{ matrix.os }}]
     strategy:
       matrix:
         os: [macos-latest]
