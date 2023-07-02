@@ -1,13 +1,10 @@
 name: build-bazel
 
-on: [push]
+on: [push, workflow_dispatch]
 
 jobs:
   bazel:
-    runs-on: [self-hosted, ${{ matrix.os }}]
-    strategy:
-      matrix:
-        os: [macos-latest]
+    runs-on: [self-hosted, macos]
 
     steps:
       - uses: actions/checkout@v3
