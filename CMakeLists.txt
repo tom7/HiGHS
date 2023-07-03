@@ -390,7 +390,6 @@ endif()
 
 option(JULIA "Build library and executable for Julia" OFF)
 
-
 if (PYTHON)
   include(python-highs)
 endif()

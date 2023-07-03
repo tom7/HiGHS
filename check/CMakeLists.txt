@@ -214,7 +214,7 @@ foreach(instance ${${instances}})
 
     # loop over all settings
     foreach(setting ${settings})
-        add_test(NAME ${name}${setting} COMMAND $<TARGET_FILE:highs> ${setting}
+        add_test(NAME ${name}${setting} COMMAND $<TARGET_FILE:highs-bin> ${setting}
               ${inst})
 
         set_tests_properties (${name}${setting} PROPERTIES
@@ -251,7 +251,7 @@ foreach(instance ${mipInstances})
     set(inst "${HIGHS_SOURCE_DIR}/check/instances/${name}.mps")
 
     foreach(setting ${settings})
-        add_test(NAME ${name}${setting} COMMAND $<TARGET_FILE:highs> ${setting} --options_file ${CMAKE_BINARY_DIR}/testoptions.txt
+        add_test(NAME ${name}${setting} COMMAND $<TARGET_FILE:highs-bin> ${setting} --options_file ${CMAKE_BINARY_DIR}/testoptions.txt
               ${inst})
 
         set_tests_properties (${name}${setting} PROPERTIES

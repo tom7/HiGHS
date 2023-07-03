@@ -1,7 +1,6 @@
 #ifndef HCONFIG_H_
 #define HCONFIG_H_
 
-#define FAST_BUILD
 /* #undef ZLIB_FOUND */
 #define CMAKE_BUILD_TYPE "RELEASE"
 #define HiGHSRELEASE
