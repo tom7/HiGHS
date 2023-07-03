@@ -132,14 +132,14 @@ set_tests_properties(unit_tests_all
 #
 # define the set of feasible instances
 set(successInstances
-    "25fv47\;3103\; 5.5018458883\;"
+    "25fv47\;3149\; 5.5018458883\;"
     "80bau3b\;3686\; 9.8722419241\;"
     "adlittle\;74\; 2.2549496316\;"
     "afiro\;22\;-4.6475314286\;"
-    "etamacro\;531\;-7.5571523330\;"
-    "greenbea\;5156\;-7.2555248130\;"
+    "etamacro\;532\;-7.5571523330\;"
+    "greenbea\;5109\;-7.2555248130\;"
     "shell\;623\; 1.2088253460\;"
-    "stair\;531\;-2.5126695119\;"
+    "stair\;529\;-2.5126695119\;"
     "standata\;72\; 1.2576995000\;"
     "standgub\;68\; 1.2576995000\;"
     "standmps\;218\; 1.4060175000\;"
