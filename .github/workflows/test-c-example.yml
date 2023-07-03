@@ -22,8 +22,6 @@ jobs:
             -DCMAKE_INSTALL_PREFIX=../installs/highs \
             -DCMAKE_BUILD_TYPE=Release \
             -DBUILD_SHARED_LIBS=ON \
-            -DFAST_BUILD=ON \
-            -DIPX=OFF \
             $GITHUB_WORKSPACE
           cmake --build . --config Release --parallel
           make install
