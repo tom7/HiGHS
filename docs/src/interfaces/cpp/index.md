@@ -21,10 +21,8 @@ the full sequence of commands required is as follows
 
 ``` bash
 cd HiGHS
-mkdir build
-cd build
-cmake -DFAST_BUILD=ON ..
-cmake --build .
+cmake -S . -B build
+cmake --build build
 ```
 
 This creates the [executable](@ref Executable) `build/bin/highs`.

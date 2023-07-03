@@ -19,12 +19,12 @@ jobs:
       - name: Configure CMake
         shell: bash
         working-directory: ${{runner.workspace}}/build
-        run: cmake -DEXP=ON $GITHUB_WORKSPACE
+        run: cmake -S $GITHUB_WORKSPACE 
 
       - name: Build
         working-directory: ${{runner.workspace}}/build
         shell: bash
-        run: cmake --build . --parallel
+        run: cmake --build . --config Release --parallel
 
       - name: Test
         working-directory: ${{runner.workspace}}/build

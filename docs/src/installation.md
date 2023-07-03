@@ -94,14 +94,12 @@ It is also possible to specify a specific Visual studio version to build with:
 When building under Windows, some extra options are available.  One is building a 32 bit version or a 64 bit version. The default build is 64 bit. To build 32 bit, the following commands can be used from the `HiGHS/` directory:
 
 ```bash
-    cmake -A Win32 -S . -DFAST_BUILD=OFF -B buildWin32
+    cmake -A Win32 -S . -B buildWin32
     cmake --build buildWin32
 ```
 
 Another thing specific for windows is the calling convention, particularly important for the HiGHS dynamic library (dll). The default calling convention in windows is cdecl calling convention, however, dlls are most often compiled with stdcall. Most applications which expect stdcall, can't access dlls with cdecl and vice versa. To change the default calling convention from cdecl to stdcall the following option can be added
 ```bash
-    cmake -DSTDCALL=ON -S . -DFAST_BUILD=OFF -B build
+    cmake -DSTDCALL=ON -S .  -B build
     cmake --build build
 ```
-An extra note. With the legacy `-DFAST_BUILD=OFF`, under windows the build dll is called `highs.dll` however the exe expects `libhighs.dll` so a manual copy of `highs.dll` to `libhighs.dll` is needed. Of course all above options can be combined with each other.
-
