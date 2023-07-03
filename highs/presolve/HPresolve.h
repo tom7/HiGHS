@@ -343,9 +343,6 @@ class HPresolve {
 
   HighsInt debugGetCheckCol() const;
   HighsInt debugGetCheckRow() const;
-
-  // Not currently called
-  static void debug(const HighsLp& lp, const HighsOptions& options);
 };
 
 }  // namespace presolve

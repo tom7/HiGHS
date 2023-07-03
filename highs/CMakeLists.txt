@@ -145,8 +145,6 @@ set(srcs
     simplex/HSimplexNlaFreeze.cpp
     simplex/HSimplexNlaProductForm.cpp
     simplex/HSimplexReport.cpp
-    test/KktCh2.cpp
-    test/DevKkt.cpp
     util/HFactor.cpp
     util/HFactorDebug.cpp
     util/HFactorExtend.cpp
@@ -250,7 +248,6 @@ target_include_directories(highs PRIVATE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/qpsolver>  
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/simplex>  
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/util>  
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/test>  
     )
 
 target_include_directories(highs PRIVATE
@@ -362,8 +359,6 @@ set(headers
     presolve/HPresolve.h
     presolve/HPresolveAnalysis.h
     presolve/PresolveComponent.h
-    test/DevKkt.h
-    test/KktCh2.h
     util/FactorTimer.h
     util/HFactor.h
     util/HFactorConst.h

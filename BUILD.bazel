@@ -32,7 +32,6 @@ cc_library(
         "highs/presolve/*.cpp",
         "highs/qpsolver/*.cpp",
         "highs/simplex/*.cpp",
-        "highs/test/*.cpp",
         "highs/util/*.cpp", 
     ]),
     hdrs = glob([
