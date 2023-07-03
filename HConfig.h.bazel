@@ -2,7 +2,7 @@
 #define HCONFIG_H_
 
 /* #undef ZLIB_FOUND */
-#define CMAKE_BUILD_TYPE "RELEASE"
+#define CMAKE_BUILD_TYPE "Release"
 #define HiGHSRELEASE
 /* #undef HIGHSINT64 */
 /* #undef HIGHS_HAVE_MM_PAUSE */

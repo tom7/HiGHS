@@ -59,7 +59,8 @@ cc_library(
         # "src/simplex",
         # "src/test",
         # "src/util",
-        "bazel-bin"],
+        "bazel-bin"
+        ],
     visibility = ["//visibility:public"],
         deps = [
         "//:config",
