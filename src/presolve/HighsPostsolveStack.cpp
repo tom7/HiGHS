@@ -88,6 +88,12 @@ void HighsPostsolveStack::FreeColSubstitution::undo(
 
   assert(colCoef != 0);
   // Row values aren't fully postsolved, so why do this?
+  if (row >= HighsInt(solution.row_value.size())) {
+    printf("About to write to row_value[%d] with size being %d\n",
+	   row, int(solution.row_value.size()));
+  }
+  assert(row < HighsInt(solution.row_value.size()));
+  assert(col < HighsInt(solution.col_value.size()));
   solution.row_value[row] =
       double(rowValue + colCoef * solution.col_value[col]);
   solution.col_value[col] = double((rhs - rowValue) / colCoef);
