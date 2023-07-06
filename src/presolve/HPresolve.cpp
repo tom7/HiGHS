@@ -2848,6 +2848,9 @@ HPresolve::Result HPresolve::singletonCol(HighsPostsolveStack& postsolve_stack,
       rowType = HighsPostsolveStack::RowType::kGeq;
     }
 
+    if (row == 1675) {
+      printf("freeColSubstitution(%d, %d)\n", int(row), int(col));
+    }
     postsolve_stack.freeColSubstitution(row, col, rhs, model->col_cost_[col],
                                         rowType, getStoredRow(),
                                         getColumnVector(col));
@@ -4686,6 +4689,9 @@ HPresolve::Result HPresolve::aggregator(HighsPostsolveStack& postsolve_stack) {
       if (model->integrality_[col] == HighsVarType::kInteger) ++numsubstint;
       storeRow(row);
 
+    if (row == 1675) {
+      printf("freeColSubstitution(%d, %d)\n", int(row), int(col));
+    }
       postsolve_stack.freeColSubstitution(row, col, rhs, model->col_cost_[col],
                                           rowType, getStoredRow(),
                                           getColumnVector(col));
@@ -4746,6 +4752,9 @@ HPresolve::Result HPresolve::aggregator(HighsPostsolveStack& postsolve_stack) {
       changeRowDualLower(row, -kHighsInf);
     }
 
+    if (row == 1675) {
+      printf("freeColSubstitution(%d, %d)\n", int(row), int(col));
+    }
     postsolve_stack.freeColSubstitution(row, col, rhs, model->col_cost_[col],
                                         rowType, getStoredRow(),
                                         getColumnVector(col));

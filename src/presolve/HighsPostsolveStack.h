@@ -591,6 +591,7 @@ class HighsPostsolveStack {
         basis.row_status[origRowIndex[i]] = basis.row_status[i];
     }
 
+    printf("HighsPostsolveStack:  reductions.size() = %d\n", int( reductions.size()));
     // now undo the changes
     for (HighsInt i = reductions.size() - 1; i >= 0; --i) {
       if (report_col >= 0)
