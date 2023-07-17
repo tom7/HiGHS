@@ -11,6 +11,8 @@ target_include_directories(Catch INTERFACE ${HIGHS_SOURCE_DIR}/highs)
 
 configure_file(${HIGHS_SOURCE_DIR}/check/HCheckConfig.h.in ${HIGHS_BINARY_DIR}/HCheckConfig.h)
 
+configure_file(${HIGHS_SOURCE_DIR}/check/HCheckConfig.h.in ${HIGHS_BINARY_DIR}/HCheckConfig.h)
+
 FILE(WRITE ${CMAKE_BINARY_DIR}/testoptions.txt
 "mip_rel_gap=0.0
 mip_abs_gap=0.0")
