@@ -1,7 +1,5 @@
 # -------------------------- Configuration
 conf_data = configuration_data()
-conf_data.set('FAST_BUILD',
-              get_option('fast_build'))
 conf_data.set('HIGHS_VERSION_MAJOR',
               meson.project_version().split('.')[0])
 conf_data.set('HIGHS_VERSION_MINOR',

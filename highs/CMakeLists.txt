@@ -3,7 +3,6 @@
 
 add_library(highs)
 
-set_target_properties(highs PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 if(${BUILD_SHARED_LIBS})
     # put version information into shared library file
@@ -20,6 +19,7 @@ elseif()
     target_compile_definitions(highs PUBLIC LIBHIGHS_STATIC_DEFINE)
 endif()
 
+# set_target_properties(highs PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 # on UNIX system the 'lib' prefix is automatically added
 # set_target_properties(libhighs PROPERTIES

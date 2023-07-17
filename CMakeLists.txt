@@ -113,7 +113,7 @@ option(CSHARP "Build CSharp interface" OFF)
 message(STATUS "Build CSharp: ${CSHARP}")
 
 # ZLIB can be switched off, for building interfaces
-option(ZLIB "Fast build: " ON)
+option(ZLIB "ZLIB: " ON)
 
 # If wrapper are built, we need to have the install rpath in BINARY_DIR to package
 if(PYTHON OR FORTRAN OR CSHARP)

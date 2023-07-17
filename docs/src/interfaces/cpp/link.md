@@ -8,7 +8,7 @@ Firstly, make sure that HiGHS is installed locally with the correct CMake flags:
 cd HiGHS
 mkdir build
 cd build
-cmake -DFAST_BUILD=ON -DCMAKE_INSTALL_PREFIX=/path_to_highs_install/ ..   
+cmake -DCMAKE_INSTALL_PREFIX=/path_to_highs_install/ ..   
 cmake --build . 
 cmake --install .
 ```
@@ -50,7 +50,6 @@ FetchContent_Declare(
     GIT_REPOSITORY "https://github.com/ERGO-Code/HiGHS.git"
     GIT_TAG        "bazel"
 )
-set(FAST_BUILD ON CACHE INTERNAL "Fast Build")
 
 FetchContent_MakeAvailable(highs)
 

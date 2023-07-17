@@ -1,7 +1,4 @@
 # Booleans
-option('fast_build',
-       type : 'boolean',
-       value : false)
 option('highsint64',
        type : 'boolean',
        value : true)

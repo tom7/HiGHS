@@ -48,7 +48,7 @@ To install in a specified installation directory run CMake with the
 `CMAKE_INSTALL_PREFIX` flag set:
 
 ``` bash
-cmake -DFAST_BUILD=ON -DCMAKE_INSTALL_PREFIX=/path/to/highs_install ..
+cmake -DCMAKE_INSTALL_PREFIX=/path/to/highs_install ..
 cmake --build .
 cmake --install .
 ```

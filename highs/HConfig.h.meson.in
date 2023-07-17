@@ -1,7 +1,6 @@
 #ifndef HCONFIG_H_
 #define HCONFIG_H_
 
-#mesondefine FAST_BUILD
 #mesondefine ZLIB_FOUND
 #mesondefine HIGHSINT64
 #mesondefine HIGHS_HAVE_MM_PAUSE
